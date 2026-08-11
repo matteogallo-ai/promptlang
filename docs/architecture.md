@@ -85,35 +85,38 @@ text, and source position (line + column). The lexer handles:
 The lexer is implemented as a hand-written state machine. No regex-based tokenizer is
 used — this gives precise error recovery and clean position tracking.
 
-### `src/parser/`
+### `src/parser/` ✅ implemented (v0.3)
 
-Recursive-descent parser. Consumes the token stream and produces a Concrete Syntax
-Tree (CST) that preserves all source positions. The parser is intentionally
-over-accepting: it parses as much as possible and collects multiple errors rather than
-halting on the first one.
+Hand-written recursive descent parser. Consumes the filtered token stream (NEWLINE,
+COMMENT_LINE, and COMMENT_BLOCK tokens are discarded) and produces a typed AST directly.
+One parse method per grammar rule; no intermediate CST.
 
-Grammar highlights:
+Grammar highlights (full EBNF in `src/parser/grammar.md`):
 
 ```
-File          = Directive* Declaration*
-Directive     = "@" IDENT StringLiteral
-Declaration   = TypeDecl | PromptDecl | ChainDecl
-TypeDecl      = "type" IDENT "=" ("enum" EnumBody | "struct" StructBody)
-PromptDecl    = "prompt" IDENT "(" ParamList? ")" "->" Type Block
-ChainDecl     = "chain" IDENT "(" ParamList? ")" "->" Type ChainBody
-Block         = "{" (Field | TestBlock)* "}"
+Program       = Metadata* Declaration*
+Metadata      = "@version" | "@model" | "@temperature" | "@max_tokens"
+              | "@breaking_changes" | "@migration_from" | "@description"
+Declaration   = TypeDecl | PromptDecl | ChainDecl | TestDecl | EvalDecl
+TypeDecl      = "type" IDENT "=" TypeExpression
+TypeExpression= PrimitiveType | EnumType | StructType | TypeReference
+PromptDecl    = "prompt" IDENT "(" ParamList? ")" "->" TypeExpression "{" Section+ "}"
+ChainDecl     = "chain" IDENT "(" ParamList? ")" "->" TypeExpression "{" Step+ "return" Expr "}"
+TestDecl      = "test" StringLit "{" "input" ":" Expr Expectation+ "}"
+EvalDecl      = "eval" StringLit "{" dataset prompt metric threshold "}"
 ```
 
-The full grammar is defined in `src/parser/grammar.ts` (added in v0.2).
+Throws `ParserError` with line, column, expected type, and found type on any grammar
+violation. Named arguments (`key: value`) are supported in call expressions.
 
-### `src/ast/`
+### `src/ast/` ✅ implemented (v0.3)
 
 AST node definitions. Each node is a plain TypeScript interface with a `kind`
-discriminant, typed children, and a `span` (start + end source position). The AST
-intentionally discards CST-level noise (whitespace, comments) to make analysis clean.
+discriminant, typed children, and `line`/`column` source positions. The AST discards
+token-level noise (whitespace, comments) to keep analysis clean.
 
-A visitor pattern (`ASTVisitor<T>`) allows analysis passes to traverse the tree
-without coupling to node internals.
+An `printAst()` utility in `src/ast/printer.ts` renders the tree as a human-readable
+box-drawing string for debugging and the future `promptlang parse` CLI command.
 
 ### `src/compiler/typescript/`
 

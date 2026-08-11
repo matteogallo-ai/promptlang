@@ -19,7 +19,7 @@ _Goal: repo is credible, documented, and ready to receive contributors._
 
 ---
 
-## v0.2 — Lexer ✅ (current)
+## v0.2 — Lexer ✅
 
 _Goal: a `.prompt` file can be tokenized into a typed token stream._
 
@@ -30,12 +30,30 @@ _Goal: a `.prompt` file can be tokenized into a typed token stream._
 - [x] Hyphenated identifier support for model names (`claude-opus-4.7`)
 - [x] Comments emitted as tokens (not discarded) for future formatter use
 - [x] 91 unit tests — 100% passing
-- [ ] Recursive-descent parser (moved to v0.3)
-- [ ] `promptlang parse <file>` CLI command (moved to v0.3)
 
 ---
 
-## v0.3 — TypeScript Compiler (basic)
+## v0.3 — Parser + AST ✅ (current)
+
+_Goal: a token stream can be parsed into a fully typed Abstract Syntax Tree._
+
+- [x] Hand-written recursive descent parser — no external parsing library
+- [x] Complete typed AST interfaces with `line`/`column` on every node
+- [x] All declaration types: `type`, `prompt`, `chain`, `test`, `eval`
+- [x] All type expressions: primitive, enum, struct (with optional fields), TypeReference
+- [x] All expression forms: call, member access, identifier, string/number/bool literals
+- [x] Named arguments in call expressions (`key: value` syntax)
+- [x] `expect` and `expect.<field>` assertion clauses in test blocks
+- [x] All 7 metadata directives including `@description`
+- [x] `ParserError` with line, column, expected, and found token types
+- [x] AST printer (`printAst()`) for debugging and future CLI
+- [x] `@description` lexer support added (`AT_DESCRIPTION` token type)
+- [x] 89 unit and integration tests — 100% passing
+- [x] 3 full integration tests covering all 3 example `.prompt` files
+
+---
+
+## v0.4 — TypeScript Compiler (basic)
 
 _Goal: a simple prompt with string I/O compiles to a working TypeScript function._
 

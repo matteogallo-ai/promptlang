@@ -70,7 +70,7 @@ state between stages.
 
 ## Modules
 
-### `src/lexer/`
+### `src/lexer/` ✅ implemented (v0.2)
 
 Converts raw source text into a flat token stream. Each token carries its kind, raw
 text, and source position (line + column). The lexer handles:

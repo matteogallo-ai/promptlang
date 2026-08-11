@@ -6,7 +6,7 @@ flags until it's ready.
 
 ---
 
-## v0.1 — Foundation (current)
+## v0.1 — Foundation ✅
 
 _Goal: repo is credible, documented, and ready to receive contributors._
 
@@ -19,15 +19,19 @@ _Goal: repo is credible, documented, and ready to receive contributors._
 
 ---
 
-## v0.2 — Lexer + Parser
+## v0.2 — Lexer ✅ (current)
 
-_Goal: a `.prompt` file can be parsed into an AST and pretty-printed back._
+_Goal: a `.prompt` file can be tokenized into a typed token stream._
 
-- [ ] Tokenizer (lexer) with full token set
-- [ ] Recursive-descent parser for declarations and expressions
-- [ ] AST node definitions with visitor pattern
-- [ ] `promptlang parse <file>` CLI command (prints AST as JSON)
-- [ ] Lexer and parser unit tests (>90% line coverage)
+- [x] Tokenizer (lexer) with full token set — 55 token types
+- [x] `LexerError` with precise line + column on all error conditions
+- [x] Single-line and triple-quoted strings with escape handling
+- [x] Template string detection (`{{...}}` → `TEMPLATE_STRING`)
+- [x] Hyphenated identifier support for model names (`claude-opus-4.7`)
+- [x] Comments emitted as tokens (not discarded) for future formatter use
+- [x] 91 unit tests — 100% passing
+- [ ] Recursive-descent parser (moved to v0.3)
+- [ ] `promptlang parse <file>` CLI command (moved to v0.3)
 
 ---
 

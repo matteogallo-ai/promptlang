@@ -1,6 +1,6 @@
 {
   "name": "promptlang",
-  "version": "0.1.0-alpha.0",
+  "version": "0.3.1-alpha.0",
   "description": "The typed language for production-grade LLM prompts",
   "author": "Matteo Gallo <matteo.gallo@gallarti.io>",
   "license": "MIT",
@@ -22,10 +22,14 @@
   ],
   "type": "module",
   "main": "./src/index.ts",
+  "bin": {
+    "promptlang": "./src/cli/cli.ts"
+  },
   "scripts": {
     "test": "bun test",
-    "build": "echo 'Build not yet implemented'",
-    "lint": "echo 'Lint not yet implemented'"
+    "typecheck": "bunx tsc --noEmit",
+    "cli": "bun run src/cli/cli.ts",
+    "build": "echo 'Build not yet implemented'"
   },
   "devDependencies": {
     "@types/bun": "latest",

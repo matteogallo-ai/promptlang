@@ -10,6 +10,7 @@
     "noUnusedParameters": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "resolveJsonModule": true,
     "types": ["bun-types"],
     "lib": ["ESNext"]
   },

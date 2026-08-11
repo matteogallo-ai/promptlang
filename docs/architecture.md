@@ -146,14 +146,46 @@ Rules are pluggable: third-party packages can register additional rules.
 
 ### `src/runtime/`
 
-A thin TypeScript/Python package that compiled stubs import at runtime. Responsibilities:
+The runtime package that compiled stubs import at runtime. It is the only part
+of PromptLang that makes network calls.
 
-- Call the configured LLM provider API
-- Parse structured output into the declared return type
-- Apply retry logic and fallback chains
-- Emit structured logs for observability integrations
+**Core types** (`types.ts`, `client.ts`):
 
-The runtime is the only part of PromptLang that makes network calls.
+- `PromptRequest` — model, messages, temperature, max_tokens
+- `PromptResponse` — content string, normalized usage (input/output tokens)
+- `PromptClient` — the interface every provider implements: `complete(request): Promise<PromptResponse>`
+
+**Error hierarchy** (`errors.ts`):
+
+All runtime errors extend `PromptClientError → Error`. Sub-classes:
+
+| Class | Retried? | When |
+|-------|----------|------|
+| `AuthenticationError` | Never | 401 |
+| `RateLimitError` | Yes | 429 |
+| `ServerError` | Yes | 5xx |
+| `InvalidRequestError` | Never | 400 |
+| `TimeoutError` | Yes | AbortController fires |
+| `NetworkError` | Yes | Low-level fetch failure |
+| `ConnectionError` | Yes | ECONNREFUSED (Ollama) |
+| `NotFoundError` | Never | 404 (Ollama model missing) |
+| `AllProvidersFailedError` | — | All RoutingClient providers failed |
+
+**Provider clients** (`providers/`):
+
+- `AnthropicClient` — POST `/v1/messages`; separates system messages into the top-level `system` field; max_tokens defaults to 1024.
+- `OpenAIClient` — POST `/v1/chat/completions`; messages forwarded unchanged; normalizes `prompt_tokens`/`completion_tokens` to `input_tokens`/`output_tokens`.
+- `OllamaClient` — POST `/api/chat`; no auth; maps `options.temperature` / `options.num_predict`; `stream: false`; pedagogical errors for ECONNREFUSED and 404.
+- `RoutingClient` — tries `primary`, then each `fallback` in order; `AuthenticationError` short-circuits without trying fallbacks; aggregates all errors in `AllProvidersFailedError`.
+
+All provider clients use a shared `withRetry` utility (exponential backoff, configurable `maxRetries` and `retryDelay`).
+
+**MockClient** (`client.ts`) — for local development and unit tests; accepts a queue of `PromptResponse[]` or a function `(req) => PromptResponse`.
+
+**Design invariants:**
+- Tests never make real HTTP calls; all provider tests spy on `globalThis.fetch`.
+- Zero external dependencies — uses the `fetch` global provided by Bun.
+- Streaming is not implemented (v0.8+).
 
 ### `src/cli/`
 

@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0-alpha.0] — 2026-08-11
+
+### Added
+- `src/runtime/providers/anthropic-client.ts` — `AnthropicClient`: HTTP client for the Anthropic Messages API with retry (exponential backoff), timeout (AbortController), and full error mapping.
+- `src/runtime/providers/openai-client.ts` — `OpenAIClient`: HTTP client for the OpenAI Chat Completions API; normalizes `prompt_tokens`/`completion_tokens` to the shared `usage` interface.
+- `src/runtime/providers/ollama-client.ts` — `OllamaClient`: HTTP client for local Ollama servers; maps `options.temperature` / `options.num_predict`; pedagogical `ConnectionError` on ECONNREFUSED, `NotFoundError` on 404 with `ollama pull` guidance.
+- `src/runtime/providers/routing-client.ts` — `RoutingClient`: automatic fallback across providers; `AuthenticationError` is never retried via fallback; `AllProvidersFailedError` aggregates all errors.
+- `src/runtime/errors.ts` — full error hierarchy: `PromptClientError`, `AuthenticationError`, `RateLimitError`, `ServerError`, `InvalidRequestError`, `TimeoutError`, `NetworkError`, `ConnectionError`, `NotFoundError`, `AllProvidersFailedError`.
+- `src/runtime/providers/anthropic-client.test.ts` — 18 tests (headers, body, response parsing, retries, errors).
+- `src/runtime/providers/openai-client.test.ts` — 15 tests.
+- `src/runtime/providers/ollama-client.test.ts` — 17 tests.
+- `src/runtime/providers/routing-client.test.ts` — 11 tests (fallback ordering, AuthenticationError short-circuit, `onFallback` callback, `AllProvidersFailedError`).
+- `src/runtime/index.ts` — updated to re-export all provider classes, option types, and error classes.
+
+### Notes
+- No live API calls are made in tests. All provider tests spy on `globalThis.fetch`.
+- API keys must be supplied by the user via environment variables. No key is hard-coded.
+- Streaming responses are deferred to v0.8+.
+
 ## [0.5.1-alpha.0] — 2026-08-11
 
 ### Fixed

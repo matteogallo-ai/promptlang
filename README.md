@@ -157,6 +157,72 @@ bun run src/cli/cli.ts analyze docs/examples/ --strict
 
 ---
 
+## Available runtime providers
+
+The compiled TypeScript imports `PromptClient` from `promptlang/runtime`. Three
+provider clients ship with PromptLang — pick the one that matches your stack.
+
+### Anthropic
+
+```typescript
+import { AnthropicClient } from "promptlang/runtime";
+import { classify_ticket } from "./generated/classify-ticket";
+
+const client = new AnthropicClient({
+  apiKey: process.env.ANTHROPIC_API_KEY!,
+});
+
+const category = await classify_ticket(
+  { ticket: "The submit button crashes on iOS 17" },
+  client
+);
+```
+
+### OpenAI
+
+```typescript
+import { OpenAIClient } from "promptlang/runtime";
+import { classify_ticket } from "./generated/classify-ticket";
+
+const client = new OpenAIClient({
+  apiKey: process.env.OPENAI_API_KEY!,
+  // organization: "org-abc123",   // optional
+});
+
+const category = await classify_ticket({ ticket: "..." }, client);
+```
+
+### Ollama (local)
+
+```typescript
+import { OllamaClient } from "promptlang/runtime";
+import { classify_ticket } from "./generated/classify-ticket";
+
+// No API key required — Ollama runs locally.
+const client = new OllamaClient({
+  baseURL: "http://localhost:11434", // default
+});
+
+const category = await classify_ticket({ ticket: "..." }, client);
+```
+
+### Routing (automatic fallback)
+
+```typescript
+import { AnthropicClient, OpenAIClient, RoutingClient } from "promptlang/runtime";
+import { classify_ticket } from "./generated/classify-ticket";
+
+const client = new RoutingClient({
+  primary: new AnthropicClient({ apiKey: process.env.ANTHROPIC_API_KEY! }),
+  fallbacks: [new OpenAIClient({ apiKey: process.env.OPENAI_API_KEY! })],
+  onFallback: (err, i) => console.warn(`Fallback #${i}:`, err.message),
+});
+
+const category = await classify_ticket({ ticket: "..." }, client);
+```
+
+---
+
 ## Known Limitations (alpha)
 
 The generated TypeScript uses `import { … } from "promptlang/runtime"`. This import resolves correctly **within this repository** via the `package.json` `exports` field. In an **external project** it will produce `TS2307: Cannot find module 'promptlang/runtime'` until promptlang is published to npm (planned for v1.0).

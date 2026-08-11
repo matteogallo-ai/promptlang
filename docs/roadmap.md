@@ -94,7 +94,21 @@ _Goal: prompts can be composed into a directed acyclic graph._
 
 ---
 
-## v0.6 — Native Tests and Evals
+## v0.6 — Multi-provider runtime ✅
+
+_Goal: PromptLang is usable in production with real API keys._
+
+- [x] `AnthropicClient` — HTTP client for Anthropic Messages API; retry + backoff + timeout
+- [x] `OpenAIClient` — HTTP client for OpenAI Chat Completions API
+- [x] `OllamaClient` — HTTP client for local Ollama servers (no auth required)
+- [x] `RoutingClient` — automatic fallback across providers; `AuthenticationError` never retried
+- [x] Full error hierarchy: `AuthenticationError`, `RateLimitError`, `ServerError`, `InvalidRequestError`, `TimeoutError`, `NetworkError`, `ConnectionError`, `NotFoundError`, `AllProvidersFailedError`
+- [x] 61 tests — all using mocked `fetch`, no live API calls
+- [ ] Streaming responses (deferred to v0.8+)
+
+---
+
+## v0.7 — Native Tests and Evals
 
 _Goal: `test` blocks execute as real unit tests via `bun test`._
 

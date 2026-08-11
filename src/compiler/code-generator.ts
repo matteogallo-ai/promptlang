@@ -1,17 +1,12 @@
 import type {
   TypeDeclaration,
   PromptDeclaration,
-  ChainDeclaration,
   TypeExpression,
   Program,
-  Expression,
-  CallArgument,
-  NamedArgument,
   Parameter,
 } from "../ast/nodes";
 import { mapType, toPascalCase, toConstName } from "./type-mapper";
 import { compileStringLiteral } from "./template-compiler";
-import { CompilerError } from "./errors";
 
 export type TypeRegistry = Map<string, TypeExpression>;
 
@@ -143,49 +138,6 @@ export function generatePromptDeclaration(
 }
 
 // ---------------------------------------------------------------------------
-// ChainDeclaration
-// ---------------------------------------------------------------------------
-
-export function generateChainDeclaration(
-  decl: ChainDeclaration,
-  _meta: CompiledMetadata,
-  _registry: TypeRegistry
-): string {
-  const { name, parameters, returnType, steps, returnExpression } = decl;
-  const pascalName = toPascalCase(name);
-  const inputType = `${pascalName}Input`;
-  const returnTsType = mapType(returnType);
-  const paramNames = new Set(parameters.map((p) => p.name));
-
-  const parts: string[] = [];
-
-  // Input interface
-  parts.push(generateInputInterface(inputType, parameters));
-  parts.push("");
-
-  // Function signature
-  parts.push(`export async function ${name}(`);
-  parts.push(`  input: ${inputType},`);
-  parts.push(`  client: PromptClient`);
-  parts.push(`): Promise<${returnTsType}> {`);
-
-  // Steps
-  const stepNames = new Set<string>();
-  for (const step of steps) {
-    const expr = compileExpression(step.expression, paramNames, stepNames);
-    parts.push(`  const ${step.name} = ${expr};`);
-    stepNames.add(step.name);
-  }
-
-  // Return
-  const retExpr = compileExpression(returnExpression, paramNames, stepNames);
-  parts.push(`  return ${retExpr};`);
-  parts.push("}");
-
-  return parts.join("\n");
-}
-
-// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -286,58 +238,3 @@ function generateValidation(
   return lines.join("\n");
 }
 
-function compileExpression(
-  expr: Expression,
-  paramNames: Set<string>,
-  stepNames: Set<string>
-): string {
-  switch (expr.kind) {
-    case "Identifier": {
-      if (paramNames.has(expr.name)) return `input.${expr.name}`;
-      if (stepNames.has(expr.name)) return expr.name;
-      throw new CompilerError(`Unknown identifier "${expr.name}" in chain expression`);
-    }
-    case "StringLiteral":
-      return compileStringLiteral(expr.value, expr.isTemplate, paramNames);
-    case "NumberLiteral":
-      return String(expr.value);
-    case "BooleanLiteral":
-      return String(expr.value);
-    case "MemberExpression": {
-      const base = paramNames.has(expr.object)
-        ? `input.${expr.object}`
-        : stepNames.has(expr.object)
-        ? expr.object
-        : expr.object;
-      return `${base}.${expr.property}`;
-    }
-    case "CallExpression": {
-      const inputObj = compileCallArgs(expr.arguments, paramNames, stepNames);
-      return `await ${expr.callee}(${inputObj}, client)`;
-    }
-  }
-}
-
-function compileCallArgs(
-  args: CallArgument[],
-  paramNames: Set<string>,
-  stepNames: Set<string>
-): string {
-  if (args.length === 0) return "{}";
-
-  const namedArgs = args.filter((a): a is NamedArgument => a.kind === "NamedArgument");
-
-  if (namedArgs.length === args.length) {
-    const entries = namedArgs.map(
-      (a) => `${a.name}: ${compileExpression(a.value, paramNames, stepNames)}`
-    );
-    return `{ ${entries.join(", ")} }`;
-  }
-
-  // Positional arguments: compile each value in order
-  const positional = args.filter((a) => a.kind !== "NamedArgument") as Expression[];
-  const entries = positional.map((a) =>
-    compileExpression(a, paramNames, stepNames)
-  );
-  return entries.join(", ");
-}

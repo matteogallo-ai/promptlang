@@ -3,9 +3,9 @@ import {
   buildTypeRegistry,
   generateTypeDeclaration,
   generatePromptDeclaration,
-  generateChainDeclaration,
   type CompiledMetadata,
 } from "./code-generator";
+import { buildCallableRegistry, generateChain } from "./chain-compiler";
 import pkg from "../../package.json";
 
 export function compile(program: Program, sourceFile: string): string {
@@ -20,6 +20,7 @@ export function compile(program: Program, sourceFile: string): string {
   parts.push("");
 
   const registry = buildTypeRegistry(program);
+  const callableRegistry = buildCallableRegistry(program);
   const meta = extractMetadata(program);
 
   const typeDecls = program.declarations.filter(
@@ -41,15 +42,20 @@ export function compile(program: Program, sourceFile: string): string {
     }
   }
 
-  if (promptDecls.length > 0 || chainDecls.length > 0) {
+  if (promptDecls.length > 0) {
     parts.push("// ---- Prompt definitions ----");
     parts.push("");
     for (const decl of promptDecls) {
       parts.push(generatePromptDeclaration(decl, meta, registry));
       parts.push("");
     }
+  }
+
+  if (chainDecls.length > 0) {
+    parts.push("// ---- Chain ----");
+    parts.push("");
     for (const decl of chainDecls) {
-      parts.push(generateChainDeclaration(decl, meta, registry));
+      parts.push(generateChain(decl, callableRegistry));
       parts.push("");
     }
   }

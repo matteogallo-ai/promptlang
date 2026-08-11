@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0-alpha.0] — 2026-08-11
+
+### Added
+- `src/compiler/chain-compiler.ts` — dedicated chain compilation module with:
+  - `CallableRegistry` type: maps every prompt and chain name to its ordered parameter list
+  - `buildCallableRegistry(program)` — builds the registry from an AST Program
+  - `generateChain(decl, callableRegistry)` — compiles a `ChainDeclaration` to a TypeScript async function
+  - Positional arg resolution: `summarize(article)` → `{ text: input.article }` by matching against the callee's parameter order via `CallableRegistry`
+  - Named arg compilation: `translate(text: summary, target_lang: target)` → `{ text: summary, target_lang: input.target }`
+  - Compile-time validation: undefined identifier references throw `CompilerError` with chain name + variable name in the message
+  - Forward reference detection: step `a` referencing step `b` (defined later) throws `CompilerError` with "defined later" message
+  - Member expression support in step expressions: `data.field` compiles correctly
+- `src/compiler/chain-compiler.test.ts` — 39 tests (unit + integration + end-to-end):
+  - Unit tests for 1-step, 2-step, 3-step chains; named args; positional args; param/step reuse; return type variations; interface generation
+  - Error tests: undefined identifier, forward reference, unknown callee
+  - Section header tests: `---- Chain ----` appears after `---- Prompt definitions ----`
+  - Integration: compiles `docs/examples/summarize-and-translate.prompt` without error
+  - Integration: generated TypeScript for the example compiles cleanly with `tsc --strict --noEmit`
+  - End-to-end: spawns a child Bun process that imports the compiled chain and runs it with `MockClient`, verifying the correct orchestration of 2 LLM calls
+
+### Changed
+- `src/compiler/code-generator.ts` — removed the stub `generateChainDeclaration` function and its orphaned `compileExpression` / `compileCallArgs` helpers; chain compilation now lives entirely in `chain-compiler.ts`
+- `src/compiler/compiler.ts` — wires in `buildCallableRegistry` and `generateChain` from `chain-compiler.ts`; chains now appear under a dedicated `// ---- Chain ----` section header instead of being mixed into `// ---- Prompt definitions ----`
+- `docs/examples/summarize-and-translate.prompt` — removed test blocks using comparison operators (`> n`, `<= n`) and regex matchers that require the v0.6 test-eval engine (not yet implemented); replaced with minimal literal-assertion tests that the current parser accepts
+- `package.json` — version bumped to `0.5.0-alpha.0`
+
 ## [0.3.1-alpha.0] — 2026-08-11
 
 ### Added

@@ -77,13 +77,17 @@ _Goal: primitive types, enums, and structs are validated at compile time._
 
 ---
 
-## v0.5 — Chains (Prompt DAG)
+## v0.5 — Chains (Prompt DAG) ✅
 
 _Goal: prompts can be composed into a directed acyclic graph._
 
-- [ ] `chain` declaration syntax
-- [ ] DAG cycle detection in semantic analysis
-- [ ] Compiled chain: sequential async function calls in TypeScript
+- [x] `chain` declaration compiles to a typed async TypeScript function
+- [x] Positional and named argument resolution with `CallableRegistry`
+- [x] Compile-time validation: undefined identifiers and forward references throw `CompilerError`
+- [x] Member expression support in step arguments (`step.field`)
+- [x] Dedicated `// ---- Chain ----` section in generated output
+- [x] 39 tests: unit, error, integration, end-to-end runtime with `MockClient`
+- [ ] DAG cycle detection (chains calling themselves recursively)
 - [ ] Typed data flow: output type of step N must match input type of step N+1
 - [ ] `promptlang viz <file>` CLI command: renders chain as ASCII DAG
 

@@ -1,0 +1,64 @@
+// classify-ticket.prompt
+// Classifies a support ticket into one of four predefined categories.
+// This is the canonical introductory example for PromptLang.
+
+@version "1.0.0"
+@model claude-opus-4.7
+@temperature 0.3
+@description "Support ticket classifier — enum output, multiple tests"
+
+// Declare the output type. The compiler will validate that the model's
+// response can be parsed into one of these four members.
+type Category = enum { bug, feature_request, question, other }
+
+prompt classify_ticket(ticket: string) -> Category {
+  system: """
+    You are a support ticket classifier for a B2B SaaS product.
+    Your job is to read a ticket submitted by a customer and return
+    exactly one of these categories:
+
+    - bug: a defect, crash, or unexpected behavior in the product
+    - feature_request: a request for new functionality or enhancement
+    - question: a how-to question or clarification request
+    - other: anything that does not fit the above
+
+    Respond with exactly one word — the category name. No punctuation.
+    No explanation.
+  """
+  user: "Classify this ticket:\n\n{{ticket}}"
+  output: Category
+}
+
+// --- Tests ---
+// Run with: promptlang test classify-ticket.prompt
+// Or via:   bun test
+
+test "classifies crash reports as bug" {
+  input: classify_ticket("The submit button crashes the app on iOS 17 when the form is empty")
+  expect: bug
+}
+
+test "classifies UI glitch as bug" {
+  input: classify_ticket("The dashboard graph renders incorrectly on Firefox 115")
+  expect: bug
+}
+
+test "classifies new functionality request as feature_request" {
+  input: classify_ticket("It would be really useful to be able to export our data as a CSV")
+  expect: feature_request
+}
+
+test "classifies integration request as feature_request" {
+  input: classify_ticket("Can you add a Zapier integration so we can connect to our CRM?")
+  expect: feature_request
+}
+
+test "classifies how-to as question" {
+  input: classify_ticket("How do I invite a team member to my workspace?")
+  expect: question
+}
+
+test "classifies billing as other" {
+  input: classify_ticket("I was charged twice this month, please refund the duplicate")
+  expect: other
+}

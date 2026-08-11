@@ -1,0 +1,37 @@
+{
+  "name": "promptlang",
+  "version": "0.1.0-alpha.0",
+  "description": "The typed language for production-grade LLM prompts",
+  "author": "Matteo Gallo <matteo.gallo@gallarti.io>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/matteogallo-ai/promptlang.git"
+  },
+  "homepage": "https://github.com/matteogallo-ai/promptlang",
+  "bugs": "https://github.com/matteogallo-ai/promptlang/issues",
+  "keywords": [
+    "prompt-engineering",
+    "llm",
+    "dsl",
+    "compiler",
+    "ai",
+    "openai",
+    "anthropic",
+    "typescript"
+  ],
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": {
+    "test": "bun test",
+    "build": "echo 'Build not yet implemented'",
+    "lint": "echo 'Lint not yet implemented'"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "bun": ">=1.1.0"
+  }
+}

@@ -1,0 +1,109 @@
+// summarize-and-translate.prompt
+// Demonstrates the `chain` construct: two prompts composed into a DAG.
+// Step 1: summarize a document in English.
+// Step 2: translate the summary to a target language.
+
+@version "1.0.0"
+@model claude-opus-4.7
+@description "Summarize then translate — demonstrates chain composition"
+
+// --- Type declarations ---
+
+type Language = enum {
+  english,
+  french,
+  german,
+  spanish,
+  italian,
+  portuguese,
+  japanese,
+  chinese
+}
+
+type Summary = struct {
+  text: string
+  word_count: number
+  language: string
+}
+
+// --- Individual prompts ---
+
+// Step 1: Summarize an English document to a target word count.
+prompt summarize(document: string, max_words: number) -> string {
+  system: """
+    You are a precise document summarizer.
+    Summarize the provided document in {{max_words}} words or fewer.
+    Preserve the key facts and conclusions. Write in English.
+    Return only the summary text, no preamble.
+  """
+  user: """
+    Summarize this document in {{max_words}} words or fewer:
+
+    {{document}}
+  """
+  output: string
+}
+
+// Step 2: Translate a text to a target language.
+prompt translate(text: string, target_language: Language) -> string {
+  system: """
+    You are a professional translator.
+    Translate the provided text to {{target_language}}.
+    Preserve the meaning and tone. Return only the translated text.
+  """
+  user: "Translate to {{target_language}}:\n\n{{text}}"
+  output: string
+}
+
+// --- Chain: compose summarize + translate ---
+// The compiler validates that the output of `summarize` (string) matches
+// the `text` parameter of `translate` (string). Type mismatch = compile error.
+
+chain summarize_and_translate(
+  document: string,
+  max_words: number,
+  target_language: Language
+) -> string {
+  step english_summary = summarize(document: document, max_words: max_words)
+  step translated = translate(text: english_summary, target_language: target_language)
+  return translated
+}
+
+// --- Tests ---
+
+test "summarizes and translates to French" {
+  input: summarize_and_translate(
+    document: """
+      Artificial intelligence has made remarkable progress over the past decade.
+      Large language models can now write code, analyze documents, and assist in
+      complex reasoning tasks. However, challenges remain around reliability,
+      factual accuracy, and safe deployment in high-stakes environments.
+    """,
+    max_words: 30,
+    target_language: french
+  )
+  // We test that the output is non-empty. Full correctness eval uses an eval block.
+  expect.length: > 10
+}
+
+test "individual summarize step produces short output" {
+  input: summarize(
+    document: """
+      The Eiffel Tower was constructed between 1887 and 1889 as the entrance arch
+      for the 1889 World's Fair held in Paris. It was designed by engineer Gustave
+      Eiffel and stands 330 meters tall. Initially criticized by many Parisian artists
+      and intellectuals, it has since become a global cultural icon.
+    """,
+    max_words: 20
+  )
+  expect.word_count: <= 25  // small buffer for model variation
+}
+
+test "translates to German" {
+  input: translate(
+    text: "The meeting is scheduled for tomorrow at 3pm.",
+    target_language: german
+  )
+  // Expect the German word for meeting to appear
+  expect: matches(/Treffen|Meeting|Besprechung/)
+}

@@ -1,0 +1,91 @@
+// extract-invoice.prompt
+// Extracts structured data from raw invoice text.
+// Demonstrates struct output types and field-level test assertions.
+
+@version "1.0.0"
+@model claude-opus-4.7
+@description "Invoice data extractor — struct output, field assertions"
+
+// Struct types map directly to typed objects in compiled output.
+// The compiler generates a JSON parser that validates each field.
+type ExtractedInvoice = struct {
+  amount: number
+  currency: string
+  invoice_date: string   // ISO 8601 format: YYYY-MM-DD
+  vendor: string
+  invoice_number?: string  // optional — not always present
+}
+
+prompt extract_invoice(pdf_text: string) -> ExtractedInvoice {
+  system: """
+    You are an invoice data extraction specialist.
+    Given the plain text content of an invoice, extract the following fields:
+
+    - amount: the total invoice amount as a number (no currency symbol)
+    - currency: the 3-letter ISO 4217 currency code (e.g. EUR, USD, CHF)
+    - invoice_date: the invoice date in YYYY-MM-DD format
+    - vendor: the name of the company issuing the invoice
+    - invoice_number: the invoice reference number (if present)
+
+    Return valid JSON only. No explanation, no markdown fences.
+    Example: {"amount": 1250, "currency": "EUR", "invoice_date": "2026-08-11",
+              "vendor": "Acme Corp", "invoice_number": "INV-20260811-001"}
+
+    If a field is missing from the invoice, omit it from the JSON.
+  """
+  user: """
+    Extract the invoice data from the following text:
+    ---
+    {{pdf_text}}
+    ---
+  """
+  output: ExtractedInvoice
+}
+
+// --- Tests ---
+
+test "extracts EUR invoice" {
+  input: extract_invoice("""
+    ACME CORPORATION
+    Invoice #INV-20260811-001
+    Date: August 11, 2026
+
+    Bill To: Customer Corp
+
+    Services rendered: Consulting Q3 2026
+    Total Due: 1,250.00 EUR
+
+    Payment due within 30 days.
+  """)
+  expect.amount: 1250
+  expect.currency: "EUR"
+  expect.invoice_date: "2026-08-11"
+  expect.vendor: "Acme Corporation"
+  expect.invoice_number: "INV-20260811-001"
+}
+
+test "extracts USD invoice without invoice number" {
+  input: extract_invoice("""
+    TechFlow Inc
+    Date: 2026-07-15
+    Amount: $4,800 USD
+    Project: API Integration Work
+  """)
+  expect.amount: 4800
+  expect.currency: "USD"
+  expect.vendor: "TechFlow Inc"
+}
+
+test "handles CHF invoice with different date format" {
+  input: extract_invoice("""
+    Gallarti SA — Facture
+    Numéro: FAC-2026-0042
+    Date: 11.08.2026
+    Montant total: CHF 750.00
+    Client: SomeCompany GmbH
+  """)
+  expect.amount: 750
+  expect.currency: "CHF"
+  expect.invoice_date: "2026-08-11"
+  expect.vendor: "Gallarti SA"
+}

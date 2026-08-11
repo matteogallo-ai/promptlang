@@ -105,6 +105,58 @@ export async function classifyTicket(ticket: string): Promise<Category> {
 
 ---
 
+## Why does this matter?
+
+Today, teams ship LLM features with prompts stored as strings in Python or JavaScript.
+There is no type checking. No tests. No versioning. No linting. When a prompt breaks
+in production, you find out from a customer complaint.
+
+PromptLang treats prompts as first-class typed code:
+
+- Type-safe inputs and outputs, verified at compile-time
+- Native tests and evals in the same file as the prompt
+- Semantic versioning with breaking-change tracking
+- Static analysis for injection vectors, unbounded costs, and quality drift
+- Compile once, run against any provider (Anthropic, OpenAI, local models)
+
+This isn't a wrapper around an SDK. It's the compiler and type system your prompts
+have been missing.
+
+---
+
+## Try it now
+
+Clone the repo and analyze the example prompts:
+
+```bash
+git clone https://github.com/matteogallo-ai/promptlang.git
+cd promptlang
+bun install
+bun run src/cli/cli.ts analyze docs/examples/
+```
+
+You'll see a real static analysis report — prompt injection warnings, missing tests,
+token cost estimates, chain complexity. None of the alternatives (LangChain, LangSmith,
+W&B Weave) do this today.
+
+Other commands:
+
+```bash
+# Print the AST of a .prompt file
+bun run src/cli/cli.ts parse docs/examples/classify-ticket.prompt
+
+# Print the token stream
+bun run src/cli/cli.ts tokens docs/examples/extract-invoice.prompt
+
+# JSON output for CI/CD integration
+bun run src/cli/cli.ts analyze docs/examples/ --json
+
+# Fail CI if any warnings are found
+bun run src/cli/cli.ts analyze docs/examples/ --strict
+```
+
+---
+
 ## Comparison
 
 | Capability                   | PromptLang | LangChain | LangSmith | W&B Weave |
@@ -112,7 +164,9 @@ export async function classifyTicket(ticket: string): Promise<Category> {
 | Typed prompt signatures      | ✅         | ❌        | ❌        | ❌        |
 | Native test assertions       | ✅         | ❌        | Partial   | Partial   |
 | Semver for prompts           | ✅         | ❌        | ❌        | ❌        |
-| Compiles to TypeScript       | ✅         | ❌        | ❌        | ❌        |
+| Static analysis CLI          | ✅         | ❌        | ❌        | ❌        |
+| Injection risk detection     | ✅         | ❌        | ❌        | ❌        |
+| Compiles to TypeScript       | ✅ (v0.4)  | ❌        | ❌        | ❌        |
 | Compiles to Python           | ✅ (v0.8)  | N/A       | N/A       | N/A       |
 | Model-agnostic config        | ✅         | Partial   | ✅        | ✅        |
 | AI-powered linter            | ✅ (v0.7)  | ❌        | ❌        | ❌        |

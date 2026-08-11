@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1-alpha.0] — 2026-08-11
+
+### Added
+- `src/cli/cli.ts` — main CLI entry point with dispatcher; exports `main()` for testability; supports `parse`, `tokens`, `analyze`, `version`, `help` commands
+- `src/cli/commands/parse.ts` — `promptlang parse <file>`: tokenizes + parses a `.prompt` file and prints a human-readable AST tree
+- `src/cli/commands/tokens.ts` — `promptlang tokens <file>`: tokenizes a `.prompt` file and prints every token with line:col info
+- `src/cli/commands/version.ts` — `promptlang version`: prints current version, repo URL, and license
+- `src/cli/commands/analyze.ts` — `promptlang analyze <path>`: runs the full static analysis pipeline on one file, a directory, or a glob pattern; supports `--json` (machine-readable output) and `--strict` (exit 1 on warnings); gracefully skips files using future syntax (emits `[skip]` to stderr)
+- `src/cli/output.ts` — ANSI color constants and `formatError()` for displaying lexer/parser errors with source context
+- `src/analyzer/analyzer.ts` — `analyze()` engine and `Rule` / `Issue` / `AnalysisContext` interfaces
+- `src/analyzer/report.ts` — `formatTerminalReport()` (colored, human-readable) and `formatJsonReport()` (CI-ready JSON)
+- `src/analyzer/rules/missing-tests.ts` — Rule: flags prompts that have no `test` block referencing them
+- `src/analyzer/rules/unbounded-template.ts` — Rule: flags `{{variable}}` references not declared as prompt parameters
+- `src/analyzer/rules/prompt-injection-risk.ts` — Rule: flags user-role sections with undelimited template variables (injection vector)
+- `src/analyzer/rules/token-cost-estimate.ts` — Rule: estimates token count (words × 1.3) and warns on prompts exceeding 500 tokens
+- `src/analyzer/rules/chain-complexity.ts` — Rule: warns on chains exceeding 5 steps (high cyclomatic complexity)
+- `src/analyzer/rules/duplicate-prompts.ts` — Rule: detects the same prompt name declared in multiple files
+- `src/cli/cli.test.ts` — 27 tests covering all commands, flags, error paths, and exit codes
+- `src/analyzer/analyzer.test.ts` — 24 tests: unit tests for each rule + integration tests against real example files
+
+### Changed
+- `package.json` — version bumped to `0.3.1-alpha.0`; added `bin.promptlang`, `scripts.cli`, `scripts.typecheck`
+- `tsconfig.json` — added `resolveJsonModule: true` to support `import packageJson from "../../../package.json"`
+- `README.md` — added "Why does this matter?" and "Try it now" sections with CLI usage examples; updated Comparison table with Static analysis and Injection risk detection rows
+
 ## [0.3.0-alpha.0] — 2026-08-11
 
 ### Added

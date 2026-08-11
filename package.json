@@ -1,6 +1,6 @@
 {
   "name": "promptlang",
-  "version": "0.3.1-alpha.0",
+  "version": "0.4.0-alpha.0",
   "description": "The typed language for production-grade LLM prompts",
   "author": "Matteo Gallo <matteo.gallo@gallarti.io>",
   "license": "MIT",
@@ -22,6 +22,10 @@
   ],
   "type": "module",
   "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./runtime": "./src/runtime/index.ts"
+  },
   "bin": {
     "promptlang": "./src/cli/cli.ts"
   },

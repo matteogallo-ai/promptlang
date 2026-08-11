@@ -82,7 +82,7 @@ describe("version", () => {
     restore();
     expect(code).toBe(0);
     expect(output()).toContain("promptlang");
-    expect(output()).toContain("0.3.1");
+    expect(output()).toContain("0.4.0");
   });
 
   test("prints repository URL", async () => {
@@ -234,6 +234,88 @@ describe("analyze", () => {
     ]);
     restore();
     expect(code).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// compile command
+// ---------------------------------------------------------------------------
+
+describe("compile", () => {
+  const OUT_DIR = "/tmp/promptlang-compile-test-out";
+
+  test("compiles a valid .prompt file and exits 0", async () => {
+    const restore = silenceAll();
+    const code = await main([
+      "bun", "cli", "compile",
+      "docs/examples/classify-ticket.prompt",
+      "--out", OUT_DIR,
+    ]);
+    restore();
+    expect(code).toBe(0);
+  });
+
+  test("generated .ts file exists on disk", async () => {
+    const restore = silenceAll();
+    await main([
+      "bun", "cli", "compile",
+      "docs/examples/classify-ticket.prompt",
+      "--out", OUT_DIR,
+    ]);
+    restore();
+    const file = Bun.file(`${OUT_DIR}/classify-ticket.ts`);
+    expect(await file.exists()).toBe(true);
+  });
+
+  test("generates index.ts re-exporting compiled files", async () => {
+    const restore = silenceAll();
+    await main([
+      "bun", "cli", "compile",
+      "docs/examples/classify-ticket.prompt",
+      "docs/examples/extract-invoice.prompt",
+      "--out", OUT_DIR,
+    ]);
+    restore();
+    const index = await Bun.file(`${OUT_DIR}/index.ts`).text();
+    expect(index).toContain("classify-ticket");
+    expect(index).toContain("extract-invoice");
+  });
+
+  test("compiles a directory of .prompt files and exits 0", async () => {
+    const restore = silenceAll();
+    const code = await main([
+      "bun", "cli", "compile",
+      "docs/examples/classify-ticket.prompt",
+      "docs/examples/extract-invoice.prompt",
+      "--out", OUT_DIR,
+    ]);
+    restore();
+    expect(code).toBe(0);
+  });
+
+  test("missing path argument exits 1", async () => {
+    const restore = silenceAll();
+    const code = await main(["bun", "cli", "compile"]);
+    restore();
+    expect(code).toBe(1);
+  });
+
+  test("nonexistent file exits 1", async () => {
+    const restore = silenceAll();
+    const code = await main([
+      "bun", "cli", "compile",
+      "no-such-file.prompt",
+      "--out", OUT_DIR,
+    ]);
+    restore();
+    expect(code).toBe(1);
+  });
+
+  test("help mentions compile command", async () => {
+    const { output, restore } = captureLog();
+    await main(["bun", "cli", "--help"]);
+    restore();
+    expect(output()).toContain("compile");
   });
 });
 

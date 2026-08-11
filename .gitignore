@@ -8,3 +8,6 @@ build
 coverage
 .turbo
 bun.lockb
+generated/
+runtime-generated/
+tmp-test-output/

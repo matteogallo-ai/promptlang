@@ -4,6 +4,7 @@ import { runParse } from "./commands/parse";
 import { runTokens } from "./commands/tokens";
 import { runAnalyze } from "./commands/analyze";
 import { runVersion } from "./commands/version";
+import { runCompile } from "./commands/compile";
 
 const HELP = `
 promptlang — the typed language for production-grade LLM prompts
@@ -16,13 +17,15 @@ Commands:
   tokens <file>             Print token stream of a .prompt file
   analyze <path> [flags]    Run static analysis on .prompt files
                             Flags: --json, --strict
+  compile <path> [flags]    Compile .prompt files to TypeScript
+                            Flags: --out <dir>
   version                   Show version and repository info
 
 Examples:
   promptlang parse docs/examples/classify-ticket.prompt
   promptlang tokens docs/examples/extract-invoice.prompt
   promptlang analyze docs/examples/
-  promptlang analyze 'src/**/*.prompt' --json --strict
+  promptlang compile docs/examples/ --out ./generated
 `.trim();
 
 export async function main(argv: string[]): Promise<number> {
@@ -37,6 +40,8 @@ export async function main(argv: string[]): Promise<number> {
         return await runTokens(args.slice(1));
       case "analyze":
         return await runAnalyze(args.slice(1));
+      case "compile":
+        return await runCompile(args.slice(1));
       case "version":
         return runVersion();
       case undefined:

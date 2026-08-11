@@ -44,6 +44,7 @@ const AT_DIRECTIVES: Readonly<Record<string, TokenType>> = {
   max_tokens: TokenType.AT_MAX_TOKENS,
   breaking_changes: TokenType.AT_BREAKING_CHANGES,
   migration_from: TokenType.AT_MIGRATION_FROM,
+  description: TokenType.AT_DESCRIPTION,
 };
 
 /**

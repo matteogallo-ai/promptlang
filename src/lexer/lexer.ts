@@ -483,29 +483,31 @@ export class Lexer {
    * Scientific notation (`1e10`) is not supported in v0.2.
    * The first digit `ch` has already been consumed.
    *
-   * @throws {LexerError} if a second decimal point is found.
+   * @throws {LexerError} if the number is immediately followed by an identifier
+   *   character (e.g. `123abc`), or if a second decimal point is found.
    */
   private scanNumber(ch: string): void {
     let value = ch;
-    let hasDecimal = false;
 
     while (!this.isAtEnd() && isDigit(this.peek())) {
       value += this.advance();
     }
 
     if (this.peek() === "." && isDigit(this.peekNext())) {
-      if (hasDecimal) {
-        throw new LexerError(
-          "Invalid numeric literal: multiple decimal points",
-          this.startLine,
-          this.startColumn
-        );
-      }
-      hasDecimal = true;
       value += this.advance(); // consume "."
       while (!this.isAtEnd() && isDigit(this.peek())) {
         value += this.advance();
       }
+    }
+
+    // Reject cases like `123abc` — a number must not be immediately followed
+    // by an identifier-start character.
+    if (!this.isAtEnd() && isIdentStart(this.peek())) {
+      throw new LexerError(
+        `Invalid numeric literal '${value}${this.peek()}...' — identifiers cannot start with a digit`,
+        this.startLine,
+        this.startColumn
+      );
     }
 
     this.addToken(TokenType.NUMBER, value);
@@ -515,10 +517,22 @@ export class Lexer {
    * Scans an identifier or keyword.
    * After consuming all identifier characters, checks the KEYWORDS map
    * to upgrade IDENT to the appropriate keyword token type.
+   *
+   * Hyphens are allowed inside identifiers when immediately followed by an
+   * alphanumeric character or underscore, to support model names such as
+   * `claude-opus-4.7` and CSS-style identifiers. A lone trailing hyphen
+   * (e.g. before `>`) is NOT consumed — this keeps `->` unambiguous.
    */
   private scanIdentifier(): void {
-    while (!this.isAtEnd() && isIdentPart(this.peek())) {
-      this.advance();
+    while (!this.isAtEnd()) {
+      if (isIdentPart(this.peek())) {
+        this.advance();
+      } else if (this.peek() === "-" && isIdentPart(this.peekNext())) {
+        // Hyphen is part of the identifier only when followed by an ident char.
+        this.advance(); // consume -
+      } else {
+        break;
+      }
     }
     const word = this.source.slice(this.start, this.current);
     const type = KEYWORDS[word] ?? TokenType.IDENT;

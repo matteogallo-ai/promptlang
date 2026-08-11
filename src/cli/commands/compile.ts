@@ -6,16 +6,31 @@ import { LexerError } from "../../lexer/errors";
 import { ParserError } from "../../parser/errors";
 import { CompilerError } from "../../compiler/errors";
 import { mkdir } from "node:fs/promises";
-import { join, basename } from "node:path";
+import { join, basename, relative, resolve } from "node:path";
 
 export async function runCompile(args: string[]): Promise<number> {
   const outIdx = args.indexOf("--out");
   const outDir = outIdx !== -1 && args[outIdx + 1] ? args[outIdx + 1]! : "./generated";
-  const paths = args.filter((a, i) => !a.startsWith("--") && i !== outIdx + 1);
+
+  const emitTsconfig = args.includes("--emit-tsconfig");
+
+  const runtimePathIdx = args.indexOf("--runtime-path");
+  const runtimePath =
+    runtimePathIdx !== -1 && args[runtimePathIdx + 1]
+      ? args[runtimePathIdx + 1]!
+      : computeDefaultRuntimePath(outDir);
+
+  const paths = args.filter((a, i) => {
+    if (a.startsWith("--")) return false;
+    if (i === outIdx + 1) return false;
+    if (runtimePathIdx !== -1 && i === runtimePathIdx + 1) return false;
+    return true;
+  });
 
   if (paths.length === 0) {
     console.error(
-      "Missing file argument.\nUsage: promptlang compile <file|dir|glob> [--out <dir>]"
+      "Missing file argument.\n" +
+        "Usage: promptlang compile <file|dir|glob> [--out <dir>] [--emit-tsconfig [--runtime-path <path>]]"
     );
     return 1;
   }
@@ -75,7 +90,51 @@ export async function runCompile(args: string[]): Promise<number> {
     console.log(`  generated ${indexPath} (${generatedNames.length} export(s))`);
   }
 
+  if (emitTsconfig) {
+    const tsconfigPath = join(outDir, "tsconfig.json");
+    await Bun.write(tsconfigPath, buildTsconfig(runtimePath));
+    console.log(`  emitted   ${tsconfigPath}`);
+    console.log(`            (paths "promptlang/runtime" → ${runtimePath})`);
+    console.log(
+      `            Note: --emit-tsconfig is for local/alpha use. Once promptlang`
+    );
+    console.log(
+      `            is published to npm (v1.0), this flag will not be needed.`
+    );
+  }
+
   return hasErrors ? 1 : 0;
+}
+
+function computeDefaultRuntimePath(outDir: string): string {
+  const outDirAbs = resolve(outDir);
+  const runtimeAbs = resolve("src/runtime/index.ts");
+  return relative(outDirAbs, runtimeAbs);
+}
+
+function buildTsconfig(runtimePath: string): string {
+  return (
+    JSON.stringify(
+      {
+        compilerOptions: {
+          target: "ESNext",
+          module: "ESNext",
+          moduleResolution: "bundler",
+          strict: true,
+          noImplicitAny: true,
+          esModuleInterop: true,
+          skipLibCheck: true,
+          baseUrl: ".",
+          paths: {
+            "promptlang/runtime": [runtimePath],
+          },
+        },
+        include: ["./*.ts"],
+      },
+      null,
+      2
+    ) + "\n"
+  );
 }
 
 async function resolveFiles(paths: string[]): Promise<string[]> {

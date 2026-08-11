@@ -19,6 +19,13 @@ Commands:
                             Flags: --json, --strict
   compile <path> [flags]    Compile .prompt files to TypeScript
                             Flags: --out <dir>
+                                   --emit-tsconfig  Emit a tsconfig.json with
+                                     the correct paths mapping for promptlang/runtime.
+                                     Use this for local/alpha development before
+                                     promptlang is published to npm (v1.0).
+                                   --runtime-path <path>  Override the path to
+                                     promptlang/runtime in the emitted tsconfig
+                                     (default: relative path to src/runtime/index.ts).
   version                   Show version and repository info
 
 Examples:
@@ -26,6 +33,7 @@ Examples:
   promptlang tokens docs/examples/extract-invoice.prompt
   promptlang analyze docs/examples/
   promptlang compile docs/examples/ --out ./generated
+  promptlang compile docs/examples/ --out ./generated --emit-tsconfig
 `.trim();
 
 export async function main(argv: string[]): Promise<number> {

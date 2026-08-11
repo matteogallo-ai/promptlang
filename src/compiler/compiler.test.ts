@@ -1,6 +1,6 @@
 import { describe, test, expect, afterAll } from "bun:test";
 import { mkdir, rm, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import { tokenize } from "../lexer/lexer";
 import { parse } from "../parser/parser";
 import { compile } from "./compiler";
@@ -435,68 +435,140 @@ describe("compile — classify-ticket.prompt (integration)", () => {
 
 // ---------------------------------------------------------------------------
 // Integration: generated TypeScript compiles with tsc
+//
+// HONESTY NOTE: Generated files import from "promptlang/runtime". This
+// module resolves only when a paths mapping is active or the package is
+// installed via npm (v1.0+). The tests below explicitly document both
+// the success path (with explicit paths) and the expected failure path
+// (in isolation without paths).
 // ---------------------------------------------------------------------------
 
 const TMP_DIR = "./tmp-test-output";
+
+// Relative path from TMP_DIR to the local runtime source.
+// Used in explicit tsconfig paths so the test does not inherit from the
+// project tsconfig — which would be a faux positif.
+const RUNTIME_REL = relative(
+  join(process.cwd(), TMP_DIR),
+  join(process.cwd(), "src/runtime/index.ts")
+);
+
+function makeExplicitTsconfig(runtimeRelPath: string): string {
+  return JSON.stringify(
+    {
+      compilerOptions: {
+        target: "ESNext",
+        module: "ESNext",
+        moduleResolution: "bundler",
+        strict: true,
+        noUnusedLocals: false,
+        noUnusedParameters: false,
+        skipLibCheck: true,
+        baseUrl: ".",
+        paths: { "promptlang/runtime": [runtimeRelPath] },
+      },
+      include: ["*.ts"],
+    },
+    null,
+    2
+  );
+}
+
+function makeIsolationTsconfig(): string {
+  // Uses moduleResolution "node" (no `exports` field support) to simulate a
+  // user who has NOT installed promptlang via npm. With "bundler" resolution,
+  // tsc would find the package via the self-referencing exports field in the
+  // local package.json — which is NOT what an external consumer experiences.
+  return JSON.stringify(
+    {
+      compilerOptions: {
+        target: "ESNext",
+        module: "ESNext",
+        moduleResolution: "node",
+        strict: true,
+        noUnusedLocals: false,
+        noUnusedParameters: false,
+        skipLibCheck: true,
+      },
+      include: ["*.ts"],
+    },
+    null,
+    2
+  );
+}
 
 afterAll(async () => {
   await rm(TMP_DIR, { recursive: true, force: true });
 });
 
-describe("compile — tsc integration", () => {
-  test("generated TypeScript for classify-ticket compiles cleanly", async () => {
+describe("compile — tsc integration (within project, explicit paths mapping)", () => {
+  test("generated code compiles within a project with promptlang paths mapping (classify-ticket)", async () => {
     const source = await Bun.file("docs/examples/classify-ticket.prompt").text();
     const ast = parse(tokenize(source));
     const generated = compile(ast, "classify-ticket.prompt");
 
     await mkdir(TMP_DIR, { recursive: true });
     await writeFile(join(TMP_DIR, "classify-ticket.ts"), generated);
-    await writeFile(
-      join(TMP_DIR, "tsconfig.json"),
-      JSON.stringify({
-        extends: "../tsconfig.json",
-        compilerOptions: {
-          noUnusedLocals: false,
-          noUnusedParameters: false,
-        },
-        include: ["*.ts"],
-      })
-    );
+    await writeFile(join(TMP_DIR, "tsconfig.json"), makeExplicitTsconfig(RUNTIME_REL));
 
     const proc = Bun.spawn(
       [process.execPath, "x", "tsc", "--project", join(TMP_DIR, "tsconfig.json"), "--noEmit"],
       { cwd: process.cwd(), stderr: "pipe" }
     );
+    const stderr = await new Response(proc.stderr).text();
     const exitCode = await proc.exited;
 
+    expect(stderr).toBe("");
     expect(exitCode).toBe(0);
   });
 
-  test("generated TypeScript for extract-invoice compiles cleanly", async () => {
+  test("generated code compiles within a project with promptlang paths mapping (extract-invoice)", async () => {
     const source = await Bun.file("docs/examples/extract-invoice.prompt").text();
     const ast = parse(tokenize(source));
     const generated = compile(ast, "extract-invoice.prompt");
 
     await mkdir(TMP_DIR, { recursive: true });
     await writeFile(join(TMP_DIR, "extract-invoice.ts"), generated);
-    await writeFile(
-      join(TMP_DIR, "tsconfig.json"),
-      JSON.stringify({
-        extends: "../tsconfig.json",
-        compilerOptions: {
-          noUnusedLocals: false,
-          noUnusedParameters: false,
-        },
-        include: ["*.ts"],
-      })
-    );
+    await writeFile(join(TMP_DIR, "tsconfig.json"), makeExplicitTsconfig(RUNTIME_REL));
 
     const proc = Bun.spawn(
       [process.execPath, "x", "tsc", "--project", join(TMP_DIR, "tsconfig.json"), "--noEmit"],
       { cwd: process.cwd(), stderr: "pipe" }
     );
+    const stderr = await new Response(proc.stderr).text();
     const exitCode = await proc.exited;
 
+    expect(stderr).toBe("");
     expect(exitCode).toBe(0);
+  });
+});
+
+describe("compile — tsc integration (isolation, documented limitation)", () => {
+  test("generated code fails cleanly in isolation without paths mapping (documented limitation)", async () => {
+    // This test documents the expected behaviour: outside a project that has
+    // promptlang installed (or a paths mapping configured), tsc cannot resolve
+    // "promptlang/runtime". This is a known alpha limitation, not a bug in the
+    // generated code. Use --emit-tsconfig on the CLI or add a paths entry to your
+    // own tsconfig to work around it until v1.0 npm publication.
+    const source = await Bun.file("docs/examples/classify-ticket.prompt").text();
+    const ast = parse(tokenize(source));
+    const generated = compile(ast, "classify-ticket.prompt");
+
+    await mkdir(TMP_DIR, { recursive: true });
+    await writeFile(join(TMP_DIR, "classify-ticket.ts"), generated);
+    await writeFile(join(TMP_DIR, "tsconfig.json"), makeIsolationTsconfig());
+
+    // tsc writes errors to stdout (not stderr).
+    const proc = Bun.spawn(
+      [process.execPath, "x", "tsc", "--project", join(TMP_DIR, "tsconfig.json"), "--noEmit"],
+      { cwd: process.cwd(), stdout: "pipe" }
+    );
+    const stdout = await new Response(proc.stdout).text();
+    const exitCode = await proc.exited;
+
+    // Must fail with TS2307 — this is the documented expected behaviour.
+    expect(exitCode).not.toBe(0);
+    expect(stdout).toContain("TS2307");
+    expect(stdout).toContain("promptlang/runtime");
   });
 });

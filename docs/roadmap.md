@@ -87,6 +87,7 @@ _Goal: prompts can be composed into a directed acyclic graph._
 - [x] Member expression support in step arguments (`step.field`)
 - [x] Dedicated `// ---- Chain ----` section in generated output
 - [x] 39 tests: unit, error, integration, end-to-end runtime with `MockClient`
+- [x] `--emit-tsconfig` flag on `compile` command: emits a `tsconfig.json` with correct `paths` mapping for `promptlang/runtime` (patch v0.5.1)
 - [ ] DAG cycle detection (chains calling themselves recursively)
 - [ ] Typed data flow: output type of step N must match input type of step N+1
 - [ ] `promptlang viz <file>` CLI command: renders chain as ASCII DAG

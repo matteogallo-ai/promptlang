@@ -82,7 +82,7 @@ describe("version", () => {
     restore();
     expect(code).toBe(0);
     expect(output()).toContain("promptlang");
-    expect(output()).toContain("0.5.0");
+    expect(output()).toContain("0.5.1");
   });
 
   test("prints repository URL", async () => {
@@ -316,6 +316,124 @@ describe("compile", () => {
     await main(["bun", "cli", "--help"]);
     restore();
     expect(output()).toContain("compile");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// compile --emit-tsconfig
+// ---------------------------------------------------------------------------
+
+describe("compile --emit-tsconfig", () => {
+  const EMIT_OUT = "/tmp/promptlang-emit-tsconfig-test";
+
+  test("--emit-tsconfig generates tsconfig.json in --out", async () => {
+    const restore = silenceAll();
+    await main([
+      "bun", "cli", "compile",
+      "docs/examples/classify-ticket.prompt",
+      "--out", EMIT_OUT,
+      "--emit-tsconfig",
+    ]);
+    restore();
+    const file = Bun.file(`${EMIT_OUT}/tsconfig.json`);
+    expect(await file.exists()).toBe(true);
+  });
+
+  test("emitted tsconfig is valid JSON", async () => {
+    const restore = silenceAll();
+    await main([
+      "bun", "cli", "compile",
+      "docs/examples/classify-ticket.prompt",
+      "--out", EMIT_OUT,
+      "--emit-tsconfig",
+    ]);
+    restore();
+    const content = await Bun.file(`${EMIT_OUT}/tsconfig.json`).text();
+    expect(() => JSON.parse(content)).not.toThrow();
+  });
+
+  test("emitted tsconfig contains moduleResolution bundler and strict", async () => {
+    const restore = silenceAll();
+    await main([
+      "bun", "cli", "compile",
+      "docs/examples/classify-ticket.prompt",
+      "--out", EMIT_OUT,
+      "--emit-tsconfig",
+    ]);
+    restore();
+    const content = JSON.parse(await Bun.file(`${EMIT_OUT}/tsconfig.json`).text());
+    expect(content.compilerOptions.moduleResolution).toBe("bundler");
+    expect(content.compilerOptions.strict).toBe(true);
+  });
+
+  test("emitted tsconfig contains paths mapping for promptlang/runtime", async () => {
+    const restore = silenceAll();
+    await main([
+      "bun", "cli", "compile",
+      "docs/examples/classify-ticket.prompt",
+      "--out", EMIT_OUT,
+      "--emit-tsconfig",
+    ]);
+    restore();
+    const content = JSON.parse(await Bun.file(`${EMIT_OUT}/tsconfig.json`).text());
+    const paths = content.compilerOptions?.paths ?? {};
+    expect(paths["promptlang/runtime"]).toBeDefined();
+    expect(Array.isArray(paths["promptlang/runtime"])).toBe(true);
+    expect((paths["promptlang/runtime"] as string[]).length).toBeGreaterThan(0);
+  });
+
+  test("without --emit-tsconfig, no tsconfig.json is emitted (default unchanged)", async () => {
+    const outDir = "/tmp/promptlang-no-emit-test";
+    const restore = silenceAll();
+    await main([
+      "bun", "cli", "compile",
+      "docs/examples/classify-ticket.prompt",
+      "--out", outDir,
+    ]);
+    restore();
+    const file = Bun.file(`${outDir}/tsconfig.json`);
+    expect(await file.exists()).toBe(false);
+  });
+
+  test("--runtime-path overrides the default path in emitted tsconfig", async () => {
+    const restore = silenceAll();
+    await main([
+      "bun", "cli", "compile",
+      "docs/examples/classify-ticket.prompt",
+      "--out", EMIT_OUT,
+      "--emit-tsconfig",
+      "--runtime-path", "node_modules/promptlang/runtime/index.js",
+    ]);
+    restore();
+    const content = JSON.parse(await Bun.file(`${EMIT_OUT}/tsconfig.json`).text());
+    const paths = content.compilerOptions?.paths?.["promptlang/runtime"] as string[];
+    expect(paths[0]).toBe("node_modules/promptlang/runtime/index.js");
+  });
+
+  test("help mentions --emit-tsconfig flag", async () => {
+    const { output, restore } = captureLog();
+    await main(["bun", "cli", "--help"]);
+    restore();
+    expect(output()).toContain("--emit-tsconfig");
+  });
+
+  test("emitted tsconfig + generated .ts compiles with tsc", async () => {
+    const outDir = "/tmp/promptlang-emit-tsc-verify";
+    const restore = silenceAll();
+    await main([
+      "bun", "cli", "compile",
+      "docs/examples/classify-ticket.prompt",
+      "--out", outDir,
+      "--emit-tsconfig",
+    ]);
+    restore();
+
+    const proc = Bun.spawn(
+      [process.execPath, "x", "tsc", "--project", `${outDir}/tsconfig.json`, "--noEmit"],
+      { cwd: process.cwd(), stderr: "pipe" }
+    );
+    const exitCode = await proc.exited;
+    expect(exitCode).toBe(0);
   });
 });
 

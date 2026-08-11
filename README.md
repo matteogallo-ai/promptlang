@@ -157,6 +157,19 @@ bun run src/cli/cli.ts analyze docs/examples/ --strict
 
 ---
 
+## Known Limitations (alpha)
+
+The generated TypeScript uses `import { … } from "promptlang/runtime"`. This import resolves correctly **within this repository** via the `package.json` `exports` field. In an **external project** it will produce `TS2307: Cannot find module 'promptlang/runtime'` until promptlang is published to npm (planned for v1.0).
+
+**Workaround:** pass `--emit-tsconfig` to the `compile` command. It writes a `tsconfig.json` with a `paths` mapping that points directly at the local runtime source:
+
+```bash
+promptlang compile src/prompts/ --out ./generated --emit-tsconfig
+bunx tsc --project ./generated/tsconfig.json --noEmit
+```
+
+---
+
 ## Comparison
 
 | Capability                   | PromptLang | LangChain | LangSmith | W&B Weave |

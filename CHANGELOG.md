@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1-alpha.0] — 2026-08-11
+
+### Fixed
+- `src/cli/commands/compile.ts` — args filter discarded index 0 when `--runtime-path` was absent (`runtimePathIdx === -1` → `runtimePathIdx + 1 === 0`); added `runtimePathIdx !== -1 &&` guard
+- `src/compiler/compiler.test.ts` — replaced tsc integration tests that relied on `extends: "../tsconfig.json"` (inheriting the project's own paths mapping, making them pass trivially) with explicit `paths` mapping; added isolation test that documents the known TS2307 limitation when used outside the repo
+- `src/compiler/chain-compiler.test.ts` — same tsc integration test fix as above
+
+### Added
+- `promptlang compile --emit-tsconfig` — opt-in flag that writes a `tsconfig.json` to `--out` with the correct `paths` mapping for `promptlang/runtime`; intended for local/alpha development before the package is published to npm
+- `promptlang compile --runtime-path <path>` — overrides the default relative path to `src/runtime/index.ts` in the emitted tsconfig
+
+### Known Limitations (alpha)
+- `import { … } from "promptlang/runtime"` resolves only within this repository (via `package.json` `exports`). Use `--emit-tsconfig` in external projects until v1.0 is published to npm.
+
 ## [0.5.0-alpha.0] — 2026-08-11
 
 ### Added

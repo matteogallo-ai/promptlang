@@ -1,6 +1,6 @@
 import { describe, test, expect, afterAll } from "bun:test";
 import { mkdir, rm, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import { tokenize } from "../lexer/lexer";
 import { parse } from "../parser/parser";
 import { compile } from "./compiler";
@@ -536,6 +536,10 @@ describe("compiler — section headers", () => {
 
 const TMP_DIR = join(process.cwd(), "tmp-chain-test");
 
+// Relative path from TMP_DIR to the runtime source — used in an explicit
+// tsconfig so the test does NOT inherit from the project tsconfig (faux positif).
+const RUNTIME_REL = relative(TMP_DIR, join(process.cwd(), "src/runtime/index.ts"));
+
 afterAll(async () => {
   await rm(TMP_DIR, { recursive: true, force: true });
 });
@@ -569,7 +573,9 @@ describe("chain — integration: summarize-and-translate.prompt", () => {
     expect(out).toContain("await translate(");
   });
 
-  test("generated TypeScript compiles with tsc", async () => {
+  test("generated code compiles within a project with promptlang paths mapping", async () => {
+    // Uses an explicit paths mapping (not extends from parent tsconfig) to honestly
+    // verify that the generated chain code is syntactically valid TypeScript.
     const source = await Bun.file("docs/examples/summarize-and-translate.prompt").text();
     const ast = parse(tokenize(source));
     const generated = compile(ast, "summarize-and-translate.prompt");
@@ -578,14 +584,24 @@ describe("chain — integration: summarize-and-translate.prompt", () => {
     await writeFile(join(TMP_DIR, "summarize-and-translate.ts"), generated);
     await writeFile(
       join(TMP_DIR, "tsconfig.json"),
-      JSON.stringify({
-        extends: "../tsconfig.json",
-        compilerOptions: {
-          noUnusedLocals: false,
-          noUnusedParameters: false,
+      JSON.stringify(
+        {
+          compilerOptions: {
+            target: "ESNext",
+            module: "ESNext",
+            moduleResolution: "bundler",
+            strict: true,
+            noUnusedLocals: false,
+            noUnusedParameters: false,
+            skipLibCheck: true,
+            baseUrl: ".",
+            paths: { "promptlang/runtime": [RUNTIME_REL] },
+          },
+          include: ["*.ts"],
         },
-        include: ["*.ts"],
-      })
+        null,
+        2
+      )
     );
 
     const proc = Bun.spawn(

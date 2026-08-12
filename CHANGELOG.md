@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0-alpha.0] — 2026-08-12
+
+### Added
+- AI-powered linter: opt-in `--ai` flag on `promptlang analyze` invokes
+  Claude Haiku to detect semantic issues (vague instructions, missing format
+  specs, conflicting requirements, undefined terms, hallucination risks,
+  token inefficiencies).
+- `src/analyzer/ai/ai-linter.ts` — `AiLinter` class: concurrent analysis engine with configurable `PromptClient`, model, and concurrency limit (default 3).
+- `src/analyzer/ai/issue-parser.ts` — Parses Claude's strict JSON response into typed `Issue[]`; handles markdown fences and malformed JSON gracefully.
+- `src/analyzer/ai/prompts/analysis-prompt.ts` — Meta-prompt (`AI_LINTER_SYSTEM_PROMPT`) and `buildAnalysisUserMessage()` for structured prompt serialization.
+- Report now separates static issues from AI-linter issues with a dedicated `🤖 AI-LINTER ISSUES` section in terminal output.
+- JSON report now includes a top-level `ai_issues` field alongside the static `issues` field.
+- 39 new tests (476 total): `ai-linter.test.ts` (14), `issue-parser.test.ts` (13), `analysis-prompt.test.ts` (9), `cli.test.ts` additions (3).
+
+### Notes
+- AI linter requires `ANTHROPIC_API_KEY` environment variable. Without it, `--ai` prints a clear error and falls back to static-only analysis.
+- All tests use a mocked `PromptClient`. No real API calls are made in the test suite.
+- Users are responsible for their own API costs when using `--ai`.
+- Cross-provider AI linter support (OpenAI, Ollama) will land in v0.8+.
+
 ## [0.6.0-alpha.0] — 2026-08-11
 
 ### Added

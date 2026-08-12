@@ -157,6 +157,39 @@ bun run src/cli/cli.ts analyze docs/examples/ --strict
 
 ---
 
+## AI-Powered Linting
+
+PromptLang can invoke a real LLM to semantically analyze your prompts at build time.
+Nothing else in the ecosystem does this.
+
+Static analysis catches structural issues (missing tests, unbounded templates, prompt
+injection risks). The AI linter catches semantic issues that static tools cannot see:
+
+- Vague instructions like "be careful" that don't tell the model what to do
+- Missing format specs where structured output is expected but not constrained
+- Conflicting instructions ("one-sentence summary" + "detailed key points")
+- Undefined business terms ("premium user" without a definition)
+- Hallucination risks (invitations to guess vs. refuse)
+- Token inefficiencies (verbose phrasing that could be shorter)
+
+### Usage
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+bun run src/cli/cli.ts analyze docs/examples/ --ai
+```
+
+The AI linter runs in parallel (3 prompts at a time by default) and returns
+confidence-scored issues alongside the static analysis output.
+
+### Cost
+
+The AI linter uses Claude Haiku 4.5 by default (~$0.001 per prompt analyzed).
+Running the linter on 10 prompts costs approximately $0.01. Costs are yours —
+bring your own API key.
+
+---
+
 ## Available runtime providers
 
 The compiled TypeScript imports `PromptClient` from `promptlang/runtime`. Three

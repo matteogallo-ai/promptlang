@@ -1,7 +1,7 @@
 import { Glob } from "bun";
 import { tokenize } from "../../lexer/lexer";
 import { parse } from "../../parser/parser";
-import type { AnalysisContext } from "../../analyzer/analyzer";
+import type { AnalysisContext, Issue } from "../../analyzer/analyzer";
 import { analyze } from "../../analyzer/analyzer";
 import {
   formatTerminalReport,
@@ -12,6 +12,7 @@ import {
 export async function runAnalyze(args: string[]): Promise<number> {
   const jsonOutput = args.includes("--json");
   const strict = args.includes("--strict");
+  const aiEnabled = args.includes("--ai");
   const paths = args.filter((a) => !a.startsWith("--"));
 
   if (paths.length === 0) {
@@ -57,17 +58,40 @@ export async function runAnalyze(args: string[]): Promise<number> {
     return 1;
   }
 
-  const issues = analyze(contexts);
+  const staticIssues = analyze(contexts);
+
+  let aiIssues: Issue[] = [];
+  if (aiEnabled) {
+    try {
+      const { AiLinter } = await import("../../analyzer/ai/ai-linter");
+      const aiLinter = new AiLinter({
+        onProgress: (current, total) => {
+          if (!jsonOutput) {
+            process.stderr.write(`\r  AI analysis: ${current}/${total} prompts...`);
+          }
+        },
+      });
+      aiIssues = await aiLinter.analyze(contexts);
+      if (!jsonOutput) process.stderr.write("\n");
+    } catch (error) {
+      if (!jsonOutput) {
+        console.error(`\n  AI linter error: ${(error as Error).message}`);
+        console.error("  Static analysis results only.\n");
+      }
+    }
+  }
+
+  const allIssues = [...staticIssues, ...aiIssues];
   const counts = countDeclarations(contexts);
 
   if (jsonOutput) {
-    console.log(formatJsonReport(issues, counts, contexts.length));
+    console.log(formatJsonReport(allIssues, counts, contexts.length));
   } else {
-    console.log(formatTerminalReport(issues, counts, contexts.length));
+    console.log(formatTerminalReport(allIssues, counts, contexts.length));
   }
 
-  const hasErrors = issues.some((i) => i.severity === "error");
-  const hasWarnings = issues.some((i) => i.severity === "warning");
+  const hasErrors = allIssues.some((i) => i.severity === "error");
+  const hasWarnings = allIssues.some((i) => i.severity === "warning");
 
   if (parseErrors.length > 0) return 1;
   if (hasErrors) return 1;

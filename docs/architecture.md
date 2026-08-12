@@ -133,16 +133,40 @@ Code generator that walks the AST and emits TypeScript source. Design goals:
 Equivalent Python code generator (v0.8). Emits `async def` functions with PEP 484
 type hints. Compatible with both `anthropic` and `openai` Python SDKs.
 
+### `src/analyzer/` ✅ implemented (v0.3+)
+
+Static analysis pass that runs against the parsed AST. Two tiers:
+
+**Static rules** (`src/analyzer/rules/`) — no model required. Run on every `analyze` call:
+
+| Rule | What it checks |
+|------|---------------|
+| `missing-tests` | Prompts with zero test blocks |
+| `unbounded-template` | Template variables in non-user sections (cost risk) |
+| `prompt-injection-risk` | Undelimited `{{var}}` in user section |
+| `token-cost-estimate` | Prompts with likely token cost > threshold |
+| `chain-complexity` | Chains with too many steps |
+| `duplicate-prompts` | Identical prompt bodies across files |
+
+**AI rules** (`src/analyzer/ai/`) — opt-in via `--ai` flag. Invokes Claude Haiku to detect semantic issues:
+
+Six semantic categories detected:
+- `VAGUE_INSTRUCTIONS` — non-actionable phrases without concrete criteria
+- `MISSING_FORMAT_SPEC` — structured output expected but format not constrained
+- `CONFLICTING_INSTRUCTIONS` — contradictory or ambiguous requirements
+- `UNDEFINED_TERMS` — business terms used without definition
+- `POTENTIAL_HALLUCINATION_RISK` — instruction invites guessing vs. refusing
+- `TOKEN_INEFFICIENCY` — verbose phrasing that could be shortened
+
+**Meta-prompt design**: `AI_LINTER_SYSTEM_PROMPT` instructs Claude to respond with a strict JSON schema (`{"issues": [...]}`) with no surrounding text. The parser in `issue-parser.ts` strips markdown fences and returns a `ai:parse-failure` issue if the response is malformed.
+
+**Concurrency**: `AiLinter` processes prompts in configurable batches (default 3 at a time) using `Promise.allSettled`. A failing API call for one prompt does not block others.
+
+**Injectable client**: `AiLinter` accepts a custom `PromptClient` via `AiLinterOptions.client`. This is how all tests bypass the network — no `fetch` mocking required.
+
 ### `src/linter/`
 
-Static analysis pass (v0.7). Runs after semantic analysis. Two categories of rules:
-
-1. **Structural rules** — no model required. Examples: missing system prompt, unused
-   parameter, `@version` missing.
-2. **AI rules** — uses a configurable fast model (default: Claude Haiku). Examples:
-   injection risk scoring, output format ambiguity, instruction clarity rating.
-
-Rules are pluggable: third-party packages can register additional rules.
+Reserved for a future pluggable rule registry (v0.8+).
 
 ### `src/runtime/`
 

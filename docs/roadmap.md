@@ -120,16 +120,19 @@ _Goal: `test` blocks execute as real unit tests via `bun test`._
 
 ---
 
-## v0.7 — AI-Powered Linter
+## v0.7 — AI-Powered Linter ✅
 
 _Goal: optional static analysis powered by a fast model to catch prompt issues._
 
-- [ ] Linter interface and rule plugin system
-- [ ] Built-in rules: injection risk, ambiguous output format, missing system prompt
-- [ ] Claude Haiku integration (configurable model)
-- [ ] `promptlang lint <file>` CLI command
-- [ ] `--strict` flag to fail CI on lint warnings
-- [ ] Rule suppression via `// @promptlang-disable <rule>` comments
+- [x] `AiLinter` class with injectable `PromptClient`, configurable model, and concurrent analysis
+- [x] Meta-prompt engineered to detect 6 semantic issue categories via structured JSON output
+- [x] `--ai` flag on `promptlang analyze`: runs AI linter in addition to static rules
+- [x] Confidence-scored issues (high/medium/low) mapped to warning/info severity
+- [x] Separate `🤖 AI-LINTER ISSUES` section in terminal report; `ai_issues` field in JSON output
+- [x] Graceful fallback to static-only analysis when `ANTHROPIC_API_KEY` is absent
+- [x] 39 new tests — all using mocked `PromptClient`, no live API calls
+- [ ] Rule suppression via `// @promptlang-disable <rule>` comments (v0.8+)
+- [ ] Cross-provider AI linter support (OpenAI, Ollama) — v0.8+
 
 ---
 

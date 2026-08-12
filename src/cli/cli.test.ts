@@ -235,6 +235,59 @@ describe("analyze", () => {
     restore();
     expect(code).toBe(1);
   });
+
+  test("--ai without ANTHROPIC_API_KEY prints error and falls back to static only (exit 0)", async () => {
+    const savedKey = process.env.ANTHROPIC_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
+    const errLines: string[] = [];
+    const origErr = console.error;
+    console.error = (...args: unknown[]) => errLines.push(args.join(" "));
+    const origLog = console.log;
+    console.log = () => {};
+    try {
+      const code = await main([
+        "bun", "cli", "analyze", "--ai",
+        "docs/examples/classify-ticket.prompt",
+      ]);
+      expect(code).toBe(0);
+      expect(errLines.join("\n")).toContain("AI linter error");
+    } finally {
+      console.error = origErr;
+      console.log = origLog;
+      if (savedKey !== undefined) process.env.ANTHROPIC_API_KEY = savedKey;
+    }
+  });
+
+  test("--ai --json output contains ai_issues field", async () => {
+    const savedKey = process.env.ANTHROPIC_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
+    const { output, restore } = captureLog();
+    try {
+      await main([
+        "bun", "cli", "analyze", "--ai", "--json",
+        "docs/examples/classify-ticket.prompt",
+      ]);
+      restore();
+      const parsed = JSON.parse(output()) as { ai_issues: unknown[] };
+      expect(Array.isArray(parsed.ai_issues)).toBe(true);
+    } finally {
+      restore();
+      if (savedKey !== undefined) process.env.ANTHROPIC_API_KEY = savedKey;
+    }
+  });
+
+  test("analyze without --ai does not invoke AI linter", async () => {
+    const { output, restore } = captureLog();
+    const code = await main([
+      "bun", "cli", "analyze", "--json",
+      "docs/examples/classify-ticket.prompt",
+    ]);
+    restore();
+    expect(code).toBe(0);
+    const parsed = JSON.parse(output()) as { ai_issues: unknown[] };
+    // ai_issues present in JSON but always empty when --ai not used
+    expect(parsed.ai_issues).toHaveLength(0);
+  });
 });
 
 // ---------------------------------------------------------------------------

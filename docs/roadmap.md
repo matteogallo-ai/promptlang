@@ -136,15 +136,17 @@ _Goal: optional static analysis powered by a fast model to catch prompt issues._
 
 ---
 
-## v0.8 — Python Compiler
+## v0.8 — Python Compiler ✅
 
 _Goal: compiled output targets Python as a first-class language._
 
-- [ ] Python code generator: `prompt` → `async def` with type hints
-- [ ] Python runtime stub (supports `anthropic` and `openai` SDK)
-- [ ] `promptlang compile <file> --target python` CLI command
-- [ ] Parity with TypeScript compiler for primitives, enums, structs, chains
-- [ ] Example integration with FastAPI and LangChain-style usage
+- [x] Python code generator: `prompt` → `async def` with type hints (`Literal`, `TypedDict`, `NotRequired`)
+- [x] Python runtime (`promptlang_runtime.py`): `PromptClient`, `MockClient`, `AnthropicClient`, `OpenAIClient` (requires `httpx`)
+- [x] `promptlang compile <file> --target python` CLI command
+- [x] Parity with TypeScript compiler for primitives, enums, structs, chains
+- [x] `__init__.py` barrel export generated alongside `.py` files
+- [x] 52 new tests; py_compile + ast.parse integration
+- [ ] Example integration with FastAPI and LangChain-style usage (v0.9+)
 
 ---
 

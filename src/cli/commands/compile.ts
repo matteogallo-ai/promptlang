@@ -2,6 +2,8 @@ import { Glob } from "bun";
 import { tokenize } from "../../lexer/lexer";
 import { parse } from "../../parser/parser";
 import { compile } from "../../compiler/compiler";
+import { compilePython } from "../../compiler/python/python-compiler";
+import { getPythonRuntimeSource } from "../../compiler/python/python-runtime-template";
 import { LexerError } from "../../lexer/errors";
 import { ParserError } from "../../parser/errors";
 import { CompilerError } from "../../compiler/errors";
@@ -14,16 +16,25 @@ export async function runCompile(args: string[]): Promise<number> {
 
   const emitTsconfig = args.includes("--emit-tsconfig");
 
+  const targetIdx = args.indexOf("--target");
+  const target: "typescript" | "python" =
+    targetIdx !== -1 && args[targetIdx + 1] === "python" ? "python" : "typescript";
+
   const runtimePathIdx = args.indexOf("--runtime-path");
   const runtimePath =
     runtimePathIdx !== -1 && args[runtimePathIdx + 1]
       ? args[runtimePathIdx + 1]!
       : computeDefaultRuntimePath(outDir);
 
+  if (emitTsconfig && target === "python") {
+    console.error("  [warn]    --emit-tsconfig is ignored for --target python");
+  }
+
   const paths = args.filter((a, i) => {
     if (a.startsWith("--")) return false;
     if (i === outIdx + 1) return false;
     if (runtimePathIdx !== -1 && i === runtimePathIdx + 1) return false;
+    if (targetIdx !== -1 && i === targetIdx + 1) return false;
     return true;
   });
 
@@ -60,12 +71,22 @@ export async function runCompile(args: string[]): Promise<number> {
     try {
       const tokens = tokenize(source);
       const ast = parse(tokens);
-      const generated = compile(ast, file);
-      const outName = basename(file, ".prompt") + ".ts";
-      const outPath = join(outDir, outName);
-      await Bun.write(outPath, generated);
-      console.log(`  compiled  ${file} → ${outPath}`);
-      generatedNames.push(outName);
+
+      if (target === "python") {
+        const generated = compilePython(ast, file);
+        const outName = basename(file, ".prompt").replace(/-/g, "_") + ".py";
+        const outPath = join(outDir, outName);
+        await Bun.write(outPath, generated);
+        console.log(`  compiled  ${file} → ${outPath}`);
+        generatedNames.push(outName);
+      } else {
+        const generated = compile(ast, file);
+        const outName = basename(file, ".prompt") + ".ts";
+        const outPath = join(outDir, outName);
+        await Bun.write(outPath, generated);
+        console.log(`  compiled  ${file} → ${outPath}`);
+        generatedNames.push(outName);
+      }
     } catch (error) {
       if (
         error instanceof LexerError ||
@@ -81,16 +102,32 @@ export async function runCompile(args: string[]): Promise<number> {
   }
 
   if (generatedNames.length > 0) {
-    const indexContent =
-      generatedNames
-        .map((name) => `export * from "./${name.replace(/\.ts$/, "")}";`)
-        .join("\n") + "\n";
-    const indexPath = join(outDir, "index.ts");
-    await Bun.write(indexPath, indexContent);
-    console.log(`  generated ${indexPath} (${generatedNames.length} export(s))`);
+    if (target === "python") {
+      // Write __init__.py barrel
+      const initContent =
+        generatedNames
+          .map((name) => `from .${name.replace(/\.py$/, "")} import *`)
+          .join("\n") + "\n";
+      const initPath = join(outDir, "__init__.py");
+      await Bun.write(initPath, initContent);
+      console.log(`  generated ${initPath} (${generatedNames.length} export(s))`);
+
+      // Write the autonomous runtime
+      const runtimePath_ = join(outDir, "promptlang_runtime.py");
+      await Bun.write(runtimePath_, getPythonRuntimeSource());
+      console.log(`  generated ${runtimePath_}`);
+    } else {
+      const indexContent =
+        generatedNames
+          .map((name) => `export * from "./${name.replace(/\.ts$/, "")}";`)
+          .join("\n") + "\n";
+      const indexPath = join(outDir, "index.ts");
+      await Bun.write(indexPath, indexContent);
+      console.log(`  generated ${indexPath} (${generatedNames.length} export(s))`);
+    }
   }
 
-  if (emitTsconfig) {
+  if (emitTsconfig && target !== "python") {
     const tsconfigPath = join(outDir, "tsconfig.json");
     await Bun.write(tsconfigPath, buildTsconfig(runtimePath));
     console.log(`  emitted   ${tsconfigPath}`);

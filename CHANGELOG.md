@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0-alpha.0] — 2026-08-12
+
+### Added
+- Python compiler backend: `promptlang compile --target python` generates
+  idiomatic Python 3.10+ code with `Literal` types, `TypedDict` inputs,
+  `async` functions, and runtime validation.
+- `src/compiler/python/python-compiler.ts` — orchestrator (mirrors `compiler.ts`)
+- `src/compiler/python/python-code-generator.ts` — generates prompt/type/chain declarations in Python
+- `src/compiler/python/python-template-compiler.ts` — `{{var}}` → f-string with `input['var']`; literal braces doubled for f-string safety
+- `src/compiler/python/python-type-mapper.ts` — PromptLang types → Python type hints (`str`, `float`, `bool`, `Literal[...]`, `TypedDict`)
+- `src/compiler/python/python-runtime-template.ts` — autonomous `promptlang_runtime.py` source (PromptClient, MockClient, AnthropicClient, OpenAIClient)
+- Generated `__init__.py` barrel export alongside `.py` files
+- CLI flag `--target <typescript|python>` (default: `typescript`)
+- `package.json` bumped to `0.8.0-alpha.0`
+- 52 new tests (528 total); includes `py_compile` + `ast.parse` integration tests
+
+### Notes
+- Python integration tests are skipped if `python3` is not on PATH.
+- Generated Python uses `from __future__ import annotations` and requires Python 3.10+.
+- `httpx` is required only for real API calls (`pip install httpx`); `MockClient` has no external dependencies.
+- `--emit-tsconfig` is silently ignored when `--target python` is used.
+
 ## [0.7.0-alpha.0] — 2026-08-12
 
 ### Added

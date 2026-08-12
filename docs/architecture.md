@@ -128,10 +128,30 @@ Code generator that walks the AST and emits TypeScript source. Design goals:
 - No runtime dependency on PromptLang internals beyond the thin `promptlang/runtime`
   package (model calls, output parsing).
 
-### `src/compiler/python/`
+### `src/compiler/python/` ✅ implemented (v0.8)
 
-Equivalent Python code generator (v0.8). Emits `async def` functions with PEP 484
-type hints. Compatible with both `anthropic` and `openai` Python SDKs.
+Python backend, mirroring the TypeScript compiler. Activated with `--target python`.
+
+**Type mapping:**
+
+| PromptLang | Python |
+|------------|--------|
+| `string` | `str` |
+| `number` | `float` |
+| `boolean` | `bool` |
+| `date` | `str` (ISO 8601) |
+| `enum { a, b }` | `Literal["a", "b"]` + `_NAME_VALUES` list for runtime validation |
+| `struct { f: t }` | `class Name(TypedDict)` with `NotRequired[T]` for optional fields |
+| TypeReference | referenced class name |
+
+**Generated file structure per compile run:**
+- `<name>.py` — async function(s) with `TypedDict` inputs and runtime validation
+- `__init__.py` — `from .module import *` barrel
+- `promptlang_runtime.py` — autonomous runtime with `PromptClient` (ABC), `MockClient`, `AnthropicClient` (httpx), `OpenAIClient` (httpx)
+
+**Template compilation:** `{{var}}` → `{input['var']}` inside f-strings. Literal `{` and `}` that aren't part of a `{{...}}` pattern are doubled (`{{`/`}}`) to be safe in f-string context.
+
+**Naming conventions:** functions and variables use `snake_case`; input types use `PascalCase + Input`; meta constants use `SCREAMING_SNAKE_CASE + _META`; enum value lists use `_NAME_VALUES`.
 
 ### `src/analyzer/` ✅ implemented (v0.3+)
 

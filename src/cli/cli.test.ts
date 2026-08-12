@@ -82,7 +82,7 @@ describe("version", () => {
     restore();
     expect(code).toBe(0);
     expect(output()).toContain("promptlang");
-    expect(output()).toContain("0.6.0");
+    expect(output()).toContain("0.8.0");
   });
 
   test("prints repository URL", async () => {

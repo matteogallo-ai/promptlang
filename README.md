@@ -190,6 +190,43 @@ bring your own API key.
 
 ---
 
+## Python target
+
+PromptLang compiles to Python as well as TypeScript:
+
+```bash
+bun run src/cli/cli.ts compile docs/examples/classify-ticket.prompt --out ./generated --target python
+```
+
+This generates:
+- `classify_ticket.py` — typed Python async function
+- `promptlang_runtime.py` — self-contained runtime (no external deps for mocking)
+- `__init__.py` — barrel export
+
+### Usage
+
+```python
+import asyncio
+import os
+from generated.classify_ticket import classify_ticket, Category
+from generated.promptlang_runtime import AnthropicClient
+
+async def main():
+    client = AnthropicClient(api_key=os.environ["ANTHROPIC_API_KEY"])
+    result: Category = await classify_ticket(
+        {"ticket": "The submit button crashes"},
+        client,
+    )
+    print(result)
+
+asyncio.run(main())
+```
+
+Requires Python 3.10+ and `httpx` for real API calls (`pip install httpx`).
+The `MockClient` works with no dependencies for local testing.
+
+---
+
 ## Available runtime providers
 
 The compiled TypeScript imports `PromptClient` from `promptlang/runtime`. Three

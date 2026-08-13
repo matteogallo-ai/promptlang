@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] — 2026-08-14
+
+**First stable release.** No new features from v0.9 — this release consolidates
+11 alpha versions into a stable, documented, benchmark-verified API.
+
+### Stability guarantees
+
+Starting with v1.0.0, PromptLang commits to semantic versioning:
+
+- MINOR versions (1.x) add features without breaking existing code.
+- PATCH versions (1.0.x) fix bugs without changing behavior.
+- MAJOR versions (2.0) may introduce breaking changes with a migration path.
+
+### Documentation
+
+- Consolidated README with new hero, comparison table (LangChain / LangSmith /
+  W&B Weave / PromptLang), and quick example.
+- New: [`docs/migration-guide.md`](docs/migration-guide.md) — 0.x → 1.0
+  upgrade guide (spoiler: it is a no-op from v0.9).
+- New: [`docs/benchmarks.md`](docs/benchmarks.md) — measured performance
+  numbers on the reference machine (Apple M4, 16 GB, Bun 1.3.14).
+- Updated: `docs/roadmap.md` with post-1.0 direction.
+- Consolidated: `docs/architecture.md` marks every module as
+  ✅ implemented and drops the "TBD" placeholders.
+
+### What was built in 11 alpha releases
+
+- **v0.1** — Foundation, structure, docs
+- **v0.2** — Lexer (55 token types, hand-written tokenizer)
+- **v0.3** — Recursive-descent parser with fully typed AST
+- **v0.3.1** — CLI (`parse`, `tokens`, `analyze`, `compile`, `version`)
+  + 6-rule static analyzer
+- **v0.4** — TypeScript compiler (type-safe, executable output)
+- **v0.5** — Chains (typed DAG composition of prompts)
+- **v0.5.1** — Test honesty audit + `--emit-tsconfig` for out-of-project
+  compilation
+- **v0.6** — Multi-provider runtime (Anthropic, OpenAI, Ollama, RoutingClient)
+- **v0.7** — AI-powered linter (Claude Haiku, opt-in `--ai`, 6 semantic rules)
+- **v0.8** — Python compiler (idiomatic Python 3.10+ from the same source)
+- **v0.9** — Project registry (`promptlang.yaml`, imports, SHA-256 integrity,
+  `init` / `install` / `list` / `check`)
+
+**603 tests total (596 feature + 7 stability regression). Zero external
+dependencies. Zero regressions across 11 versions.**
+
 ## [0.9.0-alpha.0] — 2026-08-13
 
 ### Added

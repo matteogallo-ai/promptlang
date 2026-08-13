@@ -1,6 +1,6 @@
 {
   "name": "promptlang",
-  "version": "0.9.0-alpha.0",
+  "version": "1.0.0",
   "description": "The typed language for production-grade LLM prompts",
   "author": "Matteo Gallo <matteo.gallo@gallarti.io>",
   "license": "MIT",

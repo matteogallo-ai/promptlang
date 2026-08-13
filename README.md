@@ -1,56 +1,40 @@
 # PromptLang
 
-```
- ____                            _   _
-|  _ \ _ __ ___  _ __ ___  _ __| |_| |    __ _ _ __   __ _
-| |_) | '__/ _ \| '_ ` _ \| '_ \ __| |   / _` | '_ \ / _` |
-|  __/| | | (_) | | | | | | |_) | |_| |__| (_| | | | | (_| |
-|_|   |_|  \___/|_| |_| |_| .__/ \__|_____\__,_|_| |_|\__, |
-                           |_|                          |___/
-```
-
 **The typed language for production-grade LLM prompts.**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![npm version](https://img.shields.io/badge/npm-0.1.0--alpha.0-orange)](https://www.npmjs.com/package/promptlang)
+Write, version, test, and deploy your LLM prompts as first-class code.
+Compile to TypeScript or Python. Bring your own API key. Zero dependencies.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-603%20passing-brightgreen.svg)]()
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue.svg)](tsconfig.json)
+[![Bun](https://img.shields.io/badge/runtime-Bun-black.svg)](https://bun.sh)
 [![CI](https://github.com/matteogallo-ai/promptlang/actions/workflows/ci.yml/badge.svg)](https://github.com/matteogallo-ai/promptlang/actions)
-[![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](tsconfig.json)
-
----
-
-Prompts are code. They have inputs, outputs, versions, and failure modes — yet most
-teams manage them as raw strings scattered across codebases, hardcoded in notebooks,
-or pasted into spreadsheets. PromptLang treats prompts as first-class typed artifacts:
-you write them in a purpose-built DSL, compile them to TypeScript or Python stubs,
-and test them with built-in assertions. No more silent drift. No more untested prompt
-changes going straight to production.
 
 ---
 
 ## Why PromptLang
 
-**Static typing.** Every prompt has an explicit signature: typed inputs and a typed
-output. The compiler catches schema mismatches before you ship them.
+Today, LLM prompts live as strings scattered across Python and TypeScript
+codebases. No type safety. No tests. No versioning. When a prompt breaks
+in production, you find out from a customer complaint.
 
-**Native tests.** Write `test` blocks directly in your `.prompt` file. Run them with
-`bun test` or `pytest` like any other unit test. Eval harnesses are built-in, not
-bolted on.
+PromptLang treats prompts as first-class typed code:
 
-**Semantic versioning.** Each file carries a `@version` directive. The compiler
-enforces compatibility between prompt versions in a chain and generates deprecation
-warnings for callers of older interfaces.
-
-**AI-powered linter.** An optional static analysis pass (v0.7) uses a fast model
-to detect prompt injection risks, ambiguous instructions, and model-specific pitfalls
-before your code reaches CI.
-
-**Model-agnostic by design.** Provider configuration lives in `promptlang.config.yaml`,
-not in your prompt logic. Swap from `claude-opus-4.7` to `gpt-4o` in one line.
-Your compiled stubs remain unchanged.
+- **Type-safe** inputs and outputs, verified at compile-time
+- **Native tests and evals** in the same file as the prompt
+- **Semantic versioning** with breaking-change tracking
+- **AI-powered linter** that invokes Claude to catch semantic issues static
+  analysis cannot see (vague instructions, prompt injection risks, token
+  inefficiencies) — nothing else in the ecosystem does this
+- **Compile to TypeScript OR Python** from the same source of truth
+- **Multi-provider runtime** (Anthropic, OpenAI, Ollama, or your own client)
+  with automatic fallback via `RoutingClient`
+- **Zero external dependencies** — Bun + `fetch` + your own API keys
 
 ---
 
-## Quick Example
+## Quick example
 
 ```promptlang
 @version "1.0.0"
@@ -79,81 +63,51 @@ test "classifies feature requests correctly" {
 }
 ```
 
-Compile to TypeScript:
+Compile it:
 
 ```bash
-promptlang compile classify-ticket.prompt --target typescript
+bun run cli compile classify-ticket.prompt --out ./generated --emit-tsconfig
 ```
 
-Output (`classify-ticket.ts`):
+Use it:
 
 ```typescript
-import { callLLM } from "promptlang/runtime";
+import { classify_ticket } from "./generated/classify-ticket";
+import { AnthropicClient } from "promptlang/runtime";
 
-type Category = "bug" | "feature_request" | "question" | "other";
-
-export async function classifyTicket(ticket: string): Promise<Category> {
-  return callLLM({
-    model: "claude-opus-4.7",
-    temperature: 0.3,
-    system: "You are a support ticket classifier. Respond with exactly one category, no explanation.",
-    user: `Classify: ${ticket}`,
-    outputType: "Category",
-  });
-}
+const client = new AnthropicClient({ apiKey: process.env.ANTHROPIC_API_KEY! });
+const category = await classify_ticket({ ticket: "..." }, client);
 ```
 
 ---
 
-## Why does this matter?
+## Comparison
 
-Today, teams ship LLM features with prompts stored as strings in Python or JavaScript.
-There is no type checking. No tests. No versioning. No linting. When a prompt breaks
-in production, you find out from a customer complaint.
-
-PromptLang treats prompts as first-class typed code:
-
-- Type-safe inputs and outputs, verified at compile-time
-- Native tests and evals in the same file as the prompt
-- Semantic versioning with breaking-change tracking
-- Static analysis for injection vectors, unbounded costs, and quality drift
-- Compile once, run against any provider (Anthropic, OpenAI, local models)
-
-This isn't a wrapper around an SDK. It's the compiler and type system your prompts
-have been missing.
+| Feature                          | LangChain | LangSmith | W&B Weave | **PromptLang** |
+| -------------------------------- | :-------: | :-------: | :-------: | :------------: |
+| Typed I/O                        |    ❌     |    ❌     |    ❌     |       ✅       |
+| Native tests                     |    ❌     |   SaaS    |   SaaS    |     ✅ CLI     |
+| SemVer for prompts               |    ❌     |    ❌     |    ❌     |       ✅       |
+| **AI-powered linter**            |    ❌     |    ❌     |    ❌     |  ✅ **unique** |
+| Multi-provider fallback          |  Partial  |    ❌     |    ❌     |       ✅       |
+| Compile to TypeScript **and** Python | ❌     |    ❌     |    ❌     |       ✅       |
+| Static analysis (SonarQube-style)|    ❌     |    ❌     |    ❌     |       ✅       |
+| Open source, zero SaaS           |    ✅     |    ❌     |    ❌     |       ✅       |
 
 ---
 
-## Try it now
+## Installation
 
-Clone the repo and analyze the example prompts:
+Currently in alpha distribution — clone the repo:
 
 ```bash
 git clone https://github.com/matteogallo-ai/promptlang.git
-cd promptlang
-bun install
-bun run src/cli/cli.ts analyze docs/examples/
+cd promptlang && bun install
+bun run cli --help
 ```
 
-You'll see a real static analysis report — prompt injection warnings, missing tests,
-token cost estimates, chain complexity. None of the alternatives (LangChain, LangSmith,
-W&B Weave) do this today.
-
-Other commands:
-
-```bash
-# Print the AST of a .prompt file
-bun run src/cli/cli.ts parse docs/examples/classify-ticket.prompt
-
-# Print the token stream
-bun run src/cli/cli.ts tokens docs/examples/extract-invoice.prompt
-
-# JSON output for CI/CD integration
-bun run src/cli/cli.ts analyze docs/examples/ --json
-
-# Fail CI if any warnings are found
-bun run src/cli/cli.ts analyze docs/examples/ --strict
-```
+An npm package will be published in a 1.x point release. For now, use the
+CLI via `bun run cli <command>`.
 
 ---
 
@@ -176,7 +130,7 @@ injection risks). The AI linter catches semantic issues that static tools cannot
 
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
-bun run src/cli/cli.ts analyze docs/examples/ --ai
+bun run cli analyze docs/examples/ --ai
 ```
 
 The AI linter runs in parallel (3 prompts at a time by default) and returns
@@ -195,10 +149,11 @@ bring your own API key.
 PromptLang compiles to Python as well as TypeScript:
 
 ```bash
-bun run src/cli/cli.ts compile docs/examples/classify-ticket.prompt --out ./generated --target python
+bun run cli compile docs/examples/classify-ticket.prompt --out ./generated --target python
 ```
 
 This generates:
+
 - `classify_ticket.py` — typed Python async function
 - `promptlang_runtime.py` — self-contained runtime (no external deps for mocking)
 - `__init__.py` — barrel export
@@ -259,9 +214,9 @@ chain full_workflow(input: string) -> string {
 Bootstrap a new project:
 
 ```bash
-bun run src/cli/cli.ts init
-bun run src/cli/cli.ts install
-bun run src/cli/cli.ts compile
+bun run cli init
+bun run cli install
+bun run cli compile
 ```
 
 Once the registry is populated (`.promptlang/manifest.json` + `integrity.json`),
@@ -337,83 +292,48 @@ const category = await classify_ticket({ ticket: "..." }, client);
 
 ---
 
-## Known Limitations (alpha)
+## Working out of the repository
 
-The generated TypeScript uses `import { … } from "promptlang/runtime"`. This import resolves correctly **within this repository** via the `package.json` `exports` field. In an **external project** it will produce `TS2307: Cannot find module 'promptlang/runtime'` until promptlang is published to npm (planned for v1.0).
+The generated TypeScript uses `import { … } from "promptlang/runtime"`. This
+import resolves within this repository via the `package.json` `exports` field.
+In an **external project** it will produce `TS2307: Cannot find module 'promptlang/runtime'`
+until the npm package is published.
 
-**Workaround:** pass `--emit-tsconfig` to the `compile` command. It writes a `tsconfig.json` with a `paths` mapping that points directly at the local runtime source:
+**Workaround** — pass `--emit-tsconfig` to `compile`. It writes a `tsconfig.json`
+with a `paths` mapping that points directly at the local runtime source:
 
 ```bash
-promptlang compile src/prompts/ --out ./generated --emit-tsconfig
+bun run cli compile src/prompts/ --out ./generated --emit-tsconfig
 bunx tsc --project ./generated/tsconfig.json --noEmit
-```
-
----
-
-## Comparison
-
-| Capability                   | PromptLang | LangChain | LangSmith | W&B Weave |
-| ---------------------------- | ---------- | --------- | --------- | --------- |
-| Typed prompt signatures      | ✅         | ❌        | ❌        | ❌        |
-| Native test assertions       | ✅         | ❌        | Partial   | Partial   |
-| Semver for prompts           | ✅         | ❌        | ❌        | ❌        |
-| Static analysis CLI          | ✅         | ❌        | ❌        | ❌        |
-| Injection risk detection     | ✅         | ❌        | ❌        | ❌        |
-| Compiles to TypeScript       | ✅ (v0.4)  | ❌        | ❌        | ❌        |
-| Compiles to Python           | ✅ (v0.8)  | N/A       | N/A       | N/A       |
-| Model-agnostic config        | ✅         | Partial   | ✅        | ✅        |
-| AI-powered linter            | ✅ (v0.7)  | ❌        | ❌        | ❌        |
-| Self-hostable, no SaaS       | ✅         | ✅        | ❌        | ❌        |
-| Open source (MIT)            | ✅         | ✅        | ❌        | ❌        |
-
----
-
-## Installation
-
-> PromptLang is in alpha. The npm package will be published at v0.3 (first working compiler).
-
-```bash
-# Coming at v0.3
-bun install promptlang
-```
-
-For now, clone and use locally:
-
-```bash
-git clone https://github.com/matteogallo-ai/promptlang.git
-cd promptlang
-bun install
 ```
 
 ---
 
 ## Documentation
 
-| Document | Description |
-| -------- | ----------- |
-| [docs/architecture.md](docs/architecture.md) | Technical design, pipeline, design decisions |
-| [docs/syntax-reference.md](docs/syntax-reference.md) | Complete language reference |
-| [docs/roadmap.md](docs/roadmap.md) | Public milestone roadmap |
-| [docs/examples/](docs/examples/) | Annotated `.prompt` examples |
+| Document                                              | Description                                        |
+| ----------------------------------------------------- | -------------------------------------------------- |
+| [docs/syntax-reference.md](docs/syntax-reference.md)  | Complete `.prompt` language reference              |
+| [docs/architecture.md](docs/architecture.md)          | Technical design, pipeline, design decisions       |
+| [docs/migration-guide.md](docs/migration-guide.md)    | Migration guide 0.x → 1.0                          |
+| [docs/yaml-support.md](docs/yaml-support.md)          | YAML subset supported by `promptlang.yaml`         |
+| [docs/benchmarks.md](docs/benchmarks.md)              | Measured performance numbers on the reference machine |
+| [docs/roadmap.md](docs/roadmap.md)                    | Public milestone roadmap                           |
+| [docs/examples/](docs/examples/)                      | Annotated `.prompt` examples                       |
 
 ---
 
-## Roadmap
+## Roadmap post-1.0
 
-See [docs/roadmap.md](docs/roadmap.md) for the full plan.
+- npm package publication (`npm install promptlang`)
+- Remote package registry (currently local-only)
+- Streaming responses in the runtime
+- More provider clients (Google Gemini, Mistral, Cohere)
+- IDE extensions (VS Code syntax highlighting, LSP)
+- MCP server integration
 
-**In short:**
-
-- **v0.1** (now) — Repo foundation, docs, examples
-- **v0.2** — Lexer, parser, AST printer
-- **v0.3** — TypeScript compiler (basic)
-- **v0.4** — Type system (primitives, enum, struct)
-- **v0.5** — Chains (prompt composition / DAG)
-- **v0.6** — Native tests and evals
-- **v0.7** — AI-powered linter
-- **v0.8** — Python compiler
-- **v0.9** — Project config (`promptlang.yaml`), imports, local registry
-- **v1.0** — Stable, public release
+See [`docs/roadmap.md`](docs/roadmap.md) for the full plan and the story of
+what was built in the 11 alpha releases.
 
 ---
 
@@ -427,4 +347,4 @@ issues tagged `good first issue`.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT © Matteo Gallo — see [LICENSE](LICENSE).

@@ -68,6 +68,28 @@ state between stages.
 
 ---
 
+## Component status (v1.0)
+
+| Component | Status | Since |
+| --------- | :----: | ----- |
+| Lexer                        | ✅ | v0.2  |
+| Parser + AST                 | ✅ | v0.3  |
+| Static analyzer (6 rules)    | ✅ | v0.3.1 |
+| TypeScript compiler          | ✅ | v0.4  |
+| Chain compilation (DAG)      | ✅ | v0.5  |
+| `--emit-tsconfig` bridge     | ✅ | v0.5.1 |
+| Multi-provider runtime       | ✅ | v0.6  |
+| AI-powered linter            | ✅ | v0.7  |
+| Python compiler              | ✅ | v0.8  |
+| Project config + registry    | ✅ | v0.9  |
+| CLI (parse/tokens/analyze/compile/init/install/list/check/version) | ✅ | v0.3.1 → v0.9 |
+| Streaming responses          | 🚧 | planned 1.x |
+| npm package                  | 🚧 | planned 1.x |
+| Remote package registry      | 🚧 | planned 1.x |
+| VS Code extension + LSP      | 🚧 | planned 1.x |
+
+---
+
 ## Modules
 
 ### `src/lexer/` ✅ implemented (v0.2)
@@ -118,7 +140,7 @@ token-level noise (whitespace, comments) to keep analysis clean.
 An `printAst()` utility in `src/ast/printer.ts` renders the tree as a human-readable
 box-drawing string for debugging and the future `promptlang parse` CLI command.
 
-### `src/compiler/typescript/`
+### `src/compiler/` (TypeScript backend) ✅ implemented (v0.4)
 
 Code generator that walks the AST and emits TypeScript source. Design goals:
 
@@ -184,9 +206,12 @@ Six semantic categories detected:
 
 **Injectable client**: `AiLinter` accepts a custom `PromptClient` via `AiLinterOptions.client`. This is how all tests bypass the network — no `fetch` mocking required.
 
-### `src/linter/`
+### `src/linter/` (placeholder)
 
-Reserved for a future pluggable rule registry (v0.8+).
+Reserved for a future pluggable rule registry. Rule authoring today lives in
+`src/analyzer/rules/` (static) and `src/analyzer/ai/` (LLM-driven); the
+placeholder namespace will host user-defined rules once we ship a public rule
+API in a 1.x release.
 
 ### `src/config/` ✅ implemented (v0.9)
 
@@ -229,7 +254,7 @@ Manages the `.promptlang/` on-disk registry. Three collaborating modules:
 The manifest is intentionally a plain, sorted JSON file so it diffs cleanly
 in code review and can be committed to source control.
 
-### `src/runtime/`
+### `src/runtime/` ✅ implemented (v0.6)
 
 The runtime package that compiled stubs import at runtime. It is the only part
 of PromptLang that makes network calls.
@@ -270,11 +295,12 @@ All provider clients use a shared `withRetry` utility (exponential backoff, conf
 **Design invariants:**
 - Tests never make real HTTP calls; all provider tests spy on `globalThis.fetch`.
 - Zero external dependencies — uses the `fetch` global provided by Bun.
-- Streaming is not implemented (v0.8+).
+- Streaming responses are not implemented; planned as a 1.x feature
+  (`PromptClient.stream()` companion to `.complete()`).
 
-### `src/cli/`
+### `src/cli/` ✅ implemented (v0.3.1 → v0.9)
 
-Command-line interface (v0.2+). Subcommands:
+Command-line interface. Subcommands:
 
 | Command                                    | Since | Description                        |
 | ------------------------------------------ | ----- | ---------------------------------- |

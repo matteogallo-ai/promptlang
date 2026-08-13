@@ -172,26 +172,52 @@ import system._
 
 ---
 
-## v1.0 — Stable Public Release
+## v1.0 — Stable Public Release ✅
 
 _Goal: PromptLang is production-ready and publicly announced._
 
-- [ ] API stability guarantee (no breaking changes without major version bump)
-- [ ] Complete documentation site
-- [ ] Published on npm
-- [ ] VS Code extension: syntax highlighting and hover types for `.prompt` files
-- [ ] Migration guide from raw string prompts
-- [ ] Benchmarks vs. hand-written prompt code
-- [ ] Public announcement
+- [x] API stability guarantee (semver; breaking changes only in MAJOR)
+- [x] Consolidated documentation ([README](../README.md),
+      [architecture](architecture.md), [migration-guide](migration-guide.md),
+      [benchmarks](benchmarks.md), [yaml-support](yaml-support.md))
+- [x] Migration guide 0.x → 1.0
+- [x] Benchmarks measured on reference machine (Apple M4)
+- [ ] Published on npm (first 1.x point release)
+- [ ] Public announcement (Hacker News, r/programming, LinkedIn)
+- [ ] VS Code extension (syntax highlighting) — 1.x
+- [ ] LSP implementation — 1.x
 
 ---
 
-## Beyond v1.0 (unscheduled)
+## Post-1.0 direction
 
-Ideas tracked but not yet scheduled:
+1.x releases will focus on **distribution and ecosystem**, not language
+changes. The language surface (`.prompt` syntax, AST, generated code) is now
+stable — breaking changes are reserved for 2.0 with a documented migration
+path.
 
-- Language server protocol (LSP) implementation for IDE support
+**Priorities, roughly in order:**
+
+1. **npm package publication** — `npm install promptlang` should work as a
+   first-class dependency. Requires the `promptlang` name check + a small
+   packaging pass (esbuild bundle, dual ESM/CJS export, `bin` field).
+2. **Remote package registry** — the current registry is local-only; a
+   remote layer will let `dependencies:` in `promptlang.yaml` resolve
+   against a hosted index (analogous to npm / crates.io / PyPI).
+3. **Streaming responses** — `PromptClient.stream()` companion to
+   `.complete()`; provider-side support for SSE / chunked responses.
+4. **More provider clients** — Google Gemini, Mistral, Cohere.
+5. **IDE extensions** — VS Code syntax highlighting; a Language Server
+   Protocol implementation for hover types, go-to-definition, diagnostics.
+6. **MCP server integration** — expose compiled prompts as MCP tools so
+   Claude Desktop / Claude Code can call them directly.
+
+---
+
+## Ideas tracked but not yet scheduled
+
 - Remote eval: run evals against a hosted dataset
 - Diff-aware CI: only re-run tests for prompts whose content changed
 - Prompt marketplace: share and discover community prompts
 - Fine-tune adapter: export prompt + eval data as a fine-tuning dataset
+- Multi-provider config with model aliases (moved here from v0.9)

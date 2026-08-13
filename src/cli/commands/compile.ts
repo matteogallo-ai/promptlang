@@ -7,20 +7,64 @@ import { getPythonRuntimeSource } from "../../compiler/python/python-runtime-tem
 import { LexerError } from "../../lexer/errors";
 import { ParserError } from "../../parser/errors";
 import { CompilerError } from "../../compiler/errors";
+import {
+  loadConfig,
+  CONFIG_FILENAME,
+  ConfigValidationError,
+  type PromptLangConfig,
+} from "../../config/config";
+import { ConfigParseError } from "../../config/yaml-parser";
 import { mkdir } from "node:fs/promises";
 import { join, basename, relative, resolve } from "node:path";
 
 export async function runCompile(args: string[]): Promise<number> {
   const outIdx = args.indexOf("--out");
-  const outDir = outIdx !== -1 && args[outIdx + 1] ? args[outIdx + 1]! : "./generated";
-
   const emitTsconfig = args.includes("--emit-tsconfig");
-
   const targetIdx = args.indexOf("--target");
-  const target: "typescript" | "python" =
-    targetIdx !== -1 && args[targetIdx + 1] === "python" ? "python" : "typescript";
-
   const runtimePathIdx = args.indexOf("--runtime-path");
+  const configIdx = args.indexOf("--config");
+
+  const paths = args.filter((a, i) => {
+    if (a.startsWith("--")) return false;
+    if (i === outIdx + 1) return false;
+    if (runtimePathIdx !== -1 && i === runtimePathIdx + 1) return false;
+    if (targetIdx !== -1 && i === targetIdx + 1) return false;
+    if (configIdx !== -1 && i === configIdx + 1) return false;
+    return true;
+  });
+
+  // Attempt to load promptlang.yaml when it is available. Explicit CLI flags
+  // always win over config values.
+  let config: PromptLangConfig | null = null;
+  const configPath =
+    configIdx !== -1 && args[configIdx + 1]
+      ? args[configIdx + 1]!
+      : join(process.cwd(), CONFIG_FILENAME);
+  const wantsConfig = configIdx !== -1;
+  try {
+    if (wantsConfig || (await Bun.file(configPath).exists())) {
+      config = await loadConfig(configPath);
+    }
+  } catch (error) {
+    if (error instanceof ConfigParseError || error instanceof ConfigValidationError) {
+      console.error(`Error: ${(error as Error).message}`);
+      return 1;
+    }
+    throw error;
+  }
+
+  const outDir =
+    outIdx !== -1 && args[outIdx + 1]
+      ? args[outIdx + 1]!
+      : config?.compile.out ?? "./generated";
+
+  const explicitTarget = targetIdx !== -1 && args[targetIdx + 1];
+  const target: "typescript" | "python" = explicitTarget
+    ? args[targetIdx + 1] === "python"
+      ? "python"
+      : "typescript"
+    : config?.compile.target ?? "typescript";
+
   const runtimePath =
     runtimePathIdx !== -1 && args[runtimePathIdx + 1]
       ? args[runtimePathIdx + 1]!
@@ -30,18 +74,15 @@ export async function runCompile(args: string[]): Promise<number> {
     console.error("  [warn]    --emit-tsconfig is ignored for --target python");
   }
 
-  const paths = args.filter((a, i) => {
-    if (a.startsWith("--")) return false;
-    if (i === outIdx + 1) return false;
-    if (runtimePathIdx !== -1 && i === runtimePathIdx + 1) return false;
-    if (targetIdx !== -1 && i === targetIdx + 1) return false;
-    return true;
-  });
+  // When no path is given but the project config declares sources, use them.
+  if (paths.length === 0 && config && config.sources.length > 0) {
+    for (const s of config.sources) paths.push(s.path);
+  }
 
   if (paths.length === 0) {
     console.error(
       "Missing file argument.\n" +
-        "Usage: promptlang compile <file|dir|glob> [--out <dir>] [--emit-tsconfig [--runtime-path <path>]]"
+        "Usage: promptlang compile <file|dir|glob> [--out <dir>] [--target typescript|python] [--config <path>] [--emit-tsconfig [--runtime-path <path>]]"
     );
     return 1;
   }

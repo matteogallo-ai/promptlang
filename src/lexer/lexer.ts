@@ -16,6 +16,8 @@ const KEYWORDS: Readonly<Record<string, TokenType>> = {
   return: TokenType.RETURN,
   enum: TokenType.ENUM,
   struct: TokenType.STRUCT,
+  import: TokenType.IMPORT,
+  as: TokenType.AS,
   string: TokenType.STRING_TYPE,
   number: TokenType.NUMBER_TYPE,
   boolean: TokenType.BOOLEAN_TYPE,

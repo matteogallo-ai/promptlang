@@ -82,7 +82,7 @@ describe("version", () => {
     restore();
     expect(code).toBe(0);
     expect(output()).toContain("promptlang");
-    expect(output()).toContain("0.8.0");
+    expect(output()).toContain("0.9.0");
   });
 
   test("prints repository URL", async () => {
@@ -509,3 +509,222 @@ describe("error handling", () => {
     expect(output()).toContain("Unknown command");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Project commands: init, install, list, check, compile-from-config (v0.9)
+// ---------------------------------------------------------------------------
+
+import { rm, mkdir } from "node:fs/promises";
+import { join } from "node:path";
+
+const PROJECTS_ROOT = "/tmp/promptlang-v09-cli";
+
+async function makeProject(name: string): Promise<string> {
+  const dir = join(PROJECTS_ROOT, name);
+  await rm(dir, { recursive: true, force: true });
+  await mkdir(join(dir, "prompts"), { recursive: true });
+  return dir;
+}
+
+async function withCwd<T>(dir: string, fn: () => Promise<T>): Promise<T> {
+  const orig = process.cwd();
+  process.chdir(dir);
+  try {
+    return await fn();
+  } finally {
+    process.chdir(orig);
+  }
+}
+
+describe("init command", () => {
+  test("creates promptlang.yaml and prompts/ in an empty dir", async () => {
+    const dir = await makeProject("init-fresh");
+    // remove the prompts dir that makeProject created — init should create it
+    await rm(join(dir, "prompts"), { recursive: true, force: true });
+    const restore = silenceAll();
+    const code = await withCwd(dir, () => main(["bun", "cli", "init"]));
+    restore();
+    expect(code).toBe(0);
+    expect(await Bun.file(join(dir, "promptlang.yaml")).exists()).toBe(true);
+  });
+
+  test("refuses to overwrite an existing promptlang.yaml without --force", async () => {
+    const dir = await makeProject("init-existing");
+    await Bun.write(join(dir, "promptlang.yaml"), "name: existing\nversion: 1.0.0\n");
+    const restore = silenceAll();
+    const code = await withCwd(dir, () => main(["bun", "cli", "init"]));
+    restore();
+    expect(code).toBe(1);
+    // content preserved
+    const text = await Bun.file(join(dir, "promptlang.yaml")).text();
+    expect(text).toContain("existing");
+  });
+});
+
+describe("install command", () => {
+  test("resolves imports and writes manifest.json + integrity.json", async () => {
+    const dir = await makeProject("install-basic");
+    await Bun.write(
+      join(dir, "promptlang.yaml"),
+      "name: p\nversion: 1.0.0\nsources:\n  - path: ./prompts\n"
+    );
+    await Bun.write(
+      join(dir, "prompts", "a.prompt"),
+      `@version "1.0.0"\nprompt a(x: string) -> string { user: "{{x}}" output: string }\n`
+    );
+    await Bun.write(
+      join(dir, "prompts", "b.prompt"),
+      `import "./a.prompt" as A\n@version "1.0.0"\nprompt b(x: string) -> string { user: "{{x}}" output: string }\n`
+    );
+    const restore = silenceAll();
+    const code = await withCwd(dir, () => main(["bun", "cli", "install"]));
+    restore();
+    expect(code).toBe(0);
+    expect(await Bun.file(join(dir, ".promptlang", "manifest.json")).exists()).toBe(true);
+    expect(await Bun.file(join(dir, ".promptlang", "integrity.json")).exists()).toBe(true);
+    const manifest = JSON.parse(await Bun.file(join(dir, ".promptlang", "manifest.json")).text());
+    expect(manifest.version).toBe(1);
+    expect(manifest.imports).toHaveLength(1);
+    expect(manifest.imports[0].alias).toBe("A");
+  });
+
+  test("exits 1 when promptlang.yaml is missing", async () => {
+    const dir = await makeProject("install-missing");
+    const restore = silenceAll();
+    const code = await withCwd(dir, () => main(["bun", "cli", "install"]));
+    restore();
+    expect(code).toBe(1);
+  });
+});
+
+describe("list command", () => {
+  test("prints prompts and chains for every discovered file", async () => {
+    const dir = await makeProject("list-basic");
+    await Bun.write(
+      join(dir, "promptlang.yaml"),
+      "name: p\nversion: 1.0.0\nsources:\n  - path: ./prompts\n"
+    );
+    await Bun.write(
+      join(dir, "prompts", "one.prompt"),
+      `@version "1.0.0"\nprompt one(x: string) -> string { user: "{{x}}" output: string }\n`
+    );
+    const { output, restore } = captureLog();
+    const code = await withCwd(dir, () => main(["bun", "cli", "list"]));
+    restore();
+    expect(code).toBe(0);
+    expect(output()).toContain("one");
+    expect(output()).toContain("prompt");
+  });
+
+  test("--json produces valid, structured JSON", async () => {
+    const dir = await makeProject("list-json");
+    await Bun.write(
+      join(dir, "promptlang.yaml"),
+      "name: p\nversion: 1.0.0\nsources:\n  - path: ./prompts\n"
+    );
+    await Bun.write(
+      join(dir, "prompts", "x.prompt"),
+      `@version "1.0.0"\nprompt x(y: string) -> string { user: "{{y}}" output: string }\n`
+    );
+    const { output, restore } = captureLog();
+    await withCwd(dir, () => main(["bun", "cli", "list", "--json"]));
+    restore();
+    const parsed = JSON.parse(output()) as {
+      project: { name: string };
+      files: Array<{ file: string; prompts: string[] }>;
+    };
+    expect(parsed.project.name).toBe("p");
+    expect(parsed.files.length).toBeGreaterThan(0);
+    expect(parsed.files[0]!.prompts).toContain("x");
+  });
+});
+
+describe("check command", () => {
+  test("exits 0 when the project is clean", async () => {
+    const dir = await makeProject("check-clean");
+    await Bun.write(
+      join(dir, "promptlang.yaml"),
+      "name: p\nversion: 1.0.0\nsources:\n  - path: ./prompts\n"
+    );
+    await Bun.write(
+      join(dir, "prompts", "a.prompt"),
+      `@version "1.0.0"\nprompt a(x: string) -> string { user: "{{x}}" output: string }\n`
+    );
+    const restore = silenceAll();
+    await withCwd(dir, () => main(["bun", "cli", "install"]));
+    const code = await withCwd(dir, () => main(["bun", "cli", "check"]));
+    restore();
+    expect(code).toBe(0);
+  });
+
+  test("exits 1 when a file's hash no longer matches integrity.json", async () => {
+    const dir = await makeProject("check-tampered");
+    await Bun.write(
+      join(dir, "promptlang.yaml"),
+      "name: p\nversion: 1.0.0\nsources:\n  - path: ./prompts\n"
+    );
+    const file = join(dir, "prompts", "a.prompt");
+    await Bun.write(file, `@version "1.0.0"\nprompt a(x: string) -> string { user: "{{x}}" output: string }\n`);
+    const restore = silenceAll();
+    await withCwd(dir, () => main(["bun", "cli", "install"]));
+    // Mutate the file after install.
+    await Bun.write(file, `@version "1.0.0"\nprompt tampered(x: string) -> string { user: "{{x}}" output: string }\n`);
+    const code = await withCwd(dir, () => main(["bun", "cli", "check"]));
+    restore();
+    expect(code).toBe(1);
+  });
+});
+
+describe("compile with promptlang.yaml", () => {
+  test("reads compile.out and compile.target from promptlang.yaml when args are absent", async () => {
+    const dir = await makeProject("compile-from-config");
+    await Bun.write(
+      join(dir, "promptlang.yaml"),
+      `name: p
+version: 1.0.0
+sources:
+  - path: ./prompts
+compile:
+  target: typescript
+  out: ./out
+  emit_tsconfig: false
+`
+    );
+    await Bun.write(
+      join(dir, "prompts", "hello.prompt"),
+      `@version "1.0.0"\nprompt hello(x: string) -> string { user: "{{x}}" output: string }\n`
+    );
+    const restore = silenceAll();
+    const code = await withCwd(dir, () => main(["bun", "cli", "compile"]));
+    restore();
+    expect(code).toBe(0);
+    expect(await Bun.file(join(dir, "out", "hello.ts")).exists()).toBe(true);
+  });
+
+  test("--config <path> uses an alternative config file", async () => {
+    const dir = await makeProject("compile-alt-config");
+    await Bun.write(
+      join(dir, "custom.yaml"),
+      `name: p
+version: 1.0.0
+sources:
+  - path: ./prompts
+compile:
+  target: typescript
+  out: ./custom-out
+`
+    );
+    await Bun.write(
+      join(dir, "prompts", "foo.prompt"),
+      `@version "1.0.0"\nprompt foo(x: string) -> string { user: "{{x}}" output: string }\n`
+    );
+    const restore = silenceAll();
+    const code = await withCwd(dir, () =>
+      main(["bun", "cli", "compile", "--config", "custom.yaml"])
+    );
+    restore();
+    expect(code).toBe(0);
+    expect(await Bun.file(join(dir, "custom-out", "foo.ts")).exists()).toBe(true);
+  });
+});
+

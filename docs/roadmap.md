@@ -150,15 +150,25 @@ _Goal: compiled output targets Python as a first-class language._
 
 ---
 
-## v0.9 — Multi-Provider Configuration
+## v0.9 — Project Config, Imports, Registry ✅
 
-_Goal: full provider configuration with model aliases and fallback chains._
+_Goal: PromptLang manages multi-file projects with a first-class config and
+import system._
 
-- [ ] `promptlang.config.yaml` schema (providers, model aliases, retry policy)
-- [ ] `@model` directive supports provider-scoped aliases: `anthropic/fast`, `openai/reasoning`
-- [ ] Fallback chain: try primary model, fall back to secondary on error
-- [ ] Environment variable injection for API keys
-- [ ] Provider mock for offline testing
+- [x] `promptlang.yaml` schema — `name`, `version`, `defaults`, `sources`,
+      `compile`, `linter`, `dependencies`
+- [x] Minimal YAML parser (mappings, sequences, scalars, comments) — zero
+      external dependencies
+- [x] Import syntax in `.prompt` files:
+      `import "shared/x.prompt" as Alias`
+- [x] Local registry `.promptlang/manifest.json` (resolved import graph) and
+      `integrity.json` (SHA-256 hashes)
+- [x] Circular import detection
+- [x] CLI commands: `init`, `install`, `list`, `check`
+- [x] `compile` reads `promptlang.yaml` when args are absent; `--config <path>`
+      flag on project commands
+- [ ] Remote package registry (deferred to post-v1.0)
+- [ ] Multi-provider config with model aliases (moved to post-v1.0)
 
 ---
 
@@ -171,6 +181,7 @@ _Goal: PromptLang is production-ready and publicly announced._
 - [ ] Published on npm
 - [ ] VS Code extension: syntax highlighting and hover types for `.prompt` files
 - [ ] Migration guide from raw string prompts
+- [ ] Benchmarks vs. hand-written prompt code
 - [ ] Public announcement
 
 ---

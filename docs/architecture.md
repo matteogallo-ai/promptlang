@@ -188,6 +188,47 @@ Six semantic categories detected:
 
 Reserved for a future pluggable rule registry (v0.8+).
 
+### `src/config/` ✅ implemented (v0.9)
+
+Owns the project-level `promptlang.yaml` configuration.
+
+- `yaml-parser.ts` — a hand-written minimal YAML parser (mappings, sequences,
+  scalars, comments) with **zero external dependencies**. See
+  [`docs/yaml-support.md`](yaml-support.md) for the exact supported subset.
+- `config.ts` — layers a validation + defaults pass on top of the parser and
+  produces the fully typed `PromptLangConfig` interface. Required fields
+  (`name`, `version`) throw `ConfigValidationError`; unknown values for
+  `compile.target` are rejected explicitly.
+
+### `src/registry/` ✅ implemented (v0.9)
+
+Manages the `.promptlang/` on-disk registry. Three collaborating modules:
+
+- `resolver.ts` — turns raw import paths (`import "shared/x.prompt" as X`)
+  into absolute filesystem paths. Lookup order: relative-to-file first, then
+  each `sources[*].path` from `promptlang.yaml`. `resolveGraph()` walks the
+  full transitive import graph and rejects circular imports with a stack
+  trace of the cycle.
+- `integrity.ts` — SHA-256 hashing of every `.prompt` file. Line endings are
+  normalized (CRLF→LF) so cross-platform hashes match. `verifyIntegrity`
+  returns the list of mismatches (or missing files) since the last
+  `install`.
+- `registry.ts` — orchestrator. `install()` runs the resolver + integrity
+  hashing and writes `manifest.json` (resolved graph, sorted for stable
+  diffs) and `integrity.json`. `check()` re-verifies without re-resolving.
+
+**On-disk layout produced by `install`:**
+
+```
+.promptlang/
+├── manifest.json     # { version: 1, files: [...], imports: [{from, to, alias}] }
+├── integrity.json    # { "<absolute-path>": "<sha256-hex>", ... }
+└── cache/            # reserved for v1.0+ (remote registry cache)
+```
+
+The manifest is intentionally a plain, sorted JSON file so it diffs cleanly
+in code review and can be committed to source control.
+
 ### `src/runtime/`
 
 The runtime package that compiled stubs import at runtime. It is the only part
@@ -240,6 +281,10 @@ Command-line interface (v0.2+). Subcommands:
 | `promptlang parse <file>`                  | v0.2  | Print AST as JSON                  |
 | `promptlang compile <file> --target ts`    | v0.3  | Compile to TypeScript              |
 | `promptlang compile <file> --target py`    | v0.8  | Compile to Python                  |
+| `promptlang init`                          | v0.9  | Scaffold a new project             |
+| `promptlang install`                       | v0.9  | Resolve imports and write registry |
+| `promptlang list [--json]`                 | v0.9  | List all prompts in the project    |
+| `promptlang check`                         | v0.9  | Verify integrity + import resolution |
 | `promptlang test <file>`                   | v0.6  | Run test blocks                    |
 | `promptlang eval <file> --data <csv>`      | v0.6  | Run eval block against dataset     |
 | `promptlang lint <file>`                   | v0.7  | Run linter rules                   |

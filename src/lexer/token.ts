@@ -19,6 +19,8 @@ export enum TokenType {
   RETURN = "RETURN",
   ENUM = "ENUM",
   STRUCT = "STRUCT",
+  IMPORT = "IMPORT",
+  AS = "AS",
 
   // Primitive type keywords
   STRING_TYPE = "STRING_TYPE",

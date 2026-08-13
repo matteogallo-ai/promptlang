@@ -12,8 +12,26 @@ export interface AstNode {
 
 export interface Program extends AstNode {
   kind: "Program";
+  /**
+   * Import declarations that appear at the top of a `.prompt` file,
+   * before any metadata or declarations. Empty when the file has no imports.
+   */
+  imports: ImportDeclaration[];
   metadata: Metadata[];
   declarations: Declaration[];
+}
+
+// ---------------------------------------------------------------------------
+// Imports
+// ---------------------------------------------------------------------------
+
+/** `import "path/to/other.prompt" as Alias` — always appears at file top. */
+export interface ImportDeclaration extends AstNode {
+  kind: "ImportDeclaration";
+  /** The raw path string as written in the source (e.g. "shared/x.prompt"). */
+  path: string;
+  /** The alias used to reference the imported module (`Alias`). */
+  alias: string;
 }
 
 // ---------------------------------------------------------------------------

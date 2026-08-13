@@ -1112,3 +1112,85 @@ test "translates to french" {
     expect(ast.declarations).toHaveLength(5);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Imports (v0.9)
+// ---------------------------------------------------------------------------
+
+describe("import declarations", () => {
+  const MIN_BODY =
+    `@version "1.0.0"\nprompt foo(x: string) -> string { user: "{{x}}" output: string }\n`;
+
+  test("parses a single import at the top of the file", () => {
+    const src = `import "shared/classify.prompt" as Classify\n` + MIN_BODY;
+    const ast = p(src);
+    expect(ast.imports).toHaveLength(1);
+    expect(ast.imports[0]!.path).toBe("shared/classify.prompt");
+    expect(ast.imports[0]!.alias).toBe("Classify");
+    expect(ast.imports[0]!.kind).toBe("ImportDeclaration");
+  });
+
+  test("parses multiple imports in order", () => {
+    const src =
+      `import "shared/a.prompt" as A\n` +
+      `import "shared/b.prompt" as B\n` +
+      `import "vendor/c.prompt" as C\n` +
+      MIN_BODY;
+    const ast = p(src);
+    expect(ast.imports).toHaveLength(3);
+    expect(ast.imports.map((i) => i.alias)).toEqual(["A", "B", "C"]);
+    expect(ast.imports[2]!.path).toBe("vendor/c.prompt");
+  });
+
+  test("errors when import appears after metadata", () => {
+    const src =
+      `@version "1.0.0"\n` +
+      `import "shared/x.prompt" as X\n` +
+      `prompt foo(x: string) -> string { user: "{{x}}" output: string }\n`;
+    expect(() => p(src)).toThrow(ParserError);
+    try {
+      p(src);
+    } catch (e) {
+      expect((e as Error).message).toContain("top of the file");
+    }
+  });
+
+  test("errors when import has no 'as' alias", () => {
+    const src = `import "shared/x.prompt"\n` + MIN_BODY;
+    expect(() => p(src)).toThrow(ParserError);
+    try {
+      p(src);
+    } catch (e) {
+      expect((e as Error).message).toContain("as");
+    }
+  });
+
+  test("errors when import path is missing", () => {
+    const src = `import as X\n` + MIN_BODY;
+    expect(() => p(src)).toThrow(ParserError);
+  });
+
+  test("supports member access on an imported alias inside a chain", () => {
+    const src =
+      `import "shared/classify.prompt" as Classify\n` +
+      `@version "1.0.0"\n` +
+      `prompt handle(x: string) -> string { user: "{{x}}" output: string }\n` +
+      `chain flow(x: string) -> string { step c = Classify.classify step r = handle(x) return r }\n`;
+    const ast = p(src);
+    expect(ast.imports).toHaveLength(1);
+    expect(ast.declarations).toHaveLength(2);
+    const chain = ast.declarations[1] as import("../ast/nodes").ChainDeclaration;
+    const step0 = chain.steps[0]!;
+    expect(step0.expression.kind).toBe("MemberExpression");
+    if (step0.expression.kind === "MemberExpression") {
+      expect(step0.expression.object).toBe("Classify");
+      expect(step0.expression.property).toBe("classify");
+    }
+  });
+
+  test("a file with no imports has an empty imports array", () => {
+    const ast = p(MIN_BODY);
+    expect(ast.imports).toEqual([]);
+  });
+});
+

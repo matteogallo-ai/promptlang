@@ -102,7 +102,7 @@ function makeChain(name: string, stepCount: number): ChainDeclaration {
 }
 
 function makeProgram(declarations: Program["declarations"]): Program {
-  return { kind: "Program", metadata: [], declarations, ...POS };
+  return { kind: "Program", imports: [], metadata: [], declarations, ...POS };
 }
 
 function makeContext(file: string, declarations: Program["declarations"]): AnalysisContext {

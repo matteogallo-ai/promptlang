@@ -227,6 +227,50 @@ The `MockClient` works with no dependencies for local testing.
 
 ---
 
+## Project configuration
+
+For multi-file projects, create a `promptlang.yaml` at the project root:
+
+```yaml
+name: my-project
+version: 1.0.0
+defaults:
+  model: claude-opus-4.7
+  temperature: 0.3
+sources:
+  - path: ./prompts
+compile:
+  target: typescript
+  out: ./generated
+  emit_tsconfig: true
+```
+
+Then use imports across files:
+
+```
+import "shared/classify.prompt" as Classify
+
+chain full_workflow(input: string) -> string {
+  step category = Classify.classify_ticket(input)
+  ...
+}
+```
+
+Bootstrap a new project:
+
+```bash
+bun run src/cli/cli.ts init
+bun run src/cli/cli.ts install
+bun run src/cli/cli.ts compile
+```
+
+Once the registry is populated (`.promptlang/manifest.json` + `integrity.json`),
+`promptlang check` verifies that no imported prompt has been silently modified
+since it was last resolved. See [`docs/yaml-support.md`](docs/yaml-support.md)
+for the exact YAML subset supported.
+
+---
+
 ## Available runtime providers
 
 The compiled TypeScript imports `PromptClient` from `promptlang/runtime`. Three
@@ -368,6 +412,7 @@ See [docs/roadmap.md](docs/roadmap.md) for the full plan.
 - **v0.6** — Native tests and evals
 - **v0.7** — AI-powered linter
 - **v0.8** — Python compiler
+- **v0.9** — Project config (`promptlang.yaml`), imports, local registry
 - **v1.0** — Stable, public release
 
 ---

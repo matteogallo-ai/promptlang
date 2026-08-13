@@ -34,6 +34,7 @@ function makeContext(prompts: Array<{ name: string; systemContent?: string }>): 
     file: "test.prompt",
     ast: {
       kind: "Program",
+      imports: [],
       metadata: [],
       declarations: prompts.map((p) => ({
         kind: "PromptDeclaration" as const,
@@ -210,6 +211,7 @@ describe("AiLinter", () => {
       file: "test.prompt",
       ast: {
         kind: "Program",
+        imports: [],
         metadata: [],
         declarations: [{ kind: "TestDeclaration", description: "t", input: { kind: "Identifier", name: "x", line: 1, column: 1 }, expectations: [], line: 1, column: 1 }],
         line: 1,

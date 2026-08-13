@@ -1,6 +1,7 @@
 import { Token, TokenType } from "../lexer/token";
 import {
   Program,
+  ImportDeclaration,
   Metadata,
   Declaration,
   TypeDeclaration,
@@ -175,21 +176,83 @@ export class Parser {
   // Program
   // ---------------------------------------------------------------------------
 
-  /** Program ::= Metadata* Declaration* */
+  /** Program ::= Import* Metadata* Declaration* */
   private parseProgram(): Program {
     const tok = this.peek();
+    const imports: ImportDeclaration[] = [];
     const metadata: Metadata[] = [];
     const declarations: Declaration[] = [];
 
+    while (!this.isAtEnd() && this.check(TokenType.IMPORT)) {
+      imports.push(this.parseImport());
+    }
+
     while (!this.isAtEnd() && this.isMetadataStart()) {
       metadata.push(this.parseMetadata());
+    }
+
+    // An import that appears after metadata or a declaration is a hard error;
+    // imports are only legal at the top of the file.
+    if (!this.isAtEnd() && this.check(TokenType.IMPORT)) {
+      const t = this.peek();
+      throw new ParserError(
+        "'import' must appear at the top of the file, before any metadata (@...) or declarations.",
+        t.line,
+        t.column
+      );
     }
 
     while (!this.isAtEnd()) {
       declarations.push(this.parseDeclaration());
     }
 
-    return { kind: "Program", metadata, declarations, line: tok.line, column: tok.column };
+    return {
+      kind: "Program",
+      imports,
+      metadata,
+      declarations,
+      line: tok.line,
+      column: tok.column,
+    };
+  }
+
+  /** Import ::= "import" StringLit "as" IDENT */
+  private parseImport(): ImportDeclaration {
+    const tok = this.expect(TokenType.IMPORT, "Expected 'import'");
+    const pathTok = this.peek();
+    if (
+      pathTok.type !== TokenType.STRING &&
+      pathTok.type !== TokenType.TRIPLE_STRING &&
+      pathTok.type !== TokenType.TEMPLATE_STRING
+    ) {
+      throw new ParserError(
+        `Expected a string path after 'import', e.g. import "shared/x.prompt" as X`,
+        pathTok.line,
+        pathTok.column,
+        "STRING",
+        pathTok.type
+      );
+    }
+    if (pathTok.type === TokenType.TEMPLATE_STRING) {
+      throw new ParserError(
+        "Import path cannot contain template interpolation '{{...}}'.",
+        pathTok.line,
+        pathTok.column
+      );
+    }
+    this.advance();
+    this.expect(
+      TokenType.AS,
+      `Expected 'as' after import path — imports must have an alias, e.g. import "${pathTok.value}" as MyAlias`
+    );
+    const alias = this.expect(TokenType.IDENT, "Expected an alias identifier after 'as'");
+    return {
+      kind: "ImportDeclaration",
+      path: pathTok.value,
+      alias: alias.value,
+      line: tok.line,
+      column: tok.column,
+    };
   }
 
   private isMetadataStart(): boolean {

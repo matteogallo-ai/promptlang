@@ -5,6 +5,10 @@ import { runTokens } from "./commands/tokens";
 import { runAnalyze } from "./commands/analyze";
 import { runVersion } from "./commands/version";
 import { runCompile } from "./commands/compile";
+import { runInit } from "./commands/init";
+import { runInstall } from "./commands/install";
+import { runList } from "./commands/list";
+import { runCheck } from "./commands/check";
 
 const HELP = `
 promptlang — the typed language for production-grade LLM prompts
@@ -13,26 +17,37 @@ Usage:
   promptlang <command> [args]
 
 Commands:
+
+Project commands:
+  init                      Scaffold a new project (promptlang.yaml + prompts/)
+  install                   Resolve imports and write .promptlang/manifest.json
+  list [--json]             List every prompt in the project (local + imported)
+  check                     Verify integrity + import resolution
+
+File commands:
   parse <file>              Print AST of a .prompt file
   tokens <file>             Print token stream of a .prompt file
   analyze <path> [flags]    Run static analysis on .prompt files
-                            Flags: --json, --strict
-  compile <path> [flags]    Compile .prompt files to TypeScript
+                            Flags: --json, --strict, --ai
+  compile [path] [flags]    Compile .prompt files to TypeScript or Python.
+                            When no path is given, reads sources from
+                            promptlang.yaml.
                             Flags: --out <dir>
-                                   --emit-tsconfig  Emit a tsconfig.json with
-                                     the correct paths mapping for promptlang/runtime.
-                                     Use this for local/alpha development before
-                                     promptlang is published to npm (v1.0).
+                                   --target typescript|python
+                                   --config <path>  Alternative config file
+                                   --emit-tsconfig  Emit tsconfig.json with
+                                     the correct paths mapping for
+                                     promptlang/runtime.
                                    --runtime-path <path>  Override the path to
-                                     promptlang/runtime in the emitted tsconfig
-                                     (default: relative path to src/runtime/index.ts).
+                                     promptlang/runtime in the emitted tsconfig.
   version                   Show version and repository info
 
 Examples:
+  promptlang init
+  promptlang install
+  promptlang compile
   promptlang parse docs/examples/classify-ticket.prompt
-  promptlang tokens docs/examples/extract-invoice.prompt
   promptlang analyze docs/examples/
-  promptlang compile docs/examples/ --out ./generated
   promptlang compile docs/examples/ --out ./generated --emit-tsconfig
 `.trim();
 
@@ -50,6 +65,14 @@ export async function main(argv: string[]): Promise<number> {
         return await runAnalyze(args.slice(1));
       case "compile":
         return await runCompile(args.slice(1));
+      case "init":
+        return await runInit(args.slice(1));
+      case "install":
+        return await runInstall(args.slice(1));
+      case "list":
+        return await runList(args.slice(1));
+      case "check":
+        return await runCheck(args.slice(1));
       case "version":
         return runVersion();
       case undefined:

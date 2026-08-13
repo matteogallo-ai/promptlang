@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0-alpha.0] — 2026-08-13
+
+### Added
+- `promptlang.yaml` project configuration file with `defaults`, `sources`,
+  `compile`, `linter`, and `dependencies` sections.
+- Minimal YAML parser (subset: mappings, sequences, scalars, comments).
+  Zero external dependencies.
+- Import system in `.prompt` files:
+  `import "path/to/other.prompt" as Alias`.
+- Local registry `.promptlang/` with `manifest.json` (resolved import graph)
+  and `integrity.json` (SHA-256 hashes) for tamper detection.
+- CLI commands: `init`, `install`, `list`, `check`.
+- CLI `compile` now reads `promptlang.yaml` when `--out`, `--target`, and
+  path arguments are omitted.
+- `--config <path>` flag on `compile`, `install`, `list`, and `check` for
+  alternative config files.
+- New lexer tokens `IMPORT` and `AS`.
+- New AST node `ImportDeclaration`.
+- 68 new tests (596 total): `yaml-parser.test.ts` (23), `config.test.ts` (12),
+  `resolver.test.ts` (9), `integrity.test.ts` (7), `parser.test.ts` additions
+  (7), `cli.test.ts` additions (10).
+
+### Notes
+- Only a subset of YAML is supported (see `docs/yaml-support.md`).
+- `dependencies` are declared but resolved only against local `path` values
+  in v0.9. A remote package registry is planned for post-v1.0.
+- Circular imports are detected and rejected at `install` / `check` time.
+- `import` statements must appear at the top of the file, before any `@`
+  metadata directives or declarations.
+
 ## [0.8.0-alpha.0] — 2026-08-12
 
 ### Added

@@ -1,0 +1,43 @@
+{
+  "name": "@promptlang/yaml-parser",
+  "version": "1.0.0",
+  "description": "Zero-dependency minimal YAML parser — the subset used by PromptLang and Praxis. Rejects anchors, block scalars, tags, and flow-style with line-aware errors.",
+  "author": "Matteo Gallo <matteo.gallo@gallarti.io>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/matteogallo-ai/promptlang.git",
+    "directory": "packages/yaml-parser"
+  },
+  "homepage": "https://github.com/matteogallo-ai/promptlang/tree/main/packages/yaml-parser",
+  "bugs": "https://github.com/matteogallo-ai/promptlang/issues",
+  "keywords": [
+    "yaml",
+    "parser",
+    "zero-dependencies",
+    "typescript",
+    "promptlang"
+  ],
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "bunx tsc --noEmit"
+  },
+  "dependencies": {},
+  "engines": {
+    "bun": ">=1.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

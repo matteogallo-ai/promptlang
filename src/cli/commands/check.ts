@@ -4,7 +4,7 @@ import {
   CONFIG_FILENAME,
   ConfigValidationError,
 } from "../../config/config";
-import { ConfigParseError } from "../../config/yaml-parser";
+import { YamlParseError } from "@promptlang/yaml-parser";
 import { check } from "../../registry/registry";
 import { ResolverError } from "../../registry/resolver";
 
@@ -36,7 +36,7 @@ export async function runCheck(args: string[]): Promise<number> {
     return 1;
   } catch (error) {
     if (
-      error instanceof ConfigParseError ||
+      error instanceof YamlParseError ||
       error instanceof ConfigValidationError ||
       error instanceof ResolverError
     ) {

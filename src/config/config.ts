@@ -1,4 +1,4 @@
-import { parseYaml, ConfigParseError, type YamlValue } from "./yaml-parser";
+import { parseYaml, YamlParseError, type YamlValue } from "@promptlang/yaml-parser";
 
 /**
  * Fully-resolved PromptLang project configuration.
@@ -69,7 +69,7 @@ export const CONFIG_FILENAME = "promptlang.yaml";
  * Loads a `promptlang.yaml` from disk, parses it, validates required fields,
  * and applies defaults for any missing optional fields.
  *
- * @throws {ConfigParseError} on YAML syntax errors.
+ * @throws {YamlParseError} on YAML syntax errors.
  * @throws {ConfigValidationError} on missing required fields or invalid values.
  * @throws {Error} if the file cannot be read.
  */
@@ -302,4 +302,7 @@ function describeType(v: YamlValue): string {
   return typeof v;
 }
 
-export { ConfigParseError };
+export { YamlParseError };
+// Backwards-compat alias — external consumers may still import the
+// pre-extraction name. Deprecated: prefer `YamlParseError` in new code.
+export { YamlParseError as ConfigParseError };

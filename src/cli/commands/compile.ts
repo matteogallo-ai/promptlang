@@ -13,7 +13,7 @@ import {
   ConfigValidationError,
   type PromptLangConfig,
 } from "../../config/config";
-import { ConfigParseError } from "../../config/yaml-parser";
+import { YamlParseError } from "@promptlang/yaml-parser";
 import { mkdir } from "node:fs/promises";
 import { join, basename, relative, resolve } from "node:path";
 
@@ -46,7 +46,7 @@ export async function runCompile(args: string[]): Promise<number> {
       config = await loadConfig(configPath);
     }
   } catch (error) {
-    if (error instanceof ConfigParseError || error instanceof ConfigValidationError) {
+    if (error instanceof YamlParseError || error instanceof ConfigValidationError) {
       console.error(`Error: ${(error as Error).message}`);
       return 1;
     }

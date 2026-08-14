@@ -1,5 +1,5 @@
 import { loadConfig, CONFIG_FILENAME, ConfigValidationError } from "../../config/config";
-import { ConfigParseError } from "../../config/yaml-parser";
+import { YamlParseError } from "@promptlang/yaml-parser";
 import { install } from "../../registry/registry";
 import { ResolverError } from "../../registry/resolver";
 import { join } from "node:path";
@@ -24,7 +24,7 @@ export async function runInstall(args: string[]): Promise<number> {
     return 0;
   } catch (error) {
     if (
-      error instanceof ConfigParseError ||
+      error instanceof YamlParseError ||
       error instanceof ConfigValidationError ||
       error instanceof ResolverError
     ) {

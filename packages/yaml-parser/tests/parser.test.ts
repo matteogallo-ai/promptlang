@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { parseYaml, ConfigParseError, type YamlValue } from "./yaml-parser";
+import { parseYaml, YamlParseError, type YamlValue } from "@promptlang/yaml-parser";
 
 function asObj(v: YamlValue): Record<string, YamlValue> {
   if (v === null || typeof v !== "object" || Array.isArray(v)) {
@@ -173,17 +173,17 @@ dependencies:
 describe("yaml-parser: errors", () => {
   test("throws on inconsistent indentation", () => {
     const src = "root:\n  a: 1\n   b: 2\n";
-    expect(() => parseYaml(src)).toThrow(ConfigParseError);
+    expect(() => parseYaml(src)).toThrow(YamlParseError);
   });
 
   test("throws on a malformed mapping line", () => {
     const src = "root:\n  just a scalar with no colon\n";
-    expect(() => parseYaml(src)).toThrow(ConfigParseError);
+    expect(() => parseYaml(src)).toThrow(YamlParseError);
   });
 
   test("throws on unsupported anchor (&)", () => {
     const src = "root: &anchor 1\n";
-    expect(() => parseYaml(src)).toThrow(ConfigParseError);
+    expect(() => parseYaml(src)).toThrow(YamlParseError);
     try {
       parseYaml(src);
     } catch (e) {
@@ -193,17 +193,17 @@ describe("yaml-parser: errors", () => {
 
   test("throws on unsupported alias (*)", () => {
     const src = "root: *ref\n";
-    expect(() => parseYaml(src)).toThrow(ConfigParseError);
+    expect(() => parseYaml(src)).toThrow(YamlParseError);
   });
 
   test("throws on unsupported block scalar (|)", () => {
     const src = "root: |\n  line one\n  line two\n";
-    expect(() => parseYaml(src)).toThrow(ConfigParseError);
+    expect(() => parseYaml(src)).toThrow(YamlParseError);
   });
 
   test("throws on tabs used for indentation", () => {
     const src = "root:\n\ta: 1\n";
-    expect(() => parseYaml(src)).toThrow(ConfigParseError);
+    expect(() => parseYaml(src)).toThrow(YamlParseError);
     try {
       parseYaml(src);
     } catch (e) {
@@ -212,8 +212,8 @@ describe("yaml-parser: errors", () => {
   });
 
   test("throws on flow-style collections", () => {
-    expect(() => parseYaml("root: [1, 2, 3]\n")).toThrow(ConfigParseError);
-    expect(() => parseYaml("root: {a: 1}\n")).toThrow(ConfigParseError);
+    expect(() => parseYaml("root: [1, 2, 3]\n")).toThrow(YamlParseError);
+    expect(() => parseYaml("root: {a: 1}\n")).toThrow(YamlParseError);
   });
 
   test("error message includes the offending line number", () => {
@@ -222,7 +222,7 @@ describe("yaml-parser: errors", () => {
       parseYaml(src);
       throw new Error("expected error");
     } catch (e) {
-      expect((e as ConfigParseError).line).toBe(3);
+      expect((e as YamlParseError).line).toBe(3);
     }
   });
 });

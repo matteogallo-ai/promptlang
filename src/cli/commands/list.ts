@@ -4,7 +4,7 @@ import {
   CONFIG_FILENAME,
   ConfigValidationError,
 } from "../../config/config";
-import { ConfigParseError } from "../../config/yaml-parser";
+import { YamlParseError } from "@promptlang/yaml-parser";
 import { tokenize } from "../../lexer/lexer";
 import { parse } from "../../parser/parser";
 import { discoverLocalPrompts, readManifest } from "../../registry/registry";
@@ -66,7 +66,7 @@ export async function runList(args: string[]): Promise<number> {
     }
     return 0;
   } catch (error) {
-    if (error instanceof ConfigParseError || error instanceof ConfigValidationError) {
+    if (error instanceof YamlParseError || error instanceof ConfigValidationError) {
       console.error(`Error: ${(error as Error).message}`);
       return 1;
     }

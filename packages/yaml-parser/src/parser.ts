@@ -10,7 +10,7 @@
  *     integers, floats, booleans (`true`/`false`), null (`~` or `null`)
  *   - Comments (`#` from a whitespace boundary to end of line)
  *
- * NOT supported (all trigger `ConfigParseError`):
+ * NOT supported (all trigger `YamlParseError`):
  *   - Anchors and aliases (`&`, `*`)
  *   - Block scalars (`|`, `>`)
  *   - Explicit type tags (`!!str`, `!!int`, ...)
@@ -30,12 +30,12 @@ export type YamlValue =
   | { [key: string]: YamlValue };
 
 /** Thrown when the YAML source contains an unsupported or malformed construct. */
-export class ConfigParseError extends Error {
+export class YamlParseError extends Error {
   readonly line: number;
 
   constructor(message: string, line: number) {
     super(`${message} (line ${line})`);
-    this.name = "ConfigParseError";
+    this.name = "YamlParseError";
     this.line = line;
   }
 }
@@ -50,7 +50,7 @@ interface Line {
  * Parses a YAML source string into a `YamlValue`.
  * Returns `null` for empty input.
  *
- * @throws {ConfigParseError} on any unsupported or malformed construct.
+ * @throws {YamlParseError} on any unsupported or malformed construct.
  */
 export function parseYaml(source: string): YamlValue {
   const lines = tokenizeLines(source);
@@ -72,7 +72,7 @@ function tokenizeLines(source: string): Line[] {
     let indent = 0;
     while (indent < rowStr.length && rowStr[indent] === " ") indent++;
     if (indent < rowStr.length && rowStr[indent] === "\t") {
-      throw new ConfigParseError(
+      throw new YamlParseError(
         "Tab characters are not supported for indentation; use spaces",
         i + 1
       );
@@ -81,7 +81,7 @@ function tokenizeLines(source: string): Line[] {
     const content = rest.replace(/\s+$/, "");
     if (content === "") continue;
     if (indent % 2 !== 0) {
-      throw new ConfigParseError(
+      throw new YamlParseError(
         `Indentation must be a multiple of 2 spaces (got ${indent})`,
         i + 1
       );
@@ -129,7 +129,7 @@ class YamlParser {
     if (this.lines.length === 0) return null;
     const first = this.lines[0]!;
     if (first.indent !== 0) {
-      throw new ConfigParseError(
+      throw new YamlParseError(
         `Root node must start at column 1 (got indent ${first.indent})`,
         first.lineNum
       );
@@ -137,7 +137,7 @@ class YamlParser {
     const value = this.parseBlock(0);
     if (this.idx < this.lines.length) {
       const stray = this.lines[this.idx]!;
-      throw new ConfigParseError(
+      throw new YamlParseError(
         "Unexpected content after root node — check indentation",
         stray.lineNum
       );
@@ -149,7 +149,7 @@ class YamlParser {
     if (this.idx >= this.lines.length) return null;
     const first = this.lines[this.idx]!;
     if (first.indent !== indent) {
-      throw new ConfigParseError(
+      throw new YamlParseError(
         `Expected content at indent ${indent}, got ${first.indent}`,
         first.lineNum
       );
@@ -166,27 +166,27 @@ class YamlParser {
       const line = this.lines[this.idx]!;
       if (line.indent < indent) break;
       if (line.indent > indent) {
-        throw new ConfigParseError(
+        throw new YamlParseError(
           `Unexpected indentation ${line.indent} (expected ${indent})`,
           line.lineNum
         );
       }
       if (isSequenceLine(line.content)) {
-        throw new ConfigParseError(
+        throw new YamlParseError(
           "Expected a 'key: value' mapping but found a sequence item",
           line.lineNum
         );
       }
       const colonIdx = findKeyColon(line.content);
       if (colonIdx === -1) {
-        throw new ConfigParseError(
+        throw new YamlParseError(
           `Malformed mapping line — expected 'key: value' but found '${line.content}'`,
           line.lineNum
         );
       }
       const key = line.content.slice(0, colonIdx).trim();
       if (key === "") {
-        throw new ConfigParseError("Mapping key cannot be empty", line.lineNum);
+        throw new YamlParseError("Mapping key cannot be empty", line.lineNum);
       }
       rejectUnsupported(key, line.lineNum);
       const rest = line.content.slice(colonIdx + 1).trim();
@@ -210,7 +210,7 @@ class YamlParser {
       const line = this.lines[this.idx]!;
       if (line.indent < indent) break;
       if (line.indent > indent) {
-        throw new ConfigParseError(
+        throw new YamlParseError(
           `Unexpected indentation ${line.indent} (expected ${indent})`,
           line.lineNum
         );
@@ -269,7 +269,7 @@ class YamlParser {
       if (isSequenceLine(nl.content)) break;
       const c = findKeyColon(nl.content);
       if (c === -1) {
-        throw new ConfigParseError(
+        throw new YamlParseError(
           `Malformed mapping line — expected 'key: value' but found '${nl.content}'`,
           nl.lineNum
         );
@@ -332,13 +332,13 @@ function parseScalar(input: string, lineNum: number): YamlValue {
 
   if (s.startsWith('"')) {
     if (s.length < 2 || !s.endsWith('"')) {
-      throw new ConfigParseError("Unterminated double-quoted string", lineNum);
+      throw new YamlParseError("Unterminated double-quoted string", lineNum);
     }
     return parseDoubleQuoted(s.slice(1, -1), lineNum);
   }
   if (s.startsWith("'")) {
     if (s.length < 2 || !s.endsWith("'")) {
-      throw new ConfigParseError("Unterminated single-quoted string", lineNum);
+      throw new YamlParseError("Unterminated single-quoted string", lineNum);
     }
     return s.slice(1, -1).replace(/''/g, "'");
   }
@@ -366,7 +366,7 @@ function parseDoubleQuoted(body: string, lineNum: number): string {
     i++;
     const next = body[i];
     if (next === undefined) {
-      throw new ConfigParseError("Unterminated escape sequence", lineNum);
+      throw new YamlParseError("Unterminated escape sequence", lineNum);
     }
     switch (next) {
       case "n":
@@ -391,7 +391,7 @@ function parseDoubleQuoted(body: string, lineNum: number): string {
         out += "\0";
         break;
       default:
-        throw new ConfigParseError(`Unknown escape sequence '\\${next}'`, lineNum);
+        throw new YamlParseError(`Unknown escape sequence '\\${next}'`, lineNum);
     }
   }
   return out;
@@ -404,25 +404,25 @@ function parseDoubleQuoted(body: string, lineNum: number): string {
  */
 function rejectUnsupported(s: string, lineNum: number): void {
   if (s.startsWith("&") || s.startsWith("*")) {
-    throw new ConfigParseError(
+    throw new YamlParseError(
       "YAML anchors and aliases (& / *) are not supported",
       lineNum
     );
   }
   if (s.startsWith("!!") || s.startsWith("!")) {
-    throw new ConfigParseError(
+    throw new YamlParseError(
       "YAML explicit type tags (! and !!) are not supported",
       lineNum
     );
   }
   if (s === "|" || s === ">" || s.startsWith("|") || s.startsWith(">")) {
-    throw new ConfigParseError(
+    throw new YamlParseError(
       "YAML block scalars (| and >) are not supported",
       lineNum
     );
   }
   if (s.startsWith("{") || s.startsWith("[")) {
-    throw new ConfigParseError(
+    throw new YamlParseError(
       "YAML flow-style collections ({...} and [...]) are not supported",
       lineNum
     );

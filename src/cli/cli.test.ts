@@ -82,7 +82,9 @@ describe("version", () => {
     restore();
     expect(code).toBe(0);
     expect(output()).toContain("promptlang");
-    expect(output()).toContain("1.0.0");
+    // Version must match SemVer 1.x — asserting the exact value would
+    // couple the test to the release cadence.
+    expect(output()).toMatch(/1\.\d+\.\d+(-.+)?/);
   });
 
   test("prints repository URL", async () => {

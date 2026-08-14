@@ -29,11 +29,13 @@ describe("v1.0 stability: package metadata", () => {
     expect(exports_["./runtime"]).toBe("./src/runtime/index.ts");
   });
 
-  test("no runtime dependencies (dependencies field is absent or empty)", () => {
+  test("no third-party runtime dependencies (only first-party @promptlang/* allowed)", () => {
     const deps = (pkg as { dependencies?: Record<string, string> }).dependencies;
-    if (deps !== undefined) {
-      expect(Object.keys(deps)).toHaveLength(0);
-    }
+    if (deps === undefined) return;
+    // First-party monorepo packages under the @promptlang/* scope are
+    // permitted; anything else would break the zero-external-dep promise.
+    const thirdParty = Object.keys(deps).filter((n) => !n.startsWith("@promptlang/"));
+    expect(thirdParty).toHaveLength(0);
   });
 });
 

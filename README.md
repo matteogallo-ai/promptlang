@@ -323,6 +323,21 @@ bunx tsc --project ./generated/tsconfig.json --noEmit
 
 ---
 
+## Packages
+
+PromptLang is developed as a Bun workspace. The main `promptlang`
+package lives in `src/`. First-party companion packages live under
+`packages/` and are published under the `@promptlang/` scope on npm.
+
+| Package | Location | Version | Description |
+| --- | --- | --- | --- |
+| [`@promptlang/yaml-parser`](./packages/yaml-parser/) | `packages/yaml-parser/` | 1.0.0 | Zero-dependency minimal YAML parser. Extracted from PromptLang core in v1.1.0 so sibling projects (like [Praxis](https://github.com/matteogallo-ai/praxis)) can reuse it via `bun add @promptlang/yaml-parser`. |
+
+Each package has its own `README.md`, `CHANGELOG.md`, and independent
+SemVer track.
+
+---
+
 ## Roadmap post-1.0
 
 - npm package publication (`npm install promptlang`)

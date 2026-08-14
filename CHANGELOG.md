@@ -7,6 +7,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-08-14
+
+**Structural refactor — the YAML parser is now a standalone package.**
+
+No breaking API change for external PromptLang consumers: the CLI, the
+compilers, and the runtime behave identically. Internal imports have
+moved from `src/config/yaml-parser` to `@promptlang/yaml-parser`.
+
+### Refactored
+
+- The minimal YAML parser previously living at `src/config/yaml-parser.ts`
+  has been extracted into its own npm package,
+  [`@promptlang/yaml-parser`](./packages/yaml-parser/) v1.0.0. It is now
+  a first-party workspace package under the new `packages/` folder.
+- The primary error class was renamed `ConfigParseError` →
+  `YamlParseError`. The old name is re-exported (both from the package
+  and from `src/config/config.ts`) as a deprecated alias to keep
+  existing callers working. Prefer `YamlParseError` in new code; the
+  alias will be dropped in a future major release.
+
+### Changed
+
+- `package.json` root now declares Bun workspaces (`"workspaces":
+  ["packages/*"]`) and consumes the extracted parser via
+  `"@promptlang/yaml-parser": "workspace:*"`.
+- Every internal PromptLang import that previously targeted
+  `../../config/yaml-parser` now targets `@promptlang/yaml-parser`
+  (5 files: `src/config/config.ts`, `src/cli/commands/install.ts`,
+  `check.ts`, `compile.ts`, `list.ts`).
+- `tests/v1-stability.test.ts` was relaxed to permit first-party
+  `@promptlang/*` workspace packages as dependencies. Third-party
+  runtime dependencies remain forbidden — the zero-external-dep
+  promise holds unchanged in spirit.
+
+### Fixed
+
+- `tsconfig.json` — the pre-existing `types: ["bun-types"]` reference
+  (a legacy package name that is no longer resolvable via `@types/bun`)
+  was corrected to `types: ["bun"]`. This surfaced only when running
+  `bunx tsc --noEmit` and is unrelated to the extraction, but is bundled
+  in v1.1.0 because it blocked the acceptance criteria for this release.
+
+### Migration guide
+
+External API-level consumers of PromptLang need to do nothing. Internal
+tooling (compiled prompts, custom CLI wrappers) that imported
+`ConfigParseError` from `../../config/yaml-parser` should:
+
+1. Update the import path to `@promptlang/yaml-parser`, and
+2. Rename `ConfigParseError` → `YamlParseError` (or keep the alias for
+   one more release cycle).
+
+### Notes
+
+- Sibling project [Praxis](https://github.com/matteogallo-ai/praxis)
+  will replace its vendored copy of the parser with a proper `bun add
+  @promptlang/yaml-parser` in its v0.2 release. That was the primary
+  motivation for the extraction.
+
 ## [1.0.0] — 2026-08-14
 
 **First stable release.** No new features from v0.9 — this release consolidates

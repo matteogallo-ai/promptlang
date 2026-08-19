@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] — 2026-08-19
+
+**npm publish release.**
+
+`@promptlang/yaml-parser@1.0.0` is now officially published on the npm
+registry. External consumers (starting with Praxis v1.1) can install it
+directly:
+
+```bash
+bun add @promptlang/yaml-parser
+# or: npm install @promptlang/yaml-parser
+```
+
+### Added
+
+- `packages/yaml-parser/package.json` now carries every field required
+  for a clean public publish: `publishConfig.access = "public"`,
+  `repository.directory`, `keywords`, an explicit `files` allow-list
+  (`src`, `README.md`, `CHANGELOG.md`, `LICENSE`), and `homepage` /
+  `bugs` URLs pointing at this repo.
+- npm version badge in the root `README.md`, next to the existing
+  badges, so the published `@promptlang/yaml-parser` package is
+  discoverable at a glance.
+
+### Changed
+
+- Root `package.json` version bumped to `1.2.0` to mark the milestone.
+  No API of the main `promptlang` package changed in this release.
+
+### Notes
+
+- The package's public API is unchanged since v1.1.0 — same
+  `parseYaml`, `YamlParseError`, and `YamlValue` exports as when the
+  package was first extracted. This release is purely a distribution
+  event: same code, now reachable through the npm registry rather than
+  through the workspace `file:` protocol.
+- Internal consumers of `@promptlang/yaml-parser` continue to resolve
+  via the Bun workspace (`"workspace:*"`). External consumers should
+  pin `^1.0.0`.
+- `npm pack --dry-run` prints a 6-file tarball (~6.6 kB): `src/`,
+  `README.md`, `CHANGELOG.md`, `LICENSE`, `package.json`. No tests,
+  no config files, no secrets.
+
 ## [1.1.0] — 2026-08-14
 
 **Structural refactor — the YAML parser is now a standalone package.**

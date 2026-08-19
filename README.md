@@ -6,10 +6,11 @@ Write, version, test, and deploy your LLM prompts as first-class code.
 Compile to TypeScript or Python. Bring your own API key. Zero dependencies.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-603%20passing-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-626%20passing-brightgreen.svg)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue.svg)](tsconfig.json)
 [![Bun](https://img.shields.io/badge/runtime-Bun-black.svg)](https://bun.sh)
 [![CI](https://github.com/matteogallo-ai/promptlang/actions/workflows/ci.yml/badge.svg)](https://github.com/matteogallo-ai/promptlang/actions)
+[![@promptlang/yaml-parser](https://img.shields.io/npm/v/@promptlang/yaml-parser.svg?label=%40promptlang%2Fyaml-parser)](https://www.npmjs.com/package/@promptlang/yaml-parser)
 
 ---
 
@@ -331,7 +332,7 @@ package lives in `src/`. First-party companion packages live under
 
 | Package | Location | Version | Description |
 | --- | --- | --- | --- |
-| [`@promptlang/yaml-parser`](./packages/yaml-parser/) | `packages/yaml-parser/` | 1.0.0 | Zero-dependency minimal YAML parser. Extracted from PromptLang core in v1.1.0 so sibling projects (like [Praxis](https://github.com/matteogallo-ai/praxis)) can reuse it via `bun add @promptlang/yaml-parser`. |
+| [`@promptlang/yaml-parser`](https://www.npmjs.com/package/@promptlang/yaml-parser) | `packages/yaml-parser/` | 1.0.0 (published on npm in v1.2.0) | Zero-dependency minimal YAML parser. Extracted from PromptLang core in v1.1.0 so sibling projects (like [Praxis](https://github.com/matteogallo-ai/praxis)) can reuse it via `bun add @promptlang/yaml-parser`. |
 
 Each package has its own `README.md`, `CHANGELOG.md`, and independent
 SemVer track.

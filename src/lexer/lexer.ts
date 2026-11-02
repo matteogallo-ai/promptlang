@@ -271,11 +271,7 @@ export class Lexer {
         } else if (isIdentStart(ch)) {
           this.scanIdentifier();
         } else {
-          throw new LexerError(
-            `Unexpected character '${ch}'`,
-            this.startLine,
-            this.startColumn
-          );
+          throw new LexerError(`Unexpected character '${ch}'`, this.startLine, this.startColumn);
         }
     }
   }
@@ -313,11 +309,7 @@ export class Lexer {
       }
       this.advance();
     }
-    throw new LexerError(
-      "Unterminated block comment",
-      this.startLine,
-      this.startColumn
-    );
+    throw new LexerError("Unterminated block comment", this.startLine, this.startColumn);
   }
 
   /**
@@ -334,11 +326,7 @@ export class Lexer {
     const word = this.source.slice(this.start + 1, this.current);
     const type = AT_DIRECTIVES[word];
     if (type === undefined) {
-      throw new LexerError(
-        `Unknown directive '@${word}'`,
-        this.startLine,
-        this.startColumn
-      );
+      throw new LexerError(`Unknown directive '@${word}'`, this.startLine, this.startColumn);
     }
     this.addToken(type, word);
   }
@@ -359,11 +347,7 @@ export class Lexer {
     while (!this.isAtEnd() && this.peek() !== '"') {
       const ch = this.peek();
       if (ch === "\n") {
-        throw new LexerError(
-          "Unterminated string literal",
-          this.startLine,
-          this.startColumn
-        );
+        throw new LexerError("Unterminated string literal", this.startLine, this.startColumn);
       }
       if (ch === "\\") {
         this.advance(); // consume backslash
@@ -422,18 +406,11 @@ export class Lexer {
     }
 
     if (this.isAtEnd()) {
-      throw new LexerError(
-        "Unterminated string literal",
-        this.startLine,
-        this.startColumn
-      );
+      throw new LexerError("Unterminated string literal", this.startLine, this.startColumn);
     }
 
     this.advance(); // closing "
-    this.addToken(
-      hasTemplate ? TokenType.TEMPLATE_STRING : TokenType.STRING,
-      value
-    );
+    this.addToken(hasTemplate ? TokenType.TEMPLATE_STRING : TokenType.STRING, value);
   }
 
   /**
@@ -451,18 +428,11 @@ export class Lexer {
 
     while (!this.isAtEnd()) {
       // Check for closing `"""`.
-      if (
-        this.peek() === '"' &&
-        this.peekNext() === '"' &&
-        this.peekAt(2) === '"'
-      ) {
+      if (this.peek() === '"' && this.peekNext() === '"' && this.peekAt(2) === '"') {
         this.advance(); // "
         this.advance(); // "
         this.advance(); // "
-        this.addToken(
-          hasTemplate ? TokenType.TEMPLATE_STRING : TokenType.TRIPLE_STRING,
-          value
-        );
+        this.addToken(hasTemplate ? TokenType.TEMPLATE_STRING : TokenType.TRIPLE_STRING, value);
         return;
       }
 
@@ -474,11 +444,7 @@ export class Lexer {
       value += this.advance();
     }
 
-    throw new LexerError(
-      `Unterminated triple-quoted string`,
-      this.startLine,
-      this.startColumn
-    );
+    throw new LexerError(`Unterminated triple-quoted string`, this.startLine, this.startColumn);
   }
 
   /**

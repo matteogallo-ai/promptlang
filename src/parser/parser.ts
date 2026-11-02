@@ -285,14 +285,22 @@ export class Parser {
     const tok = this.advance();
     switch (tok.type) {
       case TokenType.AT_VERSION: {
-        const str = this.parseStringLit("@version expects a string value, e.g. @version \"1.0.0\"");
-        return { kind: "VersionMetadata", value: str.value, line: tok.line, column: tok.column } satisfies VersionMetadata;
+        const str = this.parseStringLit('@version expects a string value, e.g. @version "1.0.0"');
+        return {
+          kind: "VersionMetadata",
+          value: str.value,
+          line: tok.line,
+          column: tok.column,
+        } satisfies VersionMetadata;
       }
       case TokenType.AT_MODEL: {
         // Model names may contain hyphens (consumed by the lexer as part of IDENT)
         // and dots followed by version digits (e.g. claude-opus-4.7 → IDENT "claude-opus-4" DOT NUMBER "7").
         // Reconstruct the full name by consuming IDENT (DOT (NUMBER|IDENT))* segments.
-        const ident = this.expect(TokenType.IDENT, "@model expects an identifier, e.g. @model claude-opus-4.7");
+        const ident = this.expect(
+          TokenType.IDENT,
+          "@model expects an identifier, e.g. @model claude-opus-4.7"
+        );
         let name = ident.value;
         while (this.check(TokenType.DOT)) {
           const after = this.peekAhead(1);
@@ -303,28 +311,63 @@ export class Parser {
             break;
           }
         }
-        return { kind: "ModelMetadata", value: name, line: tok.line, column: tok.column } satisfies ModelMetadata;
+        return {
+          kind: "ModelMetadata",
+          value: name,
+          line: tok.line,
+          column: tok.column,
+        } satisfies ModelMetadata;
       }
       case TokenType.AT_TEMPERATURE: {
         const num = this.parseNumberLit("@temperature expects a number, e.g. @temperature 0.3");
-        return { kind: "TemperatureMetadata", value: num.value, line: tok.line, column: tok.column } satisfies TemperatureMetadata;
+        return {
+          kind: "TemperatureMetadata",
+          value: num.value,
+          line: tok.line,
+          column: tok.column,
+        } satisfies TemperatureMetadata;
       }
       case TokenType.AT_MAX_TOKENS: {
         const num = this.parseNumberLit("@max_tokens expects a number, e.g. @max_tokens 2048");
-        return { kind: "MaxTokensMetadata", value: num.value, line: tok.line, column: tok.column } satisfies MaxTokensMetadata;
+        return {
+          kind: "MaxTokensMetadata",
+          value: num.value,
+          line: tok.line,
+          column: tok.column,
+        } satisfies MaxTokensMetadata;
       }
       case TokenType.AT_BREAKING_CHANGES: {
         const str = this.parseStringLit("@breaking_changes expects a string");
-        return { kind: "BreakingChangesMetadata", value: str.value, line: tok.line, column: tok.column } satisfies BreakingChangesMetadata;
+        return {
+          kind: "BreakingChangesMetadata",
+          value: str.value,
+          line: tok.line,
+          column: tok.column,
+        } satisfies BreakingChangesMetadata;
       }
       case TokenType.AT_MIGRATION_FROM: {
-        const from = this.parseStringLit("@migration_from expects two strings: the old version and the new version");
-        const to = this.parseStringLit("@migration_from expects a second string for the new version");
-        return { kind: "MigrationFromMetadata", from: from.value, to: to.value, line: tok.line, column: tok.column } satisfies MigrationFromMetadata;
+        const from = this.parseStringLit(
+          "@migration_from expects two strings: the old version and the new version"
+        );
+        const to = this.parseStringLit(
+          "@migration_from expects a second string for the new version"
+        );
+        return {
+          kind: "MigrationFromMetadata",
+          from: from.value,
+          to: to.value,
+          line: tok.line,
+          column: tok.column,
+        } satisfies MigrationFromMetadata;
       }
       case TokenType.AT_DESCRIPTION: {
         const str = this.parseStringLit("@description expects a string value");
-        return { kind: "DescriptionMetadata", value: str.value, line: tok.line, column: tok.column } satisfies DescriptionMetadata;
+        return {
+          kind: "DescriptionMetadata",
+          value: str.value,
+          line: tok.line,
+          column: tok.column,
+        } satisfies DescriptionMetadata;
       }
       default:
         throw new ParserError(`Unknown metadata directive`, tok.line, tok.column);
@@ -373,7 +416,13 @@ export class Parser {
     const name = this.expect(TokenType.IDENT, "Expected a type name after 'type'");
     this.expect(TokenType.EQUAL, `Expected '=' after type name '${name.value}'`);
     const definition = this.parseTypeExpression();
-    return { kind: "TypeDeclaration", name: name.value, definition, line: tok.line, column: tok.column };
+    return {
+      kind: "TypeDeclaration",
+      name: name.value,
+      definition,
+      line: tok.line,
+      column: tok.column,
+    };
   }
 
   // ---------------------------------------------------------------------------
@@ -392,19 +441,44 @@ export class Parser {
         return this.parseStructType();
       case TokenType.STRING_TYPE:
         this.advance();
-        return { kind: "PrimitiveType", name: "string", line: tok.line, column: tok.column } satisfies PrimitiveType;
+        return {
+          kind: "PrimitiveType",
+          name: "string",
+          line: tok.line,
+          column: tok.column,
+        } satisfies PrimitiveType;
       case TokenType.NUMBER_TYPE:
         this.advance();
-        return { kind: "PrimitiveType", name: "number", line: tok.line, column: tok.column } satisfies PrimitiveType;
+        return {
+          kind: "PrimitiveType",
+          name: "number",
+          line: tok.line,
+          column: tok.column,
+        } satisfies PrimitiveType;
       case TokenType.BOOLEAN_TYPE:
         this.advance();
-        return { kind: "PrimitiveType", name: "boolean", line: tok.line, column: tok.column } satisfies PrimitiveType;
+        return {
+          kind: "PrimitiveType",
+          name: "boolean",
+          line: tok.line,
+          column: tok.column,
+        } satisfies PrimitiveType;
       case TokenType.DATE_TYPE:
         this.advance();
-        return { kind: "PrimitiveType", name: "date", line: tok.line, column: tok.column } satisfies PrimitiveType;
+        return {
+          kind: "PrimitiveType",
+          name: "date",
+          line: tok.line,
+          column: tok.column,
+        } satisfies PrimitiveType;
       case TokenType.IDENT: {
         this.advance();
-        return { kind: "TypeReference", name: tok.value, line: tok.line, column: tok.column } satisfies TypeReference;
+        return {
+          kind: "TypeReference",
+          name: tok.value,
+          line: tok.line,
+          column: tok.column,
+        } satisfies TypeReference;
       }
       default:
         throw new ParserError(
@@ -462,9 +536,19 @@ export class Parser {
   private parseField(): Field {
     const nameTok = this.parseAnyIdent("Expected a field name");
     const optional = this.match(TokenType.QUESTION);
-    this.expect(TokenType.COLON, `Expected ':' after field name '${nameTok.value}${optional ? "?" : ""}'`);
+    this.expect(
+      TokenType.COLON,
+      `Expected ':' after field name '${nameTok.value}${optional ? "?" : ""}'`
+    );
     const type = this.parseTypeExpression();
-    return { kind: "Field", name: nameTok.value, optional, type, line: nameTok.line, column: nameTok.column };
+    return {
+      kind: "Field",
+      name: nameTok.value,
+      optional,
+      type,
+      line: nameTok.line,
+      column: nameTok.column,
+    };
   }
 
   // ---------------------------------------------------------------------------
@@ -481,13 +565,24 @@ export class Parser {
     const name = this.expect(TokenType.IDENT, "Expected a prompt name after 'prompt'");
     this.expect(TokenType.LPAREN, `Expected '(' after prompt name '${name.value}'`);
     const parameters = this.check(TokenType.RPAREN) ? [] : this.parseParameterList();
-    this.expect(TokenType.RPAREN, "Expected ')' to close parameter list. Did you forget a comma between parameters?");
+    this.expect(
+      TokenType.RPAREN,
+      "Expected ')' to close parameter list. Did you forget a comma between parameters?"
+    );
     this.expect(TokenType.ARROW, `Expected '->' after parameter list for prompt '${name.value}'`);
     const returnType = this.parseTypeExpression();
     this.expect(TokenType.LBRACE, `Expected '{' to open prompt body for '${name.value}'`);
     const sections = this.parsePromptBody();
     this.expect(TokenType.RBRACE, `Expected '}' to close prompt body for '${name.value}'`);
-    return { kind: "PromptDeclaration", name: name.value, parameters, returnType, sections, line: tok.line, column: tok.column };
+    return {
+      kind: "PromptDeclaration",
+      name: name.value,
+      parameters,
+      returnType,
+      sections,
+      line: tok.line,
+      column: tok.column,
+    };
   }
 
   /** ParameterList ::= Parameter ("," Parameter)* */
@@ -505,7 +600,13 @@ export class Parser {
     const nameTok = this.parseAnyIdent("Expected a parameter name");
     this.expect(TokenType.COLON, `Expected ':' after parameter name '${nameTok.value}'`);
     const type = this.parseTypeExpression();
-    return { kind: "Parameter", name: nameTok.value, type, line: nameTok.line, column: nameTok.column };
+    return {
+      kind: "Parameter",
+      name: nameTok.value,
+      type,
+      line: nameTok.line,
+      column: nameTok.column,
+    };
   }
 
   /** PromptBody ::= PromptSection+ */
@@ -516,7 +617,11 @@ export class Parser {
     }
     if (sections.length === 0) {
       const tok = this.peek();
-      throw new ParserError("Prompt body must contain at least one section (system, user, assistant, or output).", tok.line, tok.column);
+      throw new ParserError(
+        "Prompt body must contain at least one section (system, user, assistant, or output).",
+        tok.line,
+        tok.column
+      );
     }
     return sections;
   }
@@ -531,12 +636,23 @@ export class Parser {
       const role = this.previous().value as "system" | "user" | "assistant";
       this.expect(TokenType.COLON, `Expected ':' after '${role}'`);
       const content = this.parseStringLit(`Expected a string after '${role}:'`);
-      return { kind: "MessageSection", role, content, line: tok.line, column: tok.column } satisfies MessageSection;
+      return {
+        kind: "MessageSection",
+        role,
+        content,
+        line: tok.line,
+        column: tok.column,
+      } satisfies MessageSection;
     }
     if (this.match(TokenType.OUTPUT)) {
       this.expect(TokenType.COLON, "Expected ':' after 'output'");
       const type = this.parseTypeExpression();
-      return { kind: "OutputSection", type, line: tok.line, column: tok.column } satisfies OutputSection;
+      return {
+        kind: "OutputSection",
+        type,
+        line: tok.line,
+        column: tok.column,
+      } satisfies OutputSection;
     }
     throw new ParserError(
       `Expected a prompt section ('system', 'user', 'assistant', or 'output') but found '${tok.value}'.`,
@@ -568,7 +684,16 @@ export class Parser {
     this.expect(TokenType.RETURN, "Expected 'return' statement at the end of chain body");
     const returnExpression = this.parseExpression();
     this.expect(TokenType.RBRACE, `Expected '}' to close chain body for '${name.value}'`);
-    return { kind: "ChainDeclaration", name: name.value, parameters, returnType, steps, returnExpression, line: tok.line, column: tok.column };
+    return {
+      kind: "ChainDeclaration",
+      name: name.value,
+      parameters,
+      returnType,
+      steps,
+      returnExpression,
+      line: tok.line,
+      column: tok.column,
+    };
   }
 
   /** Parse chain steps until a 'return' token is seen. */
@@ -579,7 +704,11 @@ export class Parser {
     }
     if (steps.length === 0) {
       const tok = this.peek();
-      throw new ParserError("Chain body must contain at least one 'step' before 'return'.", tok.line, tok.column);
+      throw new ParserError(
+        "Chain body must contain at least one 'step' before 'return'.",
+        tok.line,
+        tok.column
+      );
     }
     return steps;
   }
@@ -619,7 +748,12 @@ export class Parser {
     }
     if (tok.type === TokenType.TRUE || tok.type === TokenType.FALSE) {
       this.advance();
-      return { kind: "BooleanLiteral", value: tok.type === TokenType.TRUE, line: tok.line, column: tok.column } satisfies BooleanLiteral;
+      return {
+        kind: "BooleanLiteral",
+        value: tok.type === TokenType.TRUE,
+        line: tok.line,
+        column: tok.column,
+      } satisfies BooleanLiteral;
     }
 
     // IDENT-based expressions: need 1-token lookahead to disambiguate
@@ -632,7 +766,12 @@ export class Parser {
         return this.parseMemberExpression();
       }
       this.advance();
-      return { kind: "Identifier", name: tok.value, line: tok.line, column: tok.column } satisfies Identifier;
+      return {
+        kind: "Identifier",
+        name: tok.value,
+        line: tok.line,
+        column: tok.column,
+      } satisfies Identifier;
     }
 
     throw new ParserError(
@@ -647,8 +786,17 @@ export class Parser {
     const callee = this.expect(TokenType.IDENT, "Expected function name");
     this.expect(TokenType.LPAREN, `Expected '(' after '${callee.value}'`);
     const args: CallArgument[] = this.check(TokenType.RPAREN) ? [] : this.parseArgumentList();
-    this.expect(TokenType.RPAREN, `Expected ')' to close argument list for '${callee.value}'. Did you forget a comma?`);
-    return { kind: "CallExpression", callee: callee.value, arguments: args, line: callee.line, column: callee.column };
+    this.expect(
+      TokenType.RPAREN,
+      `Expected ')' to close argument list for '${callee.value}'. Did you forget a comma?`
+    );
+    return {
+      kind: "CallExpression",
+      callee: callee.value,
+      arguments: args,
+      line: callee.line,
+      column: callee.column,
+    };
   }
 
   /**
@@ -669,7 +817,13 @@ export class Parser {
         const nameTok = this.advance(); // IDENT or keyword used as name
         this.advance(); // COLON
         const value = this.parseExpression();
-        args.push({ kind: "NamedArgument", name: nameTok.value, value, line: nameTok.line, column: nameTok.column } satisfies NamedArgument);
+        args.push({
+          kind: "NamedArgument",
+          name: nameTok.value,
+          value,
+          line: nameTok.line,
+          column: nameTok.column,
+        } satisfies NamedArgument);
       } else {
         args.push(this.parseExpression());
       }
@@ -682,7 +836,13 @@ export class Parser {
     const obj = this.expect(TokenType.IDENT, "Expected object name");
     this.expect(TokenType.DOT, "Expected '.' in member access");
     const prop = this.parseAnyIdent(`Expected property name after '${obj.value}.'`);
-    return { kind: "MemberExpression", object: obj.value, property: prop.value, line: obj.line, column: obj.column };
+    return {
+      kind: "MemberExpression",
+      object: obj.value,
+      property: prop.value,
+      line: obj.line,
+      column: obj.column,
+    };
   }
 
   // ---------------------------------------------------------------------------
@@ -704,7 +864,14 @@ export class Parser {
     const input = this.parseExpression();
     const expectations = this.parseExpectations();
     this.expect(TokenType.RBRACE, "Expected '}' to close test body");
-    return { kind: "TestDeclaration", description: desc.value, input, expectations, line: tok.line, column: tok.column };
+    return {
+      kind: "TestDeclaration",
+      description: desc.value,
+      input,
+      expectations,
+      line: tok.line,
+      column: tok.column,
+    };
   }
 
   /**
@@ -719,7 +886,11 @@ export class Parser {
     }
     if (expectations.length === 0) {
       const tok = this.peek();
-      throw new ParserError("Test body must contain at least one 'expect' clause.", tok.line, tok.column);
+      throw new ParserError(
+        "Test body must contain at least one 'expect' clause.",
+        tok.line,
+        tok.column
+      );
     }
     return expectations;
   }
@@ -805,15 +976,30 @@ export class Parser {
     }
     if (tok.type === TokenType.TRUE) {
       this.advance();
-      return { kind: "BooleanLiteral", value: true, line: tok.line, column: tok.column } satisfies BooleanLiteral;
+      return {
+        kind: "BooleanLiteral",
+        value: true,
+        line: tok.line,
+        column: tok.column,
+      } satisfies BooleanLiteral;
     }
     if (tok.type === TokenType.FALSE) {
       this.advance();
-      return { kind: "BooleanLiteral", value: false, line: tok.line, column: tok.column } satisfies BooleanLiteral;
+      return {
+        kind: "BooleanLiteral",
+        value: false,
+        line: tok.line,
+        column: tok.column,
+      } satisfies BooleanLiteral;
     }
     if (tok.type === TokenType.IDENT) {
       this.advance();
-      return { kind: "Identifier", name: tok.value, line: tok.line, column: tok.column } satisfies Identifier;
+      return {
+        kind: "Identifier",
+        name: tok.value,
+        line: tok.line,
+        column: tok.column,
+      } satisfies Identifier;
     }
     throw new ParserError(
       `Expected a literal value (string, number, boolean, or identifier) but found '${tok.value}'.`,
@@ -847,7 +1033,12 @@ export class Parser {
     const tok = this.peek();
     if (tok.type === TokenType.NUMBER) {
       this.advance();
-      return { kind: "NumberLiteral", value: parseFloat(tok.value), line: tok.line, column: tok.column };
+      return {
+        kind: "NumberLiteral",
+        value: parseFloat(tok.value),
+        line: tok.line,
+        column: tok.column,
+      };
     }
     throw new ParserError(errorMessage, tok.line, tok.column, "NUMBER", tok.type);
   }

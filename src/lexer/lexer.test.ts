@@ -9,9 +9,7 @@ import { LexerError } from "./errors";
 
 /** Returns only non-NEWLINE, non-EOF tokens for compact assertions. */
 function tokens(src: string) {
-  return tokenize(src).filter(
-    (t) => t.type !== TokenType.NEWLINE && t.type !== TokenType.EOF
-  );
+  return tokenize(src).filter((t) => t.type !== TokenType.NEWLINE && t.type !== TokenType.EOF);
 }
 
 /** Returns only token types (no NEWLINE, no EOF) for sequence checks. */
@@ -119,10 +117,7 @@ describe("Directives", () => {
   });
 
   test("directive followed by string value", () => {
-    expect(types('@version "1.0.0"')).toEqual([
-      TokenType.AT_VERSION,
-      TokenType.STRING,
-    ]);
+    expect(types('@version "1.0.0"')).toEqual([TokenType.AT_VERSION, TokenType.STRING]);
   });
 });
 
@@ -457,9 +452,7 @@ describe("Template strings", () => {
 
 describe("Line comments", () => {
   test("line comment emits COMMENT_LINE", () => {
-    const t = tokenize("// hello world").find(
-      (x) => x.type === TokenType.COMMENT_LINE
-    )!;
+    const t = tokenize("// hello world").find((x) => x.type === TokenType.COMMENT_LINE)!;
     expect(t).toBeDefined();
     expect(t.value).toBe("hello world");
   });
@@ -484,9 +477,7 @@ describe("Line comments", () => {
 
 describe("Block comments", () => {
   test("single-line block comment emits COMMENT_BLOCK", () => {
-    const t = tokenize("/* hello */").find(
-      (x) => x.type === TokenType.COMMENT_BLOCK
-    )!;
+    const t = tokenize("/* hello */").find((x) => x.type === TokenType.COMMENT_BLOCK)!;
     expect(t).toBeDefined();
     expect(t.value).toBe("hello");
   });

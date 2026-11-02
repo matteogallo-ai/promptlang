@@ -781,3 +781,45 @@ compile:
     expect(await Bun.file(join(dir, "custom-out", "foo.ts")).exists()).toBe(true);
   });
 });
+
+describe("compile — empty .prompt files", () => {
+  const DIR = "/tmp/promptlang-empty-prompt-test";
+
+  async function compileFile(name: string, source: string) {
+    await rm(DIR, { recursive: true, force: true });
+    await mkdir(DIR, { recursive: true });
+    await Bun.write(join(DIR, name), source);
+    const log = captureLog();
+    const err = captureError();
+    const code = await main(["bun", "cli", "compile", join(DIR, name), "--out", join(DIR, "out")]);
+    const stderr = err.output();
+    err.restore();
+    log.restore();
+    return { code, stderr };
+  }
+
+  test("an empty file is a compile error, not a silent empty module", async () => {
+    const { code, stderr } = await compileFile("empty.prompt", "");
+    expect(code).toBe(1);
+    expect(stderr).toContain("empty.prompt");
+    expect(stderr).toContain("no declarations");
+    expect(await Bun.file(join(DIR, "out", "empty.ts")).exists()).toBe(false);
+  });
+
+  test("a file with only whitespace, comments and metadata is also an error", async () => {
+    const { code, stderr } = await compileFile(
+      "meta-only.prompt",
+      `  \n// nothing here yet\n@version "1.0.0"\n`
+    );
+    expect(code).toBe(1);
+    expect(stderr).toContain("no declarations");
+  });
+
+  test("a file that only declares types is not empty", async () => {
+    const { code } = await compileFile(
+      "types.prompt",
+      `@version "1.0.0"\ntype Category = enum { a, b }\n`
+    );
+    expect(code).toBe(0);
+  });
+});

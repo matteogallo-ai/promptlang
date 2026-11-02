@@ -47,7 +47,10 @@ class PromptResponse(TypedDict):
 # ---- Errors (same names and meaning as the TypeScript runtime) ----
 
 class PromptClientError(Exception):
-    """Base class for every error a client raises about a call."""
+    """Base class for the errors a client raises about an HTTP response.
+
+    Timeouts and connection failures are not wrapped: they raise httpx exceptions.
+    """
 
     def __init__(self, message: str, provider: str | None = None):
         super().__init__(message)

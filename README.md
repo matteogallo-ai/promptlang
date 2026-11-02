@@ -276,11 +276,12 @@ asyncio.run(main())
 ```
 
 Requires Python 3.11+ (generated files import `typing.NotRequired`) and `httpx` for real API calls (`pip install httpx`).
-`promptlang_runtime.py` has the same guards as the TypeScript runtime: an empty key is
-refused, HTTP errors raise `AuthenticationError`, `RateLimitError`,
+`promptlang_runtime.py` checks what the TypeScript runtime checks on a response: an
+empty key is refused, HTTP errors raise `AuthenticationError`, `RateLimitError`,
 `InvalidRequestError` or `ServerError`, and a malformed response raises
 `InvalidResponseError` (all subclasses of `PromptClientError`). It sends Anthropic API
-version 2026-10-21, without `temperature`.
+version 2026-10-21, without `temperature`. Unlike the TypeScript runtime, it does not
+retry, and a timeout or a connection failure raises `httpx`'s own exception.
 The `MockClient` works with no dependencies for local testing.
 
 ---

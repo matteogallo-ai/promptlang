@@ -140,12 +140,19 @@ because `COLON` cannot follow a bare expression in any other production.
 TestDeclaration
                ::= "test" StringLit "{"
                      "input" ":" Expression
-                     Expectation+
+                     [ "mock" ":" StringLit ]                -- raw model response for mock runs
+                     TestClause+
                    "}"
 
-Expectation    ::= "expect" ":" Literal                    -- bare expect
-                 | "expect" "." IDENT ":" Literal          -- field-path expect
+TestClause     ::= "expect" [ "." IDENT ] ":" Literal                    -- equality
+                 | "expect" [ "." IDENT ] "contains" ":" StringLit       -- substring
+                 | "expect" [ "." IDENT ] "matches" ":" StringLit        -- regular expression
+                 | "expect" "schema"                                     -- output conforms to the declared type
 ```
+
+`mock`, `contains`, `matches` and `schema` are contextual identifiers, not reserved
+words. A `matches` pattern that is not a valid JavaScript regular expression is a
+parse error at the pattern.
 
 ---
 

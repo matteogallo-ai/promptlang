@@ -249,13 +249,19 @@ export interface TestDeclaration extends AstNode {
   kind: "TestDeclaration";
   description: string;
   input: Expression;
+  /** `mock: "..."`: the raw model response `promptlang test` replays without a provider. */
+  mock?: StringLiteral;
   expectations: Expectation[];
+  /** `expect schema`: the output must conform to the prompt's declared output type. */
+  expectsSchema?: true;
 }
 
 export interface Expectation extends AstNode {
   kind: "Expectation";
   /** ["expect"] for bare `expect: val`, ["expect", "field"] for `expect.field: val`. */
   path: string[];
+  /** `expect: v` is equals; `expect contains: "s"` and `expect matches: "re"` take a string. */
+  op: "equals" | "contains" | "matches";
   value: Literal;
 }
 

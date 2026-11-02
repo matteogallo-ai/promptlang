@@ -172,7 +172,11 @@ function printTestDeclaration(
   out.push(`${conn}TestDeclaration "${node.description}"`);
   const children = [
     `input: ${exprLabel(node.input)}`,
-    ...node.expectations.map((e) => `${e.path.join(".")}: ${literalLabel(e.value)}`),
+    ...(node.mock ? [`mock: ${JSON.stringify(node.mock.value)}`] : []),
+    ...node.expectations.map(
+      (e) => `${e.path.join(".")}${e.op === "equals" ? "" : ` ${e.op}`}: ${literalLabel(e.value)}`
+    ),
+    ...(node.expectsSchema ? ["expect schema"] : []),
   ];
   children.forEach((label, i) => {
     out.push(`${cont}${connector(children, i)}${label}`);

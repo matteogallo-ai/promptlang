@@ -684,6 +684,68 @@ describe("Parser — TestDeclaration", () => {
   });
 });
 
+describe("Parser — test assertions and mock responses", () => {
+  test("a test without operators is equality, with no mock and no schema check", () => {
+    const decl = firstDecl<TestDeclaration>(`test "t" {\n  input: f("x")\n  expect: bug\n}`);
+    expect(decl.expectations[0]!.op).toBe("equals");
+    expect(decl.mock).toBeUndefined();
+    expect(decl.expectsSchema).toBeUndefined();
+  });
+
+  test("parses mock, contains, matches and schema", () => {
+    const decl = firstDecl<TestDeclaration>(`
+      test "t" {
+        input: f("x")
+        mock: "{\\"a\\": \\"hello\\"}"
+        expect.a: "hello"
+        expect.a contains: "ell"
+        expect matches: "^\\\\{"
+        expect schema
+      }
+    `);
+    expect(decl.mock?.value).toBe('{"a": "hello"}');
+    expect(decl.expectations.map((e) => [e.path.join("."), e.op])).toEqual([
+      ["expect.a", "equals"],
+      ["expect.a", "contains"],
+      ["expect", "matches"],
+    ]);
+    expect(decl.expectsSchema).toBe(true);
+  });
+
+  test("a test with only 'expect schema' is valid", () => {
+    const decl = firstDecl<TestDeclaration>(`test "t" {\n  input: f("x")\n  expect schema\n}`);
+    expect(decl.expectations).toEqual([]);
+    expect(decl.expectsSchema).toBe(true);
+  });
+
+  test("an invalid regular expression is a parse error at the pattern", () => {
+    const err = (() => {
+      try {
+        p(`test "t" {\n  input: f("x")\n  expect matches: "(unclosed"\n}`);
+      } catch (e) {
+        return e as ParserError;
+      }
+    })();
+    expect(err).toBeInstanceOf(ParserError);
+    expect(err?.message).toContain("is not a valid regular expression");
+    expect([err?.line, err?.column]).toEqual([3, 19]);
+  });
+
+  test("contains and matches take a string", () => {
+    expect(() => p(`test "t" {\n  input: f("x")\n  expect contains: 3\n}`)).toThrow(ParserError);
+  });
+
+  test("an unknown assertion word is rejected with the supported list", () => {
+    expect(() => p(`test "t" {\n  input: f("x")\n  expect equals: 3\n}`)).toThrow(
+      "expected ':', 'contains', 'matches' or 'schema'"
+    );
+  });
+
+  test("schema applies to the whole output, not to a field", () => {
+    expect(() => p(`test "t" {\n  input: f("x")\n  expect.a schema\n}`)).toThrow(ParserError);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // 11. EvalDeclaration
 // ---------------------------------------------------------------------------

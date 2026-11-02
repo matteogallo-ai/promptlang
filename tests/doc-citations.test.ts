@@ -32,7 +32,12 @@ async function missingCitations(doc: string): Promise<string[]> {
 }
 
 describe("tests cited by the system docs", () => {
-  for (const doc of ["docs/THREAT_MODEL.md", "docs/RUNBOOK.md"]) {
+  for (const doc of [
+    "docs/THREAT_MODEL.md",
+    "docs/RUNBOOK.md",
+    "docs/SLO.md",
+    "docs/SYSTEM_CARD.md",
+  ]) {
     test(`every test cited by ${doc} exists under that name`, async () => {
       expect(await missingCitations(doc)).toEqual([]);
     });

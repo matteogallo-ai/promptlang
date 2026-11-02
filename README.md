@@ -164,9 +164,10 @@ test "extracts the total" {
   makes none) and asks before calling;
   `--yes` approves without asking. Models without a recorded price are refused.
 - `--json` for tools; exit 0 when every test passes, 1 on a failure, 2 on usage errors,
-  3 when a provider error (any `PromptClientError`: timeout, network, authentication,
-  rate limit, server overload, malformed response, rejected request) left a test
-  without a verdict.
+  3 when a call failed and left a test without a verdict. The report says which
+  kind: a **configuration error** (authentication, a rejected request, an unknown
+  model: fix the file or the key) or a **provider failure** (timeout, network, rate
+  limit, server overload, malformed response: retry later).
 - A test whose `input` calls a prompt or chain that the file does not declare is a
   compile error, in `compile` and in `test`. `eval` blocks are parsed, and `compile`
   and `test` warn that they are not executed.

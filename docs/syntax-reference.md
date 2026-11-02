@@ -222,11 +222,14 @@ with its message.
   asking and is required without a terminal. A model missing from the price table is
   refused. `mock:` is ignored.
 - `--json` prints `{ ok, mode, usage, files: [{ file, error?, results }] }`.
-- Exit codes: `0` every test passed, `1` a test failed or a file has an error, `3` a provider
-  error (any `PromptClientError`: timeout, network, authentication, rate limit, server
-  overload, malformed response, or a request the provider rejects, such as a
-  `@max_tokens` it refuses) left a test without a verdict, `2` usage
-  error, missing key, unpriced model, or a declined estimate.
+- Exit codes: `0` every test passed, `1` a test failed or a file has an error, `3` a call
+  failed (any `PromptClientError`) and left a test without a verdict, `2` usage
+  error, missing key, unpriced model, or a declined estimate. On exit 3 each such test
+  reads `configuration error` (authentication, a request the provider rejects such
+  as a `@max_tokens` it refuses, an unknown model: fix the file or the key) or
+  `provider failure` (timeout, network, rate limit, server overload, malformed
+  response: retry later); `--json` carries it as `providerError: { kind, message }`
+  with `kind` `"configuration"` or `"provider"`.
 
 An `eval` block has exactly the four fields shown, in that order.
 

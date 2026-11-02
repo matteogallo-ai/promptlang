@@ -74,8 +74,11 @@ release is chosen when it is tagged.
 - `analyze --ai` prints a cost estimate and asks before any call (`--yes` approves;
   required without a terminal). It makes no retries, so the estimate counts each
   call once.
-- `promptlang test` exits 3 when a provider error (any `PromptClientError`) left a
-  test without a verdict, so an outage is never reported as a failed assertion.
+- `promptlang test` exits 3 when a failed call (any `PromptClientError`) left a
+  test without a verdict, so an outage is never reported as a failed assertion. The
+  report labels each one a configuration error (authentication, rejected request,
+  unknown model) or a provider failure (timeout, network, rate limit, server,
+  malformed response).
 - Test syntax: `mock: "..."`, `expect contains:`, `expect matches:`, `expect schema`.
 - A test whose `input` calls a prompt or chain the file does not declare, or with
   arguments that do not match its parameters, is a compile error.

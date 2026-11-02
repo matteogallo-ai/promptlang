@@ -6,7 +6,12 @@ import { ParserError } from "../../parser/errors";
 import { parse } from "../../parser/parser";
 import type { PromptClient } from "../../runtime/client";
 import { type CostEstimate, estimateLiveCost, UnpricedModelError } from "../../testing/cost";
-import { type RunMode, runTests, type TestResult } from "../../testing/runner";
+import {
+  type ProviderFailure,
+  type RunMode,
+  runTests,
+  type TestResult,
+} from "../../testing/runner";
 import { resolveFiles } from "../files";
 import { confirmInTerminal, createLiveClient } from "../live";
 import { UsageError } from "../usage-error";
@@ -60,6 +65,12 @@ function printEstimate(estimates: Array<{ file: string; estimate: CostEstimate }
   return total;
 }
 
+function describeFailure(f: ProviderFailure): string {
+  return f.kind === "configuration"
+    ? `configuration error, no verdict (fix the file or the key): ${f.message}`
+    : `provider failure, no verdict (retry later): ${f.message}`;
+}
+
 function printHuman(outcomes: FileOutcome[]): void {
   for (const o of outcomes) {
     if (o.error) {
@@ -69,17 +80,23 @@ function printHuman(outcomes: FileOutcome[]): void {
     for (const r of o.results) {
       const label = r.providerError ? "ERROR" : r.passed ? "pass " : "FAIL ";
       console.log(`  ${label}  ${o.file}:${r.line}  ${r.test}`);
-      if (r.providerError) console.log(`           provider error, no verdict: ${r.providerError}`);
+      if (r.providerError) console.log(`           ${describeFailure(r.providerError)}`);
       for (const f of r.failures) console.log(`           ${f}`);
     }
   }
   const all = outcomes.flatMap((o) => o.results);
-  const noVerdict = all.filter((r) => r.providerError).length;
+  const config = all.filter((r) => r.providerError?.kind === "configuration").length;
+  const provider = all.filter((r) => r.providerError?.kind === "provider").length;
+  const noVerdict = config + provider;
   const failed = all.filter((r) => !r.passed && !r.providerError).length;
   const errors = outcomes.filter((o) => o.error).length;
+  const why = [
+    config ? `${config} configuration error${config === 1 ? "" : "s"}` : "",
+    provider ? `${provider} provider failure${provider === 1 ? "" : "s"}` : "",
+  ].filter(Boolean);
   console.log(
     `\n${all.length - failed - noVerdict} passed, ${failed} failed` +
-      (noVerdict ? `, ${noVerdict} without a verdict (provider error)` : "") +
+      (noVerdict ? `, ${noVerdict} without a verdict (${why.join(", ")})` : "") +
       (errors ? `, ${errors} file(s) with errors` : "")
   );
 }

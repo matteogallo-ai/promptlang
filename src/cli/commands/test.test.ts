@@ -3,7 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { PromptClient } from "../../runtime/client";
-import { NetworkError } from "../../runtime/errors";
+import { InvalidRequestError, NetworkError } from "../../runtime/errors";
 import { captureConsole } from "../../../tests/support/console";
 import { runTest, type TestCommandDeps } from "./test";
 
@@ -162,9 +162,27 @@ describe("promptlang test --live", () => {
     expect(r.code).toBe(3);
     expect(r.stdout).toContain(`ERROR  ${file}:8  pass`);
     expect(r.stdout).toContain(
-      "provider error, no verdict: NetworkError: fetch failed: ECONNREFUSED"
+      "provider failure, no verdict (retry later): NetworkError: fetch failed: ECONNREFUSED"
     );
     expect(r.stdout).not.toContain("FAIL");
-    expect(r.stdout).toContain("0 passed, 0 failed, 1 without a verdict (provider error)");
+    expect(r.stdout).toContain("0 passed, 0 failed, 1 without a verdict (1 provider failure)");
+  });
+
+  test("a rejected request: exit 3, reported as a configuration error, not an outage", async () => {
+    const file = await write("live-bad-request.prompt", passing);
+    const deps: TestCommandDeps = {
+      createClient: () => ({
+        async complete() {
+          throw new InvalidRequestError("max_tokens: too large for this model", "anthropic");
+        },
+      }),
+      confirm: () => true,
+    };
+    const r = await capture(() => runTest([file, "--live", "--yes"], deps));
+    expect(r.code).toBe(3);
+    expect(r.stdout).toContain(
+      "configuration error, no verdict (fix the file or the key): InvalidRequestError: max_tokens: too large for this model"
+    );
+    expect(r.stdout).toContain("0 passed, 0 failed, 1 without a verdict (1 configuration error)");
   });
 });

@@ -167,38 +167,52 @@ function diffParams(name: string, base: Callable, cur: Callable, push: (c: Chang
  * Output rule: the schema is what consumers read and what the model must
  * produce, so any change is major except adding optional struct fields.
  */
-function diffOutput(name: string, base: Shape, cur: Shape, push: (c: Change) => void): void {
+function diffOutput(
+  name: string,
+  base: Shape,
+  cur: Shape,
+  push: (c: Change) => void,
+  prefix = ""
+): void {
   if (render(base) === render(cur)) return;
   if (base.kind !== "struct" || cur.kind !== "struct") {
+    const what = prefix === "" ? "output type" : `output field '${prefix.slice(0, -1)}' type`;
     push({
       level: "major",
       declaration: name,
-      description: `output type changed: ${render(base)} → ${render(cur)}`,
+      description: `${what} changed: ${render(base)} → ${render(cur)}`,
     });
     return;
   }
   for (const [f, b] of Object.entries(base.fields)) {
     const c = cur.fields[f];
-    if (!c) push({ level: "major", declaration: name, description: `output field '${f}' removed` });
-    else if (render(c.type) !== render(b.type))
-      push({
-        level: "major",
-        declaration: name,
-        description: `output field '${f}' type changed: ${render(b.type)} → ${render(c.type)}`,
-      });
+    const path = `${prefix}${f}`;
+    if (!c)
+      push({ level: "major", declaration: name, description: `output field '${path}' removed` });
     else if (c.optional !== b.optional)
       push({
         level: "major",
         declaration: name,
-        description: `output field '${f}' became ${c.optional ? "optional" : "required"}`,
+        description: `output field '${path}' became ${c.optional ? "optional" : "required"}`,
       });
+    // A nested struct is judged field by field, so adding an optional field inside it stays minor.
+    else diffOutput(name, b.type, c.type, push, `${path}.`);
   }
   for (const [f, c] of Object.entries(cur.fields)) {
     if (f in base.fields) continue;
+    const path = `${prefix}${f}`;
     push(
       c.optional
-        ? { level: "minor", declaration: name, description: `optional output field '${f}' added` }
-        : { level: "major", declaration: name, description: `required output field '${f}' added` }
+        ? {
+            level: "minor",
+            declaration: name,
+            description: `optional output field '${path}' added`,
+          }
+        : {
+            level: "major",
+            declaration: name,
+            description: `required output field '${path}' added`,
+          }
     );
   }
 }

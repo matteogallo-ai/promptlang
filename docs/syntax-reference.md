@@ -250,7 +250,9 @@ optional or not), its output type, and, for a prompt, the file's `@model`.
 | Message text changed; `@temperature` or `@max_tokens` changed; chain steps changed | patch |
 | Whitespace, comments, declaration order, parameter order | none |
 
-Types are compared by structure: renaming `type Category` to `type Kind` with the
+Struct output fields are compared at any depth: adding an optional field to a
+nested struct is minor and is reported with a dotted path (`inner.b`). Types are
+compared by structure: renaming `type Category` to `type Kind` with the
 same values is not a change. Below 1.0.0 the check reads bumps as `^` does: at
 0.0.z every bump counts as breaking; at 0.y.z a minor bump (`0.2.x → 0.3.0`)
 counts as breaking and a patch bump as compatible. A lower version fails. From a

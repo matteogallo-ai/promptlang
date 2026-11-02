@@ -134,6 +134,17 @@ describe("diffPrograms — minor", () => {
     ).toEqual(["minor: p: optional output field 'note' added"]);
   });
 
+  test("nested struct fields follow the same rules, with a dotted path", () => {
+    const out = (inner: string) =>
+      `type Inner = struct { ${inner} }\n${PROMPT("x: string", "struct { inner: Inner }")}`;
+    expect(levels(out("a: string"), out("a: string, b?: string"))).toEqual([
+      "minor: p: optional output field 'inner.b' added",
+    ]);
+    expect(levels(out("a: string, b: string"), out("a: string"))).toEqual([
+      "major: p: output field 'inner.b' removed",
+    ]);
+  });
+
   test("prompt added", () => {
     expect(levels("", PROMPT("x: string"))).toEqual(["minor: prompt 'p' added"]);
   });

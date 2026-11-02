@@ -14,7 +14,8 @@ release is chosen when it is tagged.
 - README marked **Native tests** and **SemVer for prompts** ✅; neither was
   implemented. Both are now implemented (see Added), with their scope in the README.
 - README marked **Multi-provider fallback** ✅; generated code sends the same model
-  name to every provider, so Anthropic → OpenAI fallback fails. Now Partial.
+  name to every provider, so Anthropic → OpenAI fallback failed. Now true:
+  `RoutingClient` maps the model per provider (see Added).
 - README marked the **AI-powered linter** ✅ and "unique"; it is only tested with a
   mocked client. Now Partial.
 - The test badge said "626 passing": it counted `@promptlang/yaml-parser`'s 23
@@ -71,6 +72,9 @@ release is chosen when it is tagged.
 - `promptlang test <paths> [--json] [--live [--yes]]`: runs `test` blocks against the
   generated TypeScript, replaying `mock:` responses by default; `--live` calls
   Anthropic after printing an approximate cost estimate and getting approval.
+- `RoutingClient` accepts `{ client, modelMap }` entries, so an Anthropic → OpenAI
+  fallback sends OpenAI its own model name; a provider with no mapping for the
+  requested model is skipped.
 - HTTP clients read `Retry-After` on a 429 (seconds or HTTP-date) into
   `RateLimitError.retryAfter`, and retries wait that long instead of the backoff;
   above 60 s the error is thrown without waiting.

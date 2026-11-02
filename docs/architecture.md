@@ -69,7 +69,7 @@ analyzer (`analyze`) runs on the AST independently of compilation.
 | Static analyzer (6 rules) | delivered |
 | TypeScript and Python compilers, chain compilation | delivered |
 | `--emit-tsconfig` bridge | delivered |
-| Runtime clients (Anthropic, OpenAI, Ollama, Routing) | delivered; cross-provider fallback partial |
+| Runtime clients (Anthropic, OpenAI, Ollama, Routing) | delivered |
 | AI-powered linter | partial (mocked tests only) |
 | Project config + local registry | delivered |
 | CLI (parse/tokens/analyze/compile/init/install/list/check/semver-check/test/version) | delivered |
@@ -279,7 +279,7 @@ All runtime errors extend `PromptClientError → Error`. Sub-classes:
 - `AnthropicClient` — POST `/v1/messages`; separates system messages into the top-level `system` field; max_tokens defaults to 1024.
 - `OpenAIClient` — POST `/v1/chat/completions`; messages forwarded unchanged; normalizes `prompt_tokens`/`completion_tokens` to `input_tokens`/`output_tokens`.
 - `OllamaClient` — POST `/api/chat`; no auth; maps `options.temperature` / `options.num_predict`; `stream: false`; pedagogical errors for ECONNREFUSED and 404.
-- `RoutingClient` — tries `primary`, then each `fallback` in order; `AuthenticationError` short-circuits without trying fallbacks; aggregates all errors in `AllProvidersFailedError`.
+- `RoutingClient` — tries `primary`, then each `fallback` in order, each with an optional `modelMap` from the requested model to its own; `AuthenticationError` short-circuits without trying fallbacks; aggregates all errors in `AllProvidersFailedError`.
 
 All provider clients use a shared `withRetry` utility (exponential backoff, configurable `maxRetries` and `retryDelay`).
 

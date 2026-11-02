@@ -31,14 +31,14 @@ PromptLang treats prompts as first-class typed code:
   range, and `promptlang semver-check` fails when a prompt's interface changed more
   than its version says
 - **Multi-provider runtime** (Anthropic, OpenAI, Ollama, or your own client)
+- **Multi-provider fallback**: `RoutingClient` tries providers in order, translating
+  the model name per provider (`modelMap`), and never falls back on a bad key
 - **No third-party runtime dependencies**: Bun + `fetch` + your own API keys
 
 Not delivered, and labelled as such everywhere in this repository (see
 [`docs/CLAIMS.md`](docs/CLAIMS.md)):
 
 - **`eval` blocks**: parsed, not executed
-- **Cross-provider fallback**: `RoutingClient` switches providers, but the
-  generated code sends one model name to all of them
 - **AI-powered linter**: the plumbing is tested with a mocked client only; there
   is no committed live run, so its findings are not a measured quality
 
@@ -115,7 +115,7 @@ tools' public documentation and are not tested here.
 | Native tests                     |    ❌     |   SaaS    |   SaaS    | ✅ (mock or live; no evals) |
 | SemVer for prompts               |    ❌     |    ❌     |    ❌     |       ✅       |
 | AI-powered linter                |    ❌     |    ❌     |    ❌     | Partial (mocked tests only) |
-| Multi-provider fallback          |  Partial  |    ❌     |    ❌     | Partial (same model name only) |
+| Multi-provider fallback          |  Partial  |    ❌     |    ❌     | ✅ (per-provider model map) |
 | Compile to TypeScript **and** Python | ❌     |    ❌     |    ❌     |       ✅       |
 | Static analysis (SonarQube-style)|    ❌     |    ❌     |    ❌     |       ✅       |
 | Open source, zero SaaS           |    ✅     |    ❌     |    ❌     |       ✅       |
@@ -369,10 +369,10 @@ const category = await classify_ticket({ ticket: "..." }, client);
 
 ### Routing (fallback across providers)
 
-> **Limitation.** The generated code puts the `@model` value in every request, so
-> the fallback below sends a Claude model ID to OpenAI, which rejects it. Fallback
-> works today only between clients that accept the same model name (for example
-> two Anthropic clients with different keys or base URLs).
+The generated code puts the file's `@model` in every request. Give each provider
+that uses other names a `modelMap` from that model to its own; a provider whose map
+has no entry for the requested model is skipped rather than sent a name it cannot
+serve. An `AuthenticationError` stops the routing at once.
 
 ```typescript
 import { AnthropicClient, OpenAIClient, RoutingClient } from "promptlang/runtime";
@@ -380,7 +380,12 @@ import { classify_ticket } from "./generated/classify-ticket";
 
 const client = new RoutingClient({
   primary: new AnthropicClient({ apiKey: process.env.ANTHROPIC_API_KEY! }),
-  fallbacks: [new OpenAIClient({ apiKey: process.env.OPENAI_API_KEY! })],
+  fallbacks: [
+    {
+      client: new OpenAIClient({ apiKey: process.env.OPENAI_API_KEY! }),
+      modelMap: { "claude-opus-5-5": "gpt-5" },
+    },
+  ],
   onFallback: (err, i) => console.warn(`Fallback #${i}:`, err.message),
 });
 
@@ -442,7 +447,6 @@ SemVer track.
 
 In progress:
 
-- **Cross-provider fallback** — per-provider model mapping in `RoutingClient`
 - **npm publication** of `@promptlang/core`
 
 Not scheduled:

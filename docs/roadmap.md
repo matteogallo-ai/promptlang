@@ -44,6 +44,8 @@ Release history is in [`CHANGELOG.md`](../CHANGELOG.md).
 - [x] `AnthropicClient`, `OpenAIClient`, `OllamaClient`: timeout, bounded retries with
       exponential backoff on retryable errors only, typed error hierarchy,
       `InvalidResponseError` for malformed provider responses, empty API keys rejected
+- [x] Cross-provider fallback: per-provider `modelMap` in `RoutingClient`; `Retry-After`
+      honoured on rate limits
 - [x] `@promptlang/core` entry point exporting `tokenize`, `parse`, `resolveGraph`,
       `resolveImport`, `compile`, `compilePython`, `analyze`, the error classes and AST types
 
@@ -51,9 +53,6 @@ Release history is in [`CHANGELOG.md`](../CHANGELOG.md).
 
 ## Partial
 
-- **Multi-provider fallback** — `RoutingClient` tries providers in order and never falls
-  back on `AuthenticationError`. Generated code sends the same `@model` value to every
-  provider, so a fallback between providers with different model names fails.
 - **AI-powered linter** (`analyze --ai`) — request building and response parsing are
   tested with a mocked client only. No live run is committed, so the quality of its
   findings is unmeasured.
@@ -62,8 +61,6 @@ Release history is in [`CHANGELOG.md`](../CHANGELOG.md).
 
 ## In progress
 
-- [ ] **Cross-provider fallback** — per-provider model mapping in `RoutingClient`;
-      `retry-after` honoured on rate limits
 - [ ] **npm publication** of `@promptlang/core` (ESM build, type declarations, Node
       consumer test)
 

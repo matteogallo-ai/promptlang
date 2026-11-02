@@ -34,15 +34,19 @@
   },
   "scripts": {
     "test": "bun test",
-    "typecheck": "bunx tsc --noEmit",
-    "cli": "bun run src/cli/cli.ts",
-    "build": "echo 'Build not yet implemented'"
+    "typecheck": "bunx tsc --noEmit && bunx tsc --noEmit -p packages/yaml-parser",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "knip": "knip",
+    "cli": "bun run src/cli/cli.ts"
   },
   "dependencies": {
     "@promptlang/yaml-parser": "workspace:*"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.6.4",
     "@types/bun": "latest",
+    "knip": "6.44.1",
     "typescript": "^5.6.0"
   },
   "engines": {

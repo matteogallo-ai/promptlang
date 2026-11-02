@@ -1,223 +1,84 @@
 # Roadmap
 
-PromptLang follows a milestone-based roadmap with two-week sprints. Each version
-ships a working, testable slice of functionality — nothing is hidden behind feature
-flags until it's ready.
+This page lists what PromptLang does today and what it does not. A capability is
+"delivered" only when it has a passing test listed in [`CLAIMS.md`](CLAIMS.md).
+Release history is in [`CHANGELOG.md`](../CHANGELOG.md).
 
 ---
 
-## v0.1 — Foundation ✅
+## Delivered
 
-_Goal: repo is credible, documented, and ready to receive contributors._
+### Language and compiler
 
-- [x] Project structure and GitHub configuration
-- [x] Architecture documentation
-- [x] Full syntax reference
-- [x] Annotated example `.prompt` files
-- [x] CI pipeline (GitHub Actions + Bun)
-- [ ] npm package placeholder registration
+- [x] Lexer with line/column errors; single-line and triple-quoted strings; `{{var}}` templates
+- [x] Recursive-descent parser and typed AST for `type`, `prompt`, `chain`, `test`, `eval`, `import`
+- [x] Primitive, enum, struct (optional fields) and named types
+- [x] TypeScript code generator: one async function per prompt, typed input and output
+- [x] Python code generator (3.10+, `Literal` / `TypedDict`) with a bundled runtime module
+- [x] `chain` compilation: sequential steps calling prompts declared in the same file,
+      named and positional arguments, member access on step results, undefined
+      identifiers and forward references rejected at compile time
+- [x] `.prompt` files with no declarations rejected by `compile`
 
----
+### Project tooling
 
-## v0.2 — Lexer ✅
+- [x] `promptlang.yaml` project config, parsed by `@promptlang/yaml-parser`
+- [x] `import "path" as Alias` resolution, circular import detection
+- [x] `install` / `check`: `.promptlang/manifest.json` and a portable `integrity.json`
+      (project-relative SHA-256 hashes)
+- [x] CLI: `parse`, `tokens`, `analyze`, `compile` (`--target`, `--emit-tsconfig`), `init`,
+      `install`, `list`, `check`, `version`
+- [x] Six static analysis rules: missing tests, unbounded templates, prompt-injection
+      risk, token cost estimate, chain complexity, duplicate prompts
 
-_Goal: a `.prompt` file can be tokenized into a typed token stream._
+### Runtime
 
-- [x] Tokenizer (lexer) with full token set — 55 token types
-- [x] `LexerError` with precise line + column on all error conditions
-- [x] Single-line and triple-quoted strings with escape handling
-- [x] Template string detection (`{{...}}` → `TEMPLATE_STRING`)
-- [x] Hyphenated identifier support for model names (`claude-opus-4.7`)
-- [x] Comments emitted as tokens (not discarded) for future formatter use
-- [x] 91 unit tests — 100% passing
-
----
-
-## v0.3 — Parser + AST ✅ (current)
-
-_Goal: a token stream can be parsed into a fully typed Abstract Syntax Tree._
-
-- [x] Hand-written recursive descent parser — no external parsing library
-- [x] Complete typed AST interfaces with `line`/`column` on every node
-- [x] All declaration types: `type`, `prompt`, `chain`, `test`, `eval`
-- [x] All type expressions: primitive, enum, struct (with optional fields), TypeReference
-- [x] All expression forms: call, member access, identifier, string/number/bool literals
-- [x] Named arguments in call expressions (`key: value` syntax)
-- [x] `expect` and `expect.<field>` assertion clauses in test blocks
-- [x] All 7 metadata directives including `@description`
-- [x] `ParserError` with line, column, expected, and found token types
-- [x] AST printer (`printAst()`) for debugging and future CLI
-- [x] `@description` lexer support added (`AT_DESCRIPTION` token type)
-- [x] 89 unit and integration tests — 100% passing
-- [x] 3 full integration tests covering all 3 example `.prompt` files
+- [x] `PromptClient` interface and deterministic `MockClient`
+- [x] `AnthropicClient`, `OpenAIClient`, `OllamaClient`: timeout, bounded retries with
+      exponential backoff on retryable errors only, typed error hierarchy,
+      `InvalidResponseError` for malformed provider responses, empty API keys rejected
+- [x] `@promptlang/core` entry point exporting `tokenize`, `parse`, `resolveGraph`,
+      `resolveImport`, `compile`, `compilePython`, `analyze`, the error classes and AST types
 
 ---
 
-## v0.4 — TypeScript Compiler (basic)
+## Partial
 
-_Goal: a simple prompt with string I/O compiles to a working TypeScript function._
-
-- [ ] Code generator: `prompt` declaration → async TypeScript function
-- [ ] Runtime stub (`src/runtime/`) for calling LLM APIs
-- [ ] `promptlang compile <file> --target typescript` CLI command
-- [ ] Support for Anthropic and OpenAI providers in the runtime
-- [ ] End-to-end test: compile + execute against a live model
-
----
-
-## v0.4 — Type System
-
-_Goal: primitive types, enums, and structs are validated at compile time._
-
-- [ ] Primitive types: `string`, `number`, `boolean`
-- [ ] `enum` declarations with string member names
-- [ ] `struct` declarations with typed fields
-- [ ] Semantic analysis pass: type-check prompt I/O against declarations
-- [ ] Compiler error messages with file + line info
+- **Multi-provider fallback** — `RoutingClient` tries providers in order and never falls
+  back on `AuthenticationError`. Generated code sends the same `@model` value to every
+  provider, so a fallback between providers with different model names fails.
+- **AI-powered linter** (`analyze --ai`) — request building and response parsing are
+  tested with a mocked client only. No live run is committed, so the quality of its
+  findings is unmeasured. The analyzed prompt text is not delimited as untrusted
+  content in the linter's request.
 
 ---
 
-## v0.5 — Chains (Prompt DAG) ✅
+## In progress
 
-_Goal: prompts can be composed into a directed acyclic graph._
-
-- [x] `chain` declaration compiles to a typed async TypeScript function
-- [x] Positional and named argument resolution with `CallableRegistry`
-- [x] Compile-time validation: undefined identifiers and forward references throw `CompilerError`
-- [x] Member expression support in step arguments (`step.field`)
-- [x] Dedicated `// ---- Chain ----` section in generated output
-- [x] 39 tests: unit, error, integration, end-to-end runtime with `MockClient`
-- [x] `--emit-tsconfig` flag on `compile` command: emits a `tsconfig.json` with correct `paths` mapping for `promptlang/runtime` (patch v0.5.1)
-- [ ] DAG cycle detection (chains calling themselves recursively)
-- [ ] Typed data flow: output type of step N must match input type of step N+1
-- [ ] `promptlang viz <file>` CLI command: renders chain as ASCII DAG
+- [ ] **SemVer for prompts** — `@version` validated as SemVer; version constraints on
+      imports with a `VersionMismatchError`; `promptlang semver-check` comparing each
+      prompt's interface (parameters, output schema, target model) against a git base
+- [ ] **Native tests** — `promptlang test` executing `test` blocks with `MockClient` by
+      default; a test referencing an unknown prompt becomes a compile error
+- [ ] **Cross-provider fallback** — per-provider model mapping in `RoutingClient`;
+      `retry-after` honoured on rate limits
+- [ ] **npm publication** of `@promptlang/core` (ESM build, type declarations, Node
+      consumer test)
 
 ---
 
-## v0.6 — Multi-provider runtime ✅
+## Not implemented, not scheduled
 
-_Goal: PromptLang is usable in production with real API keys._
-
-- [x] `AnthropicClient` — HTTP client for Anthropic Messages API; retry + backoff + timeout
-- [x] `OpenAIClient` — HTTP client for OpenAI Chat Completions API
-- [x] `OllamaClient` — HTTP client for local Ollama servers (no auth required)
-- [x] `RoutingClient` — automatic fallback across providers; `AuthenticationError` never retried
-- [x] Full error hierarchy: `AuthenticationError`, `RateLimitError`, `ServerError`, `InvalidRequestError`, `TimeoutError`, `NetworkError`, `ConnectionError`, `NotFoundError`, `AllProvidersFailedError`
-- [x] 61 tests — all using mocked `fetch`, no live API calls
-- [ ] Streaming responses (deferred to v0.8+)
-
----
-
-## v0.7 — Native Tests and Evals
-
-_Goal: `test` blocks execute as real unit tests via `bun test`._
-
-- [ ] `test` block parsing and semantic analysis
-- [ ] Test runner that compiles the prompt and evaluates assertions
-- [ ] `expect`, `expect.<field>`, and `expect.matches` assertion forms
-- [ ] `eval` block for running a prompt against a dataset (CSV/JSON)
-- [ ] Test failure output with diff between expected and actual
-
----
-
-## v0.7 — AI-Powered Linter ✅
-
-_Goal: optional static analysis powered by a fast model to catch prompt issues._
-
-- [x] `AiLinter` class with injectable `PromptClient`, configurable model, and concurrent analysis
-- [x] Meta-prompt engineered to detect 6 semantic issue categories via structured JSON output
-- [x] `--ai` flag on `promptlang analyze`: runs AI linter in addition to static rules
-- [x] Confidence-scored issues (high/medium/low) mapped to warning/info severity
-- [x] Separate `🤖 AI-LINTER ISSUES` section in terminal report; `ai_issues` field in JSON output
-- [x] Graceful fallback to static-only analysis when `ANTHROPIC_API_KEY` is absent
-- [x] 39 new tests — all using mocked `PromptClient`, no live API calls
-- [ ] Rule suppression via `// @promptlang-disable <rule>` comments (v0.8+)
-- [ ] Cross-provider AI linter support (OpenAI, Ollama) — v0.8+
-
----
-
-## v0.8 — Python Compiler ✅
-
-_Goal: compiled output targets Python as a first-class language._
-
-- [x] Python code generator: `prompt` → `async def` with type hints (`Literal`, `TypedDict`, `NotRequired`)
-- [x] Python runtime (`promptlang_runtime.py`): `PromptClient`, `MockClient`, `AnthropicClient`, `OpenAIClient` (requires `httpx`)
-- [x] `promptlang compile <file> --target python` CLI command
-- [x] Parity with TypeScript compiler for primitives, enums, structs, chains
-- [x] `__init__.py` barrel export generated alongside `.py` files
-- [x] 52 new tests; py_compile + ast.parse integration
-- [ ] Example integration with FastAPI and LangChain-style usage (v0.9+)
-
----
-
-## v0.9 — Project Config, Imports, Registry ✅
-
-_Goal: PromptLang manages multi-file projects with a first-class config and
-import system._
-
-- [x] `promptlang.yaml` schema — `name`, `version`, `defaults`, `sources`,
-      `compile`, `linter`, `dependencies`
-- [x] Minimal YAML parser (mappings, sequences, scalars, comments) — zero
-      external dependencies
-- [x] Import syntax in `.prompt` files:
-      `import "shared/x.prompt" as Alias`
-- [x] Local registry `.promptlang/manifest.json` (resolved import graph) and
-      `integrity.json` (SHA-256 hashes)
-- [x] Circular import detection
-- [x] CLI commands: `init`, `install`, `list`, `check`
-- [x] `compile` reads `promptlang.yaml` when args are absent; `--config <path>`
-      flag on project commands
-- [ ] Remote package registry (deferred to post-v1.0)
-- [ ] Multi-provider config with model aliases (moved to post-v1.0)
-
----
-
-## v1.0 — Stable Public Release ✅
-
-_Goal: PromptLang is production-ready and publicly announced._
-
-- [x] API stability guarantee (semver; breaking changes only in MAJOR)
-- [x] Consolidated documentation ([README](../README.md),
-      [architecture](architecture.md), [migration-guide](migration-guide.md),
-      [benchmarks](benchmarks.md), [yaml-support](yaml-support.md))
-- [x] Migration guide 0.x → 1.0
-- [x] Benchmarks measured on reference machine (Apple M4)
-- [ ] Published on npm (first 1.x point release)
-- [ ] Public announcement (Hacker News, r/programming, LinkedIn)
-- [ ] VS Code extension (syntax highlighting) — 1.x
-- [ ] LSP implementation — 1.x
-
----
-
-## Post-1.0 direction
-
-1.x releases will focus on **distribution and ecosystem**, not language
-changes. The language surface (`.prompt` syntax, AST, generated code) is now
-stable — breaking changes are reserved for 2.0 with a documented migration
-path.
-
-**Priorities, roughly in order:**
-
-1. **npm package publication** — `npm install promptlang` should work as a
-   first-class dependency. Requires the `promptlang` name check + a small
-   packaging pass (esbuild bundle, dual ESM/CJS export, `bin` field).
-2. **Remote package registry** — the current registry is local-only; a
-   remote layer will let `dependencies:` in `promptlang.yaml` resolve
-   against a hosted index (analogous to npm / crates.io / PyPI).
-3. **Streaming responses** — `PromptClient.stream()` companion to
-   `.complete()`; provider-side support for SSE / chunked responses.
-4. **More provider clients** — Google Gemini, Mistral, Cohere.
-5. **IDE extensions** — VS Code syntax highlighting; a Language Server
-   Protocol implementation for hover types, go-to-definition, diagnostics.
-6. **MCP server integration** — expose compiled prompts as MCP tools so
-   Claude Desktop / Claude Code can call them directly.
-
----
-
-## Ideas tracked but not yet scheduled
-
-- Remote eval: run evals against a hosted dataset
-- Diff-aware CI: only re-run tests for prompts whose content changed
-- Prompt marketplace: share and discover community prompts
-- Fine-tune adapter: export prompt + eval data as a fine-tuning dataset
-- Multi-provider config with model aliases (moved here from v0.9)
+- `eval` blocks: parsed, not executed
+- `parallel { ... }` steps in chains (not in the grammar)
+- Calling an imported prompt from a chain (`Alias.prompt(...)`)
+- Type checking of data flow between chain steps (the TypeScript target relies on `tsc`)
+- DAG cycle detection for chains; `promptlang viz`
+- Streaming responses
+- Rule suppression comments; custom analyzer rules
+- Cross-provider AI linter (OpenAI, Ollama)
+- Remote package registry; multi-provider config with model aliases
+- More provider clients (Google Gemini, Mistral, Cohere)
+- IDE support (VS Code syntax highlighting, LSP)
+- MCP server integration

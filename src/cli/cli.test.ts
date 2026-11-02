@@ -946,4 +946,19 @@ describe("compile — test and eval blocks", () => {
       `${file}:5:1: eval blocks are parsed but not executed in this version`
     );
   });
+
+  test("@temperature on a Claude model compiles with a warning that it is not sent", async () => {
+    const { code, warnings, file } = await compileSource(
+      `@model claude-opus-5-5\n@temperature 0.2\n${PROMPT}`
+    );
+    expect(code).toBe(0);
+    expect(warnings).toContain(
+      `${file}:2:1: @temperature is not sent to Anthropic (API version 2026-10-21 rejects it); it applies to OpenAI and Ollama only`
+    );
+  });
+
+  test("@temperature on a non-Claude model compiles without that warning", async () => {
+    const { warnings } = await compileSource(`@model gpt-5\n@temperature 0.2\n${PROMPT}`);
+    expect(warnings).not.toContain("@temperature");
+  });
 });

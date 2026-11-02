@@ -1,5 +1,5 @@
 import { resolveFiles } from "../files";
-import { warnAboutEvals } from "../warnings";
+import { warnAboutEvals, warnAboutTemperature } from "../warnings";
 import { tokenize } from "../../lexer/lexer";
 import { parse } from "../../parser/parser";
 import { compile } from "../../compiler/compiler";
@@ -135,6 +135,7 @@ export async function runCompile(args: string[]): Promise<number> {
       }
 
       warnAboutEvals(ast, file);
+      warnAboutTemperature(ast, file);
 
       if (target === "python") {
         const generated = compilePython(ast, file);

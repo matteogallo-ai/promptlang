@@ -9,7 +9,7 @@ import { AnthropicClient } from "../../runtime/providers/anthropic-client";
 import { type CostEstimate, estimateLiveCost, UnpricedModelError } from "../../testing/cost";
 import { type RunMode, runTests, type TestResult } from "../../testing/runner";
 import { resolveFiles } from "../files";
-import { warnAboutEvals } from "../warnings";
+import { warnAboutEvals, warnAboutTemperature } from "../warnings";
 
 const EXIT_OK = 0;
 const EXIT_FAILED = 1;
@@ -134,6 +134,7 @@ export async function runTest(
     if (typeof loaded === "string") outcomes.push({ file, error: loaded, results: [] });
     else {
       warnAboutEvals(loaded, file);
+      warnAboutTemperature(loaded, file);
       programs.push({ file, program: loaded });
     }
   }

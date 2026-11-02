@@ -12,7 +12,7 @@
  * BUDGET_USD, the spend approved for this run, or nothing is called.
  */
 import { resolve } from "node:path";
-import { AiLinter } from "../src/analyzer/ai/ai-linter";
+import { AI_LINTER_MAX_TOKENS, AI_LINTER_MODEL, AiLinter } from "../src/analyzer/ai/ai-linter";
 import {
   AI_LINTER_SYSTEM_PROMPT,
   buildAnalysisUserMessage,
@@ -21,15 +21,17 @@ import type { AnalysisContext } from "../src/analyzer/analyzer";
 import { tokenize } from "../src/lexer/lexer";
 import { parse } from "../src/parser/parser";
 import type { PromptClient } from "../src/runtime/client";
-import { AnthropicClient } from "../src/runtime/providers/anthropic-client";
+import {
+  AnthropicClient,
+  DEFAULT_ANTHROPIC_VERSION,
+} from "../src/runtime/providers/anthropic-client";
 import { pricePerMTok } from "../src/testing/cost";
 
 export const BUDGET_USD = 0.05;
-const MODEL = "claude-haiku-4-5";
+const MODEL = AI_LINTER_MODEL;
 /** Passed to the client explicitly so the record states the version actually sent. */
-const ANTHROPIC_VERSION = "2023-06-01";
-/** AiLinter sends max_tokens 1024 per prompt. */
-const MAX_OUTPUT_TOKENS = 1024;
+const ANTHROPIC_VERSION = DEFAULT_ANTHROPIC_VERSION;
+const MAX_OUTPUT_TOKENS = AI_LINTER_MAX_TOKENS;
 const ROOT = resolve(import.meta.dir, "..");
 const FILES = [
   "docs/examples/classify-ticket.prompt",

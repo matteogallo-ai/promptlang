@@ -182,7 +182,7 @@ Static analysis pass that runs against the parsed AST. Two tiers:
 | `chain-complexity` | Chains with too many steps |
 | `duplicate-prompts` | The same prompt name declared in several files |
 
-**AI rules** (`src/analyzer/ai/`) — opt-in via `--ai` flag. Invokes Claude Haiku to detect semantic issues:
+**AI rules** (`src/analyzer/ai/`) — opt-in via `--ai` flag. Invokes Claude (default `claude-haiku-5-5`) to detect semantic issues:
 
 Six semantic categories detected:
 - `VAGUE_INSTRUCTIONS` — non-actionable phrases without concrete criteria

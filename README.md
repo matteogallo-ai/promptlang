@@ -219,11 +219,12 @@ confidence-scored issues alongside the static analysis output.
 
 ### Cost
 
-Each analyzed prompt is one request to Claude Haiku 4.5 (by default) with
-`max_tokens: 1024`. At list prices ($1 / $5 per million input / output tokens) the
-three example files (four prompts, ~2 200 input tokens) cost at most about $0.03.
-This is an estimate from request sizes, not a measurement. Costs are yours —
-bring your own API key.
+Each analyzed prompt is one request to Claude Haiku 5.5 (by default) with
+`max_tokens: 4096`, which leaves room for its adaptive thinking. At list prices
+($0.10 / $0.50 per million input / output tokens, prompts up to 100K tokens) the
+three example files (four prompts) cost about $0.01 if every call used its full
+`max_tokens`. This is an estimate from request sizes, not a measurement. Costs are
+yours — bring your own API key.
 
 ---
 

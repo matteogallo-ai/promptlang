@@ -19,8 +19,7 @@ rejected by `promptlang compile`, because neither compiler emits code for import
 import "shared/categories.prompt" as Categories
 
 @version "1.0.0"
-@model claude-haiku-4-5
-@temperature 0.3
+@model claude-haiku-5-5
 @max_tokens 512
 @description "Classifies support tickets"
 ```
@@ -290,7 +289,7 @@ output, `--strict` to exit 1 on warnings):
 | `chain-complexity` | info | a chain with more than 5 steps |
 | `duplicate-prompts` | warning | the same prompt name declared in several files |
 
-`analyze --ai` additionally sends each prompt to Claude (default `claude-haiku-4-5`,
+`analyze --ai` additionally sends each prompt to Claude (default `claude-haiku-5-5`,
 key from `ANTHROPIC_API_KEY`). Its plumbing is tested with a mocked client only; see
 [`CLAIMS.md`](CLAIMS.md). There are no suppression comments and no custom-rule API.
 
@@ -303,7 +302,7 @@ name: my-project
 version: 1.0.0
 description: Support tooling prompts
 defaults:
-  model: claude-haiku-4-5
+  model: claude-haiku-5-5
   temperature: 0.3
   max_tokens: 1024
 sources:
@@ -315,7 +314,7 @@ compile:
 linter:
   ai:
     enabled: false
-    model: claude-haiku-4-5
+    model: claude-haiku-5-5
     concurrency: 3
 dependencies:
   - name: shared-templates

@@ -262,6 +262,21 @@ describe("AiLinter", () => {
     expect(callCount).toBe(2);
   });
 
+  test("asks Claude Haiku 5.5 with room for adaptive thinking, and no temperature", async () => {
+    const requests: PromptRequest[] = [];
+    const client: PromptClient = {
+      async complete(req) {
+        requests.push(req);
+        return makeResponse([]);
+      },
+    };
+    await new AiLinter({ client }).analyze([makeContext([{ name: "p" }])]);
+    expect(requests).toHaveLength(1);
+    expect(requests[0]!.model).toBe("claude-haiku-5-5");
+    expect(requests[0]!.max_tokens).toBe(4096);
+    expect("temperature" in requests[0]!).toBe(false);
+  });
+
   test("throws clear error when no client and ANTHROPIC_API_KEY is missing", () => {
     const savedKey = process.env.ANTHROPIC_API_KEY;
     delete process.env.ANTHROPIC_API_KEY;

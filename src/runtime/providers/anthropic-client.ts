@@ -11,6 +11,9 @@ import {
 import { invalidField, isRecord, readJsonObject, requireApiKey } from "./response";
 import { withRetry } from "./retry";
 
+/** The `anthropic-version` header sent unless `apiVersion` overrides it. */
+export const DEFAULT_ANTHROPIC_VERSION = "2026-10-21";
+
 /** Options for configuring the AnthropicClient. */
 export interface AnthropicClientOptions {
   /** Anthropic API key (required). Never hard-coded — use an environment variable. */
@@ -24,7 +27,7 @@ export interface AnthropicClientOptions {
   /** Base retry delay in ms, doubled on each attempt (exponential backoff). Defaults to 1 000. */
   retryDelay?: number;
   /**
-   * Value of the `anthropic-version` header. Defaults to "2026-10-21". The
+   * Value of the `anthropic-version` header. Defaults to DEFAULT_ANTHROPIC_VERSION. The
    * client never sends `temperature`, whatever the version: 2026-10-21 rejects
    * it on every model, and earlier versions reject a non-default value on
    * Claude 4.7 and later.
@@ -50,7 +53,7 @@ export class AnthropicClient implements PromptClient {
     this.timeout = options.timeout ?? 60_000;
     this.maxRetries = options.maxRetries ?? 3;
     this.retryDelay = options.retryDelay ?? 1_000;
-    this.apiVersion = options.apiVersion ?? "2026-10-21";
+    this.apiVersion = options.apiVersion ?? DEFAULT_ANTHROPIC_VERSION;
   }
 
   async complete(request: PromptRequest): Promise<PromptResponse> {

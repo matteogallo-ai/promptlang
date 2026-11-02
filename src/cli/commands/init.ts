@@ -22,7 +22,7 @@ compile:
 linter:
   ai:
     enabled: false
-    model: claude-haiku-4-5
+    model: claude-haiku-5-5
     concurrency: 3
 
 # Local packages only: there is no remote registry.

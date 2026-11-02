@@ -37,9 +37,23 @@ describe("estimateLiveCost", () => {
     const t = `test "t" {\n  input: c("x")\n  expect: x\n}\n`;
     const e = est(`@model claude-haiku-5-5\n@max_tokens 100\n${PROMPT}${chain}${t}`);
     expect(e?.calls).toBe(2);
-    // Each step: 35 chars + the longest argument (1) for "{{x}}"; step b may also
-    // receive step a's ≤100 output tokens.
-    expect(e?.inputTokens).toBe(Math.ceil(72 / 3) + 100);
+    // Step a: 35 chars + the longest argument (1). Step b's "{{x}}" may insert step
+    // a's output: ≤100 tokens at up to 6 characters each.
+    expect(e?.inputTokens).toBe(Math.ceil((36 + 35 + 600) / 3));
+  });
+
+  test("numbers, booleans and enum members count as the text they are inserted as", () => {
+    const p = `prompt p(n: number) -> string {\n  user: "Score {{n}}"\n}\n`;
+    const t = `test "t" {\n  input: p(123456789012)\n  expect: x\n}\n`;
+    expect(est(`@model claude-haiku-5-5\n${p}${t}`)?.inputTokens).toBe(Math.ceil((11 + 12) / 3));
+  });
+
+  test("a literal written in a chain step counts, at every placeholder", () => {
+    const chain = `chain c(x: string) -> string {\n  step a = p(x: "${"z".repeat(60)}")\n  return a\n}\n`;
+    const t = `test "t" {\n  input: c("x")\n  expect: x\n}\n`;
+    expect(est(`@model claude-haiku-5-5\n${PROMPT}${chain}${t}`)?.inputTokens).toBe(
+      Math.ceil((35 + 60) / 3)
+    );
   });
 
   test("no tests, no estimate; an unpriced or missing model refuses", () => {

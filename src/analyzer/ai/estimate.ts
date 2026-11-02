@@ -20,5 +20,5 @@ export function estimateLinterCost(
       chars += AI_LINTER_SYSTEM_PROMPT.length + buildAnalysisUserMessage(d).length;
     }
   }
-  return priceEstimate(model, calls, chars, 0, calls * AI_LINTER_MAX_TOKENS);
+  return priceEstimate(model, calls, chars, calls * AI_LINTER_MAX_TOKENS);
 }

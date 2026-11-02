@@ -37,7 +37,7 @@ describe("BudgetedClient", () => {
         return { content: "{}" };
       },
     };
-    const cap = priceEstimate("claude-haiku-5-5", 2, 2000, 0, 2000).estimatedUsd;
+    const cap = priceEstimate("claude-haiku-5-5", 2, 2000, 2000).estimatedUsd;
     const budgeted = new BudgetedClient(noUsage, cap);
     await budgeted.complete(req(1000));
     await budgeted.complete(req(1000));

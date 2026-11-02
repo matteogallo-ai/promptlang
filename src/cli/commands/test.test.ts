@@ -208,6 +208,34 @@ describe("promptlang test --live", () => {
     expect(r.code).toBe(0);
   });
 
+  test("a chain step that inserts an earlier output, and a number argument, fit the cap set to the estimate", async () => {
+    // Step a answers its full 100 tokens as 450 characters (English, ~4.5 per token),
+    // which step b then sends: the estimate must allow for that text as the cap measures it.
+    const source = `@version "1.0.0"\n@model claude-haiku-5-5\n@max_tokens 100\nprompt p(x: string) -> string {\n  user: "Rewrite: {{x}}"\n}\nprompt q(n: number) -> string {\n  user: "Score {{n}}"\n}\nchain c(x: string) -> string {\n  step a = p(x: x)\n  step b = p(x: a)\n  return b\n}\ntest "chain" {\n  input: c("hi")\n  expect contains: "w"\n}\ntest "number" {\n  input: q(123456789012)\n  expect contains: "w"\n}\n`;
+    const file = join(dir, "live-chain.prompt");
+    await Bun.write(file, source);
+    let sent = 0;
+    const deps: TestCommandDeps = {
+      createClient: () => ({
+        async complete(req) {
+          sent++;
+          return {
+            content: "word ".repeat(90),
+            usage: {
+              input_tokens: Math.ceil(req.messages[0]!.content.length / 4),
+              output_tokens: 100,
+            },
+          };
+        },
+      }),
+      confirm: () => true,
+    };
+    const r = await capture(() => runTest([file, "--live", "--yes"], deps));
+    expect(r.stdout).not.toContain("BudgetExceededError");
+    expect(sent).toBe(3);
+    expect(r.code).toBe(0);
+  });
+
   test("a rejected request: exit 3, reported as a configuration error, not an outage", async () => {
     const file = await write("live-bad-request.prompt", passing);
     const deps: TestCommandDeps = {

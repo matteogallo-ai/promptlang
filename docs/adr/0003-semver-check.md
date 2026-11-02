@@ -25,11 +25,17 @@ a list of files, and a rule for what "moved enough" means.
 - **Known limit.** A rename combined with a rewrite below 30% similarity reads as a
   deleted file plus a `new` one, so its interface changes are not checked.
 - **Judging a bump.** The required level is the strictest change (ADR 0002). The
-  actual bump is the first of MAJOR, MINOR, PATCH that differs; a lower version is
-  a downgrade and fails. Pre-release and build metadata are ignored, so
-  `1.0.0-rc.1 → 1.0.0` is not a bump. Below 1.0.0 a minor bump counts as major and
-  a patch bump as minor, matching how `^0.y.z` ranges resolve: what the check
-  accepts is what consumers' `requires` ranges accept.
+  actual bump is the first of MAJOR, MINOR, PATCH that differs. A version of lower
+  precedence (`1.5.0 → 1.4.0`, `1.2.3 → 1.2.3-beta`) is a downgrade and fails, even
+  when nothing else changed. Build metadata alone is not a bump. Below 1.0.0 the
+  bump is read as `^` reads it: at 0.0.z every bump counts as major; at 0.y.z a
+  minor bump counts as major and a patch bump as minor. What the check accepts is
+  what consumers' `requires "^…"` ranges accept.
+- **Pre-release cycles.** From a pre-release, moving forward to a later
+  pre-release or to its release (`2.0.0-rc.1 → 2.0.0-rc.2`, `→ 2.0.0`) satisfies
+  any change: SemVer 2.0.0 (item 9) makes pre-releases promise no compatibility,
+  and `^` ranges do not select them. Staying on the same pre-release with a
+  change fails.
 - **Failure output** names the file, both versions, the required level, the
   smallest passing version, and every change with its level. `--json` emits the
   same data. Exit 1 on any violation or unparsable file.
@@ -43,6 +49,6 @@ a list of files, and a rule for what "moved enough" means.
   earlier PR in the same release already bumped major.
 - **Requiring a bump for deleted files.** Impossible to express in-file; whoever
   deletes a published prompt has to communicate it in the changelog.
-- **Treating pre-release graduation as a bump.** `1.0.0-rc.1 → 1.0.0` changes no
-  precedence class a `^1.0.0` consumer cares about, and changes made during the
-  rc should have been versioned within it.
+- **Ignoring pre-release identifiers.** An earlier version of this check did, so
+  `2.0.0-rc.1 → 2.0.0-rc.2` with any change asked for 3.0.0: no pre-release cycle
+  could pass.

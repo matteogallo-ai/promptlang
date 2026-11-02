@@ -38,10 +38,38 @@ describe("checkVersion", () => {
     expect(r.reason).toBe("@version went down from 2.0.0 to 1.9.0");
   });
 
-  test("pre-release and build metadata do not count as a bump", () => {
-    expect(checkVersion("1.0.0-rc.1", "1.0.0", [patch]).ok).toBe(false);
+  test("build metadata alone is not a bump; a pre-release of the required version is", () => {
     expect(checkVersion("1.0.0", "1.0.0+build.7", [patch]).ok).toBe(false);
     expect(checkVersion("1.0.0", "2.0.0-rc.1", [major]).ok).toBe(true);
+  });
+
+  test("within a pre-release cycle any change passes once the version moves forward", () => {
+    // Pre-releases promise no compatibility (SemVer 2.0.0, item 9), and ^ ranges skip them.
+    expect(checkVersion("2.0.0-rc.1", "2.0.0-rc.2", [major])).toMatchObject({
+      ok: true,
+      actual: "prerelease",
+    });
+    expect(checkVersion("2.0.0-rc.1", "2.0.0", [major])).toMatchObject({
+      ok: true,
+      actual: "prerelease",
+    });
+    expect(checkVersion("2.0.0-rc.1", "2.0.0-rc.1", [patch])).toMatchObject({
+      ok: false,
+      expected: "a later pre-release of 2.0.0, or 2.0.0",
+    });
+  });
+
+  test("a lower version fails even when nothing else changed", () => {
+    expect(checkVersion("1.5.0", "1.4.0", [])).toMatchObject({ ok: false, actual: "downgrade" });
+    expect(checkVersion("1.2.3", "1.2.3-beta", [])).toMatchObject({
+      ok: false,
+      actual: "downgrade",
+    });
+  });
+
+  test("at 0.0.x every bump is breaking, as for ^0.0.z", () => {
+    expect(checkVersion("0.0.3", "0.0.4", [minor])).toMatchObject({ ok: true, actual: "major" });
+    expect(checkVersion("0.0.3", "0.0.3", [patch])).toMatchObject({ ok: false, expected: "0.0.4" });
   });
 
   test("below 1.0.0 a minor bump is breaking, as for ^0.y.z", () => {

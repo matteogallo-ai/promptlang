@@ -251,9 +251,11 @@ optional or not), its output type, and, for a prompt, the file's `@model`.
 | Whitespace, comments, declaration order, parameter order | none |
 
 Types are compared by structure: renaming `type Category` to `type Kind` with the
-same values is not a change. Below 1.0.0 the check reads bumps as `^0.y.z` does: a
-minor bump (`0.2.x → 0.3.0`) counts as breaking, a patch bump as compatible. A
-pre-release or build-metadata change alone is not a bump. A file absent at the base
+same values is not a change. Below 1.0.0 the check reads bumps as `^` does: at
+0.0.z every bump counts as breaking; at 0.y.z a minor bump (`0.2.x → 0.3.0`)
+counts as breaking and a patch bump as compatible. A lower version fails. From a
+pre-release, a later pre-release or the release itself (`2.0.0-rc.1 → 2.0.0-rc.2`)
+satisfies any change. Build metadata alone is not a bump. A file absent at the base
 is reported as `new` and passes; a file deleted since the base is not reported.
 
 Exit codes: `0` every file is versioned correctly, `1` at least one file is not (or

@@ -8,13 +8,18 @@ import { tokenize } from "../lexer/lexer";
 import { ParserError } from "../parser/errors";
 import { parse } from "../parser/parser";
 import { type Change, diffPrograms, type Level, levelRank, requiredLevel } from "./interface";
-import { parseVersion, type SemVer } from "./semver";
+import { compareVersions, parseVersion, type SemVer } from "./semver";
+
+type Actual = Level | "none" | "downgrade" | "prerelease";
 
 export interface VersionCheck {
   ok: boolean;
   required: Level | "none";
-  /** The bump the file actually made, judged the way `^` ranges judge it. */
-  actual: Level | "none" | "downgrade";
+  /**
+   * The bump the file made, judged the way `^` ranges judge it; "prerelease"
+   * when it moved forward inside a pre-release cycle.
+   */
+  actual: Actual;
   baseVersion: string | null;
   currentVersion: string | null;
   /** The smallest version that would satisfy the check, when it fails on the version. */
@@ -23,20 +28,34 @@ export interface VersionCheck {
   changes: Change[];
 }
 
+const triplet = (v: SemVer) => `${v.major}.${v.minor}.${v.patch}`;
+
 /**
- * Below 1.0.0, `^0.y.z` treats a minor bump as breaking and a patch bump as
- * compatible; the check uses the same reading so that what it accepts is
- * exactly what consumers' `requires "^…"` ranges accept.
+ * Reads a bump the way `^` reads compatibility, so that what the check accepts
+ * is what consumers' `requires "^…"` ranges accept: at 0.0.z every bump is
+ * breaking, at 0.y.z a minor bump is breaking and a patch bump compatible.
+ * Moving forward from a pre-release to a later pre-release or to its release
+ * satisfies any change: pre-releases promise no compatibility (SemVer 2.0.0,
+ * item 9), and `^` ranges do not select them.
  */
-function bumpOf(base: SemVer, cur: SemVer): Level | "none" | "downgrade" {
+function bumpOf(baseText: string, curText: string, base: SemVer, cur: SemVer): Actual {
+  const cmp = compareVersions(curText, baseText);
+  if (cmp < 0) return "downgrade";
+  if (cmp === 0) return "none";
+  if (base.prerelease.length > 0 && triplet(base) === triplet(cur)) return "prerelease";
   const order = (["major", "minor", "patch"] as const).find((k) => base[k] !== cur[k]);
   if (!order) return "none";
-  if (cur[order] < base[order]) return "downgrade";
-  if (base.major === 0 && cur.major === 0) return order === "minor" ? "major" : "minor";
+  if (base.major === 0 && cur.major === 0) {
+    if (base.minor === 0 && cur.minor === 0) return "major";
+    return order === "minor" ? "major" : "minor";
+  }
   return order;
 }
 
 function nextVersion(base: SemVer, level: Level): string {
+  if (base.prerelease.length > 0)
+    return `a later pre-release of ${triplet(base)}, or ${triplet(base)}`;
+  if (base.major === 0 && base.minor === 0) return `0.0.${base.patch + 1}`;
   if (base.major === 0) {
     return level === "major" ? `0.${base.minor + 1}.0` : `0.${base.minor}.${base.patch + 1}`;
   }
@@ -55,6 +74,32 @@ export function checkVersion(
   const base = baseVersion === null ? null : parseVersion(baseVersion);
   const cur = currentVersion === null ? null : parseVersion(currentVersion);
 
+  if (base && cur && baseVersion && currentVersion) {
+    const actual = bumpOf(baseVersion, currentVersion, base, cur);
+    if (actual === "downgrade") {
+      return {
+        ...result,
+        ok: false,
+        actual,
+        reason: `@version went down from ${baseVersion} to ${currentVersion}`,
+      };
+    }
+    if (
+      required === "none" ||
+      actual === "prerelease" ||
+      (actual !== "none" && levelRank(actual) >= levelRank(required))
+    ) {
+      return { ...result, ok: true, actual };
+    }
+    const expected = nextVersion(base, required);
+    return {
+      ...result,
+      ok: false,
+      actual,
+      expected,
+      reason: `a ${required} change needs at least ${expected}, got ${currentVersion}`,
+    };
+  }
   if (required === "none") return { ...result, ok: true, actual: "none" };
   if (!cur) {
     return {
@@ -65,22 +110,7 @@ export function checkVersion(
     };
   }
   // A file versioned for the first time has no earlier contract to break.
-  if (!base) return { ...result, ok: true, actual: required };
-
-  const actual = bumpOf(base, cur);
-  if (actual !== "downgrade" && levelRank(actual) >= levelRank(required)) {
-    return { ...result, ok: true, actual };
-  }
-  return {
-    ...result,
-    ok: false,
-    actual,
-    expected: nextVersion(base, required),
-    reason:
-      actual === "downgrade"
-        ? `@version went down from ${baseVersion} to ${currentVersion}`
-        : `a ${required} change needs at least ${nextVersion(base, required)}, got ${currentVersion}`,
-  };
+  return { ...result, ok: true, actual: required };
 }
 
 type FileStatus = "ok" | "fail" | "new" | "error";

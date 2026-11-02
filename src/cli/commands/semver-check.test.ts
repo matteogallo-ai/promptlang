@@ -95,6 +95,37 @@ describe("semver-check in a Git repository", () => {
     expect((await semverCheck("--base", "HEAD", "prompts")).exitCode).toBe(1);
   });
 
+  subprocessTest("an absolute path through a symlinked temp dir still finds the base", async () => {
+    // On macOS tmpdir() is /var/..., a symlink to /private/var/... where Git reports the top.
+    await Bun.write(join(repo, "prompts/a.prompt"), file("2.0.0", "z: string", "Hi {{z}}"));
+    const r = await semverCheck("--base", "HEAD", join(repo, "prompts/a.prompt"));
+    expect(r.stdout).not.toContain("new ");
+    expect(r.exitCode).toBe(1);
+    await sh("git", "checkout", "--", "prompts/a.prompt");
+  });
+
+  subprocessTest(
+    "a renamed file is compared with its old path, so a breaking rename fails",
+    async () => {
+      await sh("git", "mv", "prompts/a.prompt", "prompts/renamed.prompt");
+      await Bun.write(join(repo, "prompts/renamed.prompt"), file("2.0.0", "w: string", "Hi {{w}}"));
+      const r = await semverCheck("--base", "HEAD", "prompts/renamed.prompt");
+      expect(r.stdout).toContain("FAIL   prompts/renamed.prompt  2.0.0 → 2.0.0");
+      expect(r.exitCode).toBe(1);
+      await sh("git", "mv", "prompts/renamed.prompt", "prompts/a.prompt");
+      await sh("git", "checkout", "HEAD", "--", "prompts/a.prompt");
+    }
+  );
+
+  subprocessTest("a file outside the repository is a usage error", async () => {
+    const outside = await mkdtemp(join(tmpdir(), "promptlang-outside-"));
+    await Bun.write(join(outside, "x.prompt"), file("1.0.0", "x: string"));
+    const r = await semverCheck("--base", "HEAD", join(outside, "x.prompt"));
+    await rm(outside, { recursive: true, force: true });
+    expect(r.exitCode).toBe(2);
+    expect(r.stderr).toContain("is outside the Git repository");
+  });
+
   subprocessTest("an unknown ref, flag, or a directory outside Git exits 2", async () => {
     expect((await semverCheck("--base", "no-such-ref")).exitCode).toBe(2);
     expect((await semverCheck("--bogus")).exitCode).toBe(2);

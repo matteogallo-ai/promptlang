@@ -16,9 +16,14 @@ a list of files, and a rule for what "moved enough" means.
   `git show <commit>:<path>`; the current text is the working tree, so the check
   runs before committing as well as in CI.
 - **Files.** The given paths (files, directories, globs, as for `compile`), else
-  every tracked or untracked-but-not-ignored `*.prompt` file. A file absent at the
-  base is `new` and passes; a deleted file is not reported, because there is no
-  `@version` left to bump.
+  every tracked or untracked-but-not-ignored `*.prompt` file. Paths are resolved
+  through symlinks against the repository top; a file outside the repository is a
+  usage error. A file Git sees as renamed since the base (similarity ≥ 30%) is
+  compared with its old path. A file absent at the base is `new` and passes; a
+  failure to read a file that does exist at the base is an error, never `new`. A
+  deleted file is not reported, because there is no `@version` left to bump.
+- **Known limit.** A rename combined with a rewrite below 30% similarity reads as a
+  deleted file plus a `new` one, so its interface changes are not checked.
 - **Judging a bump.** The required level is the strictest change (ADR 0002). The
   actual bump is the first of MAJOR, MINOR, PATCH that differs; a lower version is
   a downgrade and fails. Pre-release and build metadata are ignored, so

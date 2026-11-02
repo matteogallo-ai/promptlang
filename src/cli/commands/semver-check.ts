@@ -1,4 +1,5 @@
-import { relative, resolve } from "node:path";
+import { realpathSync } from "node:fs";
+import { isAbsolute, relative, resolve } from "node:path";
 import { checkFile, type FileCheck } from "../../semver/check";
 import { formatChange } from "../../semver/interface";
 import { resolveFiles } from "../files";
@@ -36,11 +37,48 @@ function defaultBase(cwd: string): string {
   );
 }
 
-/** The file's text at `ref`, or null when the file does not exist there. */
-function textAt(cwd: string, top: string, ref: string, file: string): string | null {
-  const path = relative(top, resolve(cwd, file)).split("\\").join("/");
-  const r = git(cwd, ["show", `${ref}:${path}`]);
-  return r.ok ? r.stdout : null;
+/** `file` as a POSIX path from the repository top; symlinks resolved on both sides. */
+function repoPath(top: string, cwd: string, file: string): string {
+  const path = relative(realpathSync(top), realpathSync(resolve(cwd, file)));
+  if (path.startsWith("..") || isAbsolute(path)) {
+    throw new UsageError(`${file} is outside the Git repository (${top})`);
+  }
+  return path.split("\\").join("/");
+}
+
+/**
+ * Git's default (50%) misses a small .prompt file renamed and edited in the same
+ * change; 30% catches that while still rejecting unrelated files.
+ */
+const RENAME_SIMILARITY = "30%";
+
+/** Renames Git detects between `commit` and the working tree: new path → old path. */
+function renames(cwd: string, commit: string): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const line of gitOrThrow(cwd, [
+    "diff",
+    "--name-status",
+    `-M${RENAME_SIMILARITY}`,
+    commit,
+    "--",
+  ]).split("\n")) {
+    const [status, from, to] = line.split("\t");
+    if (status?.startsWith("R") && from && to) map.set(to, from);
+  }
+  return map;
+}
+
+/**
+ * The file's text at `commit`, or null when the path does not exist there. Any
+ * other `git show` failure is an error: reading it as "new" would let a
+ * breaking change pass.
+ */
+function textAt(cwd: string, commit: string, path: string): string | null {
+  const r = git(cwd, ["show", `${commit}:${path}`]);
+  if (r.ok) return r.stdout;
+  const listed = gitOrThrow(cwd, ["ls-tree", "--name-only", commit, "--", path]).trim();
+  if (listed === "") return null;
+  throw new UsageError(`cannot read ${path} at ${commit.slice(0, 12)}: ${r.stderr.trim()}`);
 }
 
 function parseArgs(args: string[]): { base?: string; json: boolean; paths: string[] } {
@@ -104,26 +142,36 @@ export async function runSemverCheck(args: string[], cwd = process.cwd()): Promi
     throw error;
   }
 
-  const files =
-    opts.paths.length > 0
-      ? (await resolveFiles(opts.paths.map((p) => resolve(cwd, p)))).map((f) => relative(cwd, f))
-      : gitOrThrow(cwd, [
-          "ls-files",
-          "--cached",
-          "--others",
-          "--exclude-standard",
-          "--",
-          "*.prompt",
-        ])
-          .split("\n")
-          .filter(Boolean);
-
   const results: FileCheck[] = [];
-  for (const file of files.sort()) {
-    const current = Bun.file(resolve(cwd, file));
-    // `ls-files --cached` still lists a file deleted from the working tree.
-    if (!(await current.exists())) continue;
-    results.push(checkFile(file, textAt(cwd, top, commit, file), await current.text()));
+  try {
+    const files =
+      opts.paths.length > 0
+        ? (await resolveFiles(opts.paths.map((p) => resolve(cwd, p)))).map((f) => relative(cwd, f))
+        : gitOrThrow(cwd, [
+            "ls-files",
+            "--cached",
+            "--others",
+            "--exclude-standard",
+            "--",
+            "*.prompt",
+          ])
+            .split("\n")
+            .filter(Boolean);
+    const renamed = renames(cwd, commit);
+    for (const file of files.sort()) {
+      const current = Bun.file(resolve(cwd, file));
+      // `ls-files --cached` still lists a file deleted from the working tree.
+      if (!(await current.exists())) continue;
+      const path = repoPath(top, cwd, file);
+      const baseText = textAt(cwd, commit, renamed.get(path) ?? path);
+      results.push(checkFile(file, baseText, await current.text()));
+    }
+  } catch (error) {
+    if (error instanceof UsageError) {
+      console.error(`Error: ${error.message}`);
+      return EXIT_USAGE;
+    }
+    throw error;
   }
 
   const ok = results.every((r) => r.status === "ok" || r.status === "new");

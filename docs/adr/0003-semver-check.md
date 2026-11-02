@@ -18,12 +18,16 @@ a list of files, and a rule for what "moved enough" means.
 - **Files.** The given paths (files, directories, globs, as for `compile`), else
   every tracked or untracked-but-not-ignored `*.prompt` file. Paths are resolved
   through symlinks against the repository top; a file outside the repository is a
-  usage error. A file Git sees as renamed since the base (similarity ≥ 30%) is
-  compared with its old path. A file absent at the base is `new` and passes; a
+  usage error. A file absent at the base that Git pairs with a deleted one
+  (staged rename, similarity ≥ 30%) is compared with the old path when both
+  declare at least one prompt or chain of the same name; otherwise it is `new`. A file absent at the base is `new` and passes; a
   failure to read a file that does exist at the base is an error, never `new`. A
   deleted file is not reported, because there is no `@version` left to bump.
-- **Known limit.** A rename combined with a rewrite below 30% similarity reads as a
-  deleted file plus a `new` one, so its interface changes are not checked.
+- **Known limits.** A rename combined with a rewrite below 30% similarity, or one
+  that also renames every declaration, reads as a deleted file plus a `new` one, so
+  its interface changes are not checked. A rename done with plain `mv` and not yet
+  staged is invisible to `git diff` and reads as `new` until `git add` (CI, which
+  checks commits, sees it).
 - **Judging a bump.** The required level is the strictest change (ADR 0002). The
   actual bump is the first of MAJOR, MINOR, PATCH that differs. A version of lower
   precedence (`1.5.0 → 1.4.0`, `1.2.3 → 1.2.3-beta`) is a downgrade and fails, even

@@ -1,5 +1,9 @@
 import { realpathSync } from "node:fs";
-import { isAbsolute, relative, resolve } from "node:path";
+import { isAbsolute, relative, resolve, sep } from "node:path";
+import { LexerError } from "../../lexer/errors";
+import { tokenize } from "../../lexer/lexer";
+import { ParserError } from "../../parser/errors";
+import { parse } from "../../parser/parser";
 import { checkFile, type FileCheck } from "../../semver/check";
 import { formatChange } from "../../semver/interface";
 import { resolveFiles } from "../files";
@@ -40,32 +44,67 @@ function defaultBase(cwd: string): string {
 /** `file` as a POSIX path from the repository top; symlinks resolved on both sides. */
 function repoPath(top: string, cwd: string, file: string): string {
   const path = relative(realpathSync(top), realpathSync(resolve(cwd, file)));
-  if (path.startsWith("..") || isAbsolute(path)) {
+  if (path === ".." || path.startsWith(`..${sep}`) || isAbsolute(path)) {
     throw new UsageError(`${file} is outside the Git repository (${top})`);
   }
   return path.split("\\").join("/");
 }
 
 /**
- * Git's default (50%) misses a small .prompt file renamed and edited in the same
- * change; 30% catches that while still rejecting unrelated files.
+ * Rename candidates Git finds between `commit` and the index or working tree:
+ * new path → old path. Git's default 50% similarity misses a small .prompt file
+ * renamed and edited at once, so the threshold is low, and `followRename` keeps
+ * a pairing only when the two files share a declaration name. `-z` keeps
+ * non-ASCII paths unquoted.
  */
-const RENAME_SIMILARITY = "30%";
-
-/** Renames Git detects between `commit` and the working tree: new path → old path. */
 function renames(cwd: string, commit: string): Map<string, string> {
   const map = new Map<string, string>();
-  for (const line of gitOrThrow(cwd, [
-    "diff",
-    "--name-status",
-    `-M${RENAME_SIMILARITY}`,
-    commit,
-    "--",
-  ]).split("\n")) {
-    const [status, from, to] = line.split("\t");
-    if (status?.startsWith("R") && from && to) map.set(to, from);
+  const fields = gitOrThrow(cwd, ["diff", "-z", "--name-status", "-M30%", commit, "--"]).split(
+    "\0"
+  );
+  for (let i = 0; i < fields.length; ) {
+    const status = fields[i++] ?? "";
+    if (status.startsWith("R") || status.startsWith("C")) {
+      const from = fields[i++];
+      const to = fields[i++];
+      if (status.startsWith("R") && from && to) map.set(to, from);
+    } else i++;
   }
   return map;
+}
+
+/** Names of the prompts and chains a file declares, or none if it does not parse. */
+function declarationNames(text: string): Set<string> {
+  try {
+    const program = parse(tokenize(text));
+    return new Set(
+      program.declarations.flatMap((d) =>
+        d.kind === "PromptDeclaration" || d.kind === "ChainDeclaration" ? [d.name] : []
+      )
+    );
+  } catch (error) {
+    // A file that does not parse shares nothing; checkFile reports its syntax error.
+    if (error instanceof LexerError || error instanceof ParserError) return new Set();
+    throw error;
+  }
+}
+
+/** The base text to compare `path` with: its own, or its old path's when it is a real rename. */
+function baseTextOf(
+  cwd: string,
+  commit: string,
+  path: string,
+  current: string,
+  renamed: Map<string, string>
+): string | null {
+  const own = textAt(cwd, commit, path);
+  if (own !== null) return own;
+  const from = renamed.get(path);
+  if (!from) return null;
+  const old = textAt(cwd, commit, from);
+  if (old === null) return null;
+  const now = declarationNames(current);
+  return [...declarationNames(old)].some((n) => now.has(n)) ? old : null;
 }
 
 /**
@@ -76,7 +115,16 @@ function renames(cwd: string, commit: string): Map<string, string> {
 function textAt(cwd: string, commit: string, path: string): string | null {
   const r = git(cwd, ["show", `${commit}:${path}`]);
   if (r.ok) return r.stdout;
-  const listed = gitOrThrow(cwd, ["ls-tree", "--name-only", commit, "--", path]).trim();
+  // --full-tree: `path` is relative to the top, whatever the cwd.
+  const listed = gitOrThrow(cwd, [
+    "ls-tree",
+    "--full-tree",
+    "-z",
+    "--name-only",
+    commit,
+    "--",
+    path,
+  ]).replace(/\0/g, "");
   if (listed === "") return null;
   throw new UsageError(`cannot read ${path} at ${commit.slice(0, 12)}: ${r.stderr.trim()}`);
 }
@@ -149,13 +197,14 @@ export async function runSemverCheck(args: string[], cwd = process.cwd()): Promi
         ? (await resolveFiles(opts.paths.map((p) => resolve(cwd, p)))).map((f) => relative(cwd, f))
         : gitOrThrow(cwd, [
             "ls-files",
+            "-z",
             "--cached",
             "--others",
             "--exclude-standard",
             "--",
             "*.prompt",
           ])
-            .split("\n")
+            .split("\0")
             .filter(Boolean);
     const renamed = renames(cwd, commit);
     for (const file of files.sort()) {
@@ -163,8 +212,8 @@ export async function runSemverCheck(args: string[], cwd = process.cwd()): Promi
       // `ls-files --cached` still lists a file deleted from the working tree.
       if (!(await current.exists())) continue;
       const path = repoPath(top, cwd, file);
-      const baseText = textAt(cwd, commit, renamed.get(path) ?? path);
-      results.push(checkFile(file, baseText, await current.text()));
+      const text = await current.text();
+      results.push(checkFile(file, baseTextOf(cwd, commit, path, text, renamed), text));
     }
   } catch (error) {
     if (error instanceof UsageError) {

@@ -117,6 +117,83 @@ describe("semver-check in a Git repository", () => {
     }
   );
 
+  subprocessTest(
+    "an unrelated file added while another is deleted is new, not a rename",
+    async () => {
+      await sh("git", "rm", "-q", "prompts/a.prompt");
+      // Same header and shape as a.prompt, so Git's similarity alone would pair them.
+      const other = file("2.0.0", "y?: string", "Hi {{y}}").replace(
+        "prompt p(",
+        "prompt summarize("
+      );
+      await Bun.write(join(repo, "prompts/other.prompt"), other);
+      await sh("git", "add", "prompts/other.prompt");
+      const r = await semverCheck("--base", "HEAD", "prompts/other.prompt");
+      await sh("git", "rm", "-q", "-f", "prompts/other.prompt");
+      await sh("git", "checkout", "HEAD", "--", "prompts/a.prompt");
+      expect(r.stdout).toContain("new    prompts/other.prompt");
+      expect(r.exitCode).toBe(0);
+    }
+  );
+
+  subprocessTest("non-ASCII file names are checked, renamed or edited in place", async () => {
+    const e = "prompts/\u00e9.prompt";
+    await Bun.write(join(repo, e), file("1.0.0", "x: string"));
+    await sh("git", "add", e);
+    await sh("git", "commit", "-q", "-m", "accented");
+    await Bun.write(join(repo, e), file("1.0.0", "q: string", "Hi {{q}}"));
+    const inPlace = await semverCheck("--base", "HEAD");
+    expect(inPlace.stdout).toContain("FAIL   prompts/\u00e9.prompt");
+    const u = "prompts/\u00fc.prompt";
+    await sh("git", "mv", e, u);
+    const renamed = await semverCheck("--base", "HEAD", u);
+    expect(renamed.stdout).toContain("FAIL   prompts/\u00fc.prompt");
+    await sh("git", "mv", u, e);
+    await sh("git", "checkout", "HEAD", "--", e);
+  });
+
+  subprocessTest("a file whose name starts with '..' is inside the repository", async () => {
+    await Bun.write(join(repo, "..x.prompt"), file("1.0.0", "x: string"));
+    const r = await semverCheck("--base", "HEAD", "..x.prompt");
+    await rm(join(repo, "..x.prompt"));
+    expect(r.exitCode).toBe(0);
+    expect(r.stdout).toContain("new    ..x.prompt");
+  });
+
+  subprocessTest(
+    "from a subdirectory, a file present at the base is never read as new",
+    async () => {
+      await Bun.write(join(repo, "prompts/a.prompt"), file("2.0.0", "z: string", "Hi {{z}}"));
+      const r = await runProcess(
+        [process.execPath, CLI, "semver-check", "--base", "HEAD", "a.prompt"],
+        join(repo, "prompts")
+      );
+      await sh("git", "checkout", "--", "prompts/a.prompt");
+      expect(r.stdout).toContain("FAIL   a.prompt");
+    }
+  );
+
+  subprocessTest("a base blob that cannot be read is an error, not a new file", async () => {
+    const missing = "0123456789abcdef0123456789abcdef01234567";
+    // A tree whose only file has no object: what a broken partial clone looks like.
+    const flat = (
+      await runProcess(
+        ["sh", "-c", `printf '100644 blob ${missing}\\ta.prompt\\n' | git mktree --missing`],
+        repo
+      )
+    ).stdout.trim();
+    const top = (
+      await runProcess(
+        ["sh", "-c", `printf '040000 tree ${flat}\\tprompts\\n' | git mktree --missing`],
+        repo
+      )
+    ).stdout.trim();
+    const commit = (await sh("git", "commit-tree", top, "-m", "broken")).trim();
+    const r = await semverCheck("--base", commit, "prompts/a.prompt");
+    expect(r.exitCode).toBe(2);
+    expect(r.stderr).toContain("cannot read prompts/a.prompt");
+  });
+
   subprocessTest("a file outside the repository is a usage error", async () => {
     const outside = await mkdtemp(join(tmpdir(), "promptlang-outside-"));
     await Bun.write(join(outside, "x.prompt"), file("1.0.0", "x: string"));

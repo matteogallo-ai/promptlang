@@ -27,7 +27,14 @@ Release history is in [`CHANGELOG.md`](../CHANGELOG.md).
 - [x] `install` / `check`: `.promptlang/manifest.json` and a portable `integrity.json`
       (project-relative SHA-256 hashes)
 - [x] CLI: `parse`, `tokens`, `analyze`, `compile` (`--target`, `--emit-tsconfig`), `init`,
-      `install`, `list`, `check`, `version`
+      `install`, `list`, `check`, `semver-check`, `test`, `version`
+- [x] **SemVer for prompts**: `@version` validated as SemVer 2.0.0; `requires "<range>"`
+      on imports with `VersionMismatchError`; `semver-check` comparing each prompt's
+      interface (parameters, output type, `@model`) with a Git base, run in CI on the
+      examples; `bun run demo`
+- [x] **Native tests**: `promptlang test` running `test` blocks against the generated
+      TypeScript, `mock:` responses by default, `--live` after a cost estimate;
+      equality, `contains`, `matches`, `schema`; tests on unknown prompts are compile errors
 - [x] Six static analysis rules: missing tests, unbounded templates, prompt-injection
       risk, token cost estimate, chain complexity, duplicate prompts
 
@@ -55,11 +62,6 @@ Release history is in [`CHANGELOG.md`](../CHANGELOG.md).
 
 ## In progress
 
-- [ ] **SemVer for prompts** — `@version` validated as SemVer; version constraints on
-      imports with a `VersionMismatchError`; `promptlang semver-check` comparing each
-      prompt's interface (parameters, output schema, target model) against a git base
-- [ ] **Native tests** — `promptlang test` executing `test` blocks with `MockClient` by
-      default; a test referencing an unknown prompt becomes a compile error
 - [ ] **Cross-provider fallback** — per-provider model mapping in `RoutingClient`;
       `retry-after` honoured on rate limits
 - [ ] **npm publication** of `@promptlang/core` (ESM build, type declarations, Node
@@ -69,7 +71,8 @@ Release history is in [`CHANGELOG.md`](../CHANGELOG.md).
 
 ## Not implemented, not scheduled
 
-- `eval` blocks: parsed, not executed
+- `eval` blocks: parsed, not executed (`compile` and `test` warn)
+- `promptlang test --live` for OpenAI and Ollama models
 - `parallel { ... }` steps in chains (not in the grammar)
 - Calling an imported prompt from a chain (`Alias.prompt(...)`)
 - Type checking of data flow between chain steps (the TypeScript target relies on `tsc`)

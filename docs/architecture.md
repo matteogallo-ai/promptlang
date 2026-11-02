@@ -72,8 +72,10 @@ analyzer (`analyze`) runs on the AST independently of compilation.
 | Runtime clients (Anthropic, OpenAI, Ollama, Routing) | delivered; cross-provider fallback partial |
 | AI-powered linter | partial (mocked tests only) |
 | Project config + local registry | delivered |
-| CLI (parse/tokens/analyze/compile/init/install/list/check/version) | delivered |
-| `test` / `eval` execution, SemVer checks | not implemented |
+| CLI (parse/tokens/analyze/compile/init/install/list/check/semver-check/test/version) | delivered |
+| SemVer: `@version` validation, `requires` ranges, `semver-check` | delivered |
+| `test` execution (`promptlang test`) | delivered |
+| `eval` execution | not implemented |
 | npm package, streaming, remote registry, IDE support | not implemented |
 
 See [`CLAIMS.md`](CLAIMS.md) for the test behind each delivered item.
@@ -114,7 +116,7 @@ TypeDecl      = "type" IDENT "=" TypeExpression
 TypeExpression= PrimitiveType | EnumType | StructType | TypeReference
 PromptDecl    = "prompt" IDENT "(" ParamList? ")" "->" TypeExpression "{" Section+ "}"
 ChainDecl     = "chain" IDENT "(" ParamList? ")" "->" TypeExpression "{" Step+ "return" Expr "}"
-TestDecl      = "test" StringLit "{" "input" ":" Expr Expectation+ "}"
+TestDecl      = "test" StringLit "{" "input" ":" Expr [ "mock" ":" StringLit ] TestClause+ "}"
 EvalDecl      = "eval" StringLit "{" dataset prompt metric threshold "}"
 ```
 
@@ -302,22 +304,11 @@ Command-line interface. Subcommands:
 | `promptlang install` | Resolve imports and write the registry |
 | `promptlang list [--json]` | List all prompts in the project |
 | `promptlang check` | Verify integrity + import resolution |
+| `promptlang semver-check [paths] [--base ref] [--json]` | Compare `@version` bumps with interface changes against a Git ref |
+| `promptlang test <paths> [--json] [--live [--yes]]` | Run `test` blocks: mock responses by default, the provider after a cost estimate with `--live` |
 | `promptlang version` | Print version, repository and licence |
 
-There is no `test`, `eval`, `lint` or `viz` command.
-
------------------------------------------- | ----- | ---------------------------------- |
-| `promptlang parse <file>`                  | v0.2  | Print AST as JSON                  |
-| `promptlang compile <file> --target ts`    | v0.3  | Compile to TypeScript              |
-| `promptlang compile <file> --target py`    | v0.8  | Compile to Python                  |
-| `promptlang init`                          | v0.9  | Scaffold a new project             |
-| `promptlang install`                       | v0.9  | Resolve imports and write registry |
-| `promptlang list [--json]`                 | v0.9  | List all prompts in the project    |
-| `promptlang check`                         | v0.9  | Verify integrity + import resolution |
-| `promptlang test <file>`                   | v0.6  | Run test blocks                    |
-| `promptlang eval <file> --data <csv>`      | v0.6  | Run eval block against dataset     |
-| `promptlang lint <file>`                   | v0.7  | Run linter rules                   |
-| `promptlang viz <file>`                    | v0.5  | Render chain as ASCII DAG          |
+There is no `eval`, `lint` or `viz` command.
 
 ---
 

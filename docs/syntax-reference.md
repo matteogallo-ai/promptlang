@@ -158,21 +158,25 @@ chain summarize_and_translate(document: string, target_language: Language) -> st
 
 ---
 
-## Section 5 — Tests and evals (parsed only)
+## Section 5 — Tests and evals
 
-Both blocks are parsed and kept in the AST. **No command executes them**, and both
-compilers ignore them. The static rule `missing-tests` uses `test` blocks to decide
-whether a prompt has tests.
+`test` blocks are run by `promptlang test`; `eval` blocks are parsed only: no command
+executes them, and `compile` and `test` print a warning for each one.
 
 ```promptlang
 test "classifies bug reports" {
   input: classify_ticket(ticket: "The app crashes on login")
+  mock: "bug"
   expect: bug
+  expect schema
 }
 
 test "extracts the total" {
   input: extract_invoice(document: "Total: 120 EUR")
+  mock: """{"total": 120, "currency": "EUR"}"""
   expect.total: 120
+  expect.currency matches: "^[A-Z]{3}$"
+  expect.currency contains: "EU"
 }
 
 eval "classification accuracy" {
@@ -183,8 +187,44 @@ eval "classification accuracy" {
 }
 ```
 
-`expect:` and `expect.<field>:` take a literal (string, number, `true`/`false`) or an
-identifier. Comparison operators and regular expressions are not part of the syntax.
+### `test` blocks
+
+- `input:` must call a prompt or chain declared in the same file, with positional
+  or named arguments that are literals (string, number, `true`/`false`) or
+  identifiers (passed as their name, for enum values). An unknown callee, an unknown
+  or duplicated argument, a missing required parameter or too many positional
+  arguments is a compile error at the call, raised by `compile` (both targets) and
+  by `test`.
+- `mock:` (optional) is the raw model response that mock mode replays. Every model
+  call the test makes receives it, including each step of a chain.
+- At least one assertion:
+
+| Assertion | Passes when |
+| --- | --- |
+| `expect: v` / `expect.field: v` | the output (or its field) equals the literal; an identifier is compared as its name |
+| `expect contains: "s"` / `expect.field contains: "s"` | the value is a string containing `s` |
+| `expect matches: "re"` / `expect.field matches: "re"` | the value is a string matching the JavaScript regular expression; an invalid pattern is a parse error |
+| `expect schema` | the whole output conforms to the declared output type: enum member, required fields present, field types (`date` as `YYYY-MM-DD`), no undeclared fields |
+
+### `promptlang test <paths> [--json] [--live [--yes]]`
+
+Each file is compiled to TypeScript and its generated functions are called, so the
+request building and output parsing under test are the shipped ones. An error the
+generated code raises (an enum value outside the type, malformed JSON) fails the test
+with its message.
+
+- **Mock mode** (default): no network. A test without `mock:` fails with a message
+  saying so. Mock tests check the code path, not the model's answers.
+- **Live mode** (`--live`): calls Anthropic with `ANTHROPIC_API_KEY`, using the file's
+  `@model`. Before any call it prints a worst-case estimate per file (input ≈ prompt
+  and argument characters ÷ 3; output = calls × `@max_tokens`, default 1024) priced
+  from a table of Claude models, and asks for confirmation; `--yes` approves without
+  asking and is required without a terminal. A model missing from the price table is
+  refused. `mock:` is ignored.
+- `--json` prints `{ ok, mode, usage, files: [{ file, error?, results }] }`.
+- Exit codes: `0` every test passed, `1` a test failed or a file has an error, `2` usage
+  error, missing key, unpriced model, or a declined estimate.
+
 An `eval` block has exactly the four fields shown, in that order.
 
 ---

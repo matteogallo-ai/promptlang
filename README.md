@@ -25,15 +25,18 @@ PromptLang treats prompts as first-class typed code:
 - **Compile to TypeScript and Python** from the same source of truth
 - **Static analysis (SonarQube-style)**: six deterministic rules (missing tests, unbounded
   templates, prompt-injection risk, token cost, chain complexity, duplicates)
+- **Native tests**: `promptlang test` runs `test` blocks against the generated code,
+  on recorded `mock:` responses by default or on the provider with `--live`
+- **SemVer for prompts**: `@version` is validated, imports can require a version
+  range, and `promptlang semver-check` fails when a prompt's interface changed more
+  than its version says
 - **Multi-provider runtime** (Anthropic, OpenAI, Ollama, or your own client)
 - **No third-party runtime dependencies**: Bun + `fetch` + your own API keys
 
 Not delivered, and labelled as such everywhere in this repository (see
 [`docs/CLAIMS.md`](docs/CLAIMS.md)):
 
-- **Native tests**: `test` blocks are parsed but not executed
-- **SemVer for prompts**: `@version` is not validated and imports carry no
-  version constraint
+- **`eval` blocks**: parsed, not executed
 - **Cross-provider fallback**: `RoutingClient` switches providers, but the
   generated code sends one model name to all of them
 - **AI-powered linter**: the plumbing is tested with a mocked client only; there
@@ -54,23 +57,35 @@ prompt classify_ticket(ticket: string) -> Category {
     You are a support ticket classifier.
     Respond with exactly one category, no explanation.
   """
-  user: "Classify: {{ticket}}"
+  user: """
+    Classify the ticket between the <ticket> tags.
+    <ticket>
+    {{ticket}}
+    </ticket>
+  """
   output: Category
 }
 
-// Parsed and kept in the AST; no command executes it (see Roadmap).
+// `promptlang test` replays `mock:` through the generated code;
+// `promptlang test --live` asks the model instead.
 test "classifies bug reports correctly" {
   input: classify_ticket("The submit button crashes the app on iOS 17")
+  mock: "bug"
   expect: bug
 }
 
 test "classifies feature requests correctly" {
   input: classify_ticket("It would be great to export data as CSV")
+  mock: "feature_request"
   expect: feature_request
 }
 ```
 
-Compile it:
+Test it, then compile it:
+
+```bash
+bun run cli test classify-ticket.prompt
+```
 
 ```bash
 bun run cli compile classify-ticket.prompt --out ./generated --emit-tsconfig
@@ -97,8 +112,8 @@ tools' public documentation and are not tested here.
 | Feature                          | LangChain | LangSmith | W&B Weave | **PromptLang** |
 | -------------------------------- | :-------: | :-------: | :-------: | :------------: |
 | Typed I/O                        |    ❌     |    ❌     |    ❌     |       ✅       |
-| Native tests                     |    ❌     |   SaaS    |   SaaS    | Roadmap (in progress) |
-| SemVer for prompts               |    ❌     |    ❌     |    ❌     | Roadmap (in progress) |
+| Native tests                     |    ❌     |   SaaS    |   SaaS    | ✅ (mock or live; no evals) |
+| SemVer for prompts               |    ❌     |    ❌     |    ❌     |       ✅       |
 | AI-powered linter                |    ❌     |    ❌     |    ❌     | Partial (mocked tests only) |
 | Multi-provider fallback          |  Partial  |    ❌     |    ❌     | Partial (same model name only) |
 | Compile to TypeScript **and** Python | ❌     |    ❌     |    ❌     |       ✅       |
@@ -118,6 +133,55 @@ bun run cli --help
 ```
 
 Then run the CLI with `bun run cli <command>`.
+
+---
+
+## Tests
+
+`test` blocks run with `promptlang test <files or directories>`:
+
+```promptlang
+test "extracts the total" {
+  input: extract_invoice(pdf_text: "Total due: 1,250.00 EUR")
+  mock: """{"amount": 1250, "currency": "EUR", "invoice_date": "2026-08-11", "vendor": "Acme"}"""
+  expect.amount: 1250
+  expect.currency matches: "^[A-Z]{3}$"
+  expect.vendor contains: "Acme"
+  expect schema
+}
+```
+
+- **Assertions**: `expect: v` and `expect.field: v` (equality), `contains: "s"`,
+  `matches: "regex"`, and `expect schema` (the output conforms to the declared
+  type: enum members, required fields, field types, no undeclared fields).
+- **Mock mode (default)**: each test's `mock:` response goes through the generated
+  TypeScript, so request building and output parsing are what is tested. It does
+  not measure the model: the mock is written by hand. A test without `mock:` fails
+  in this mode.
+- **Live mode** (`--live`, Anthropic models, `ANTHROPIC_API_KEY`): prints a worst-case
+  cost estimate (every call at its full `max_tokens`) and asks before calling;
+  `--yes` approves without asking. Models without a recorded price are refused.
+- `--json` for tools; exit 0 when every test passes, 1 on a failure, 2 on usage errors.
+- A test whose `input` calls a prompt or chain that the file does not declare is a
+  compile error, in `compile` and in `test`. `eval` blocks are parsed, and `compile`
+  and `test` warn that they are not executed.
+
+---
+
+## Versioning
+
+- `@version` must be SemVer 2.0.0 (`1.4.0`, `2.0.0-rc.1`); anything else is a parse error.
+- `import "./sentiment.prompt" as S requires "^1.0.0"`: `install` and `check` fail
+  with `VersionMismatchError` when the imported file's `@version` is outside the range.
+- `promptlang semver-check [--base <ref>]` compares each `.prompt` file with its version
+  at a Git ref (default `origin/main`, else the latest tag). Removing or retyping a
+  parameter, adding a required one, changing the output type or the `@model` requires a
+  major bump; optional additions a minor; text-only changes a patch. CI runs it on
+  `docs/examples`. Full rules: [`docs/syntax-reference.md`](docs/syntax-reference.md) Section 6.
+
+`bun run demo` plays the whole story in a temporary Git repository: an incompatible
+change released as 1.1.0 is rejected, 2.0.0 passes, a consumer pinned to `^1.0.0`
+fails cleanly, and the tests still pass ([`docs/examples/demo/`](docs/examples/demo/)).
 
 ---
 
@@ -363,14 +427,12 @@ SemVer track.
 
 In progress:
 
-- **SemVer for prompts** — validate `@version`, version constraints on imports,
-  and a `semver-check` command that detects breaking interface changes
-- **Native tests** — execute `test` blocks with the mock client by default
 - **Cross-provider fallback** — per-provider model mapping in `RoutingClient`
 - **npm publication** of `@promptlang/core`
 
 Not scheduled:
 
+- `eval` execution (datasets, metrics, thresholds)
 - Remote package registry (the registry is local-only)
 - Streaming responses in the runtime
 - More provider clients (Google Gemini, Mistral, Cohere)
@@ -394,7 +456,8 @@ marked ✅ but not implemented; that `src/index.ts` exported only a hard-coded
 workspace package's tests; that cross-provider fallback could not work; and that
 the package could not be published under its name. A follow-up review of the
 docs found that `parallel` steps and calls to imported prompts, both documented,
-do not parse.
+do not parse. Both headline features were then implemented, with the scope stated
+in the [Tests](#tests) and [Versioning](#versioning) sections.
 
 What changed in response:
 
@@ -404,8 +467,11 @@ What changed in response:
 - Biome and knip run in CI; dead code they reported was removed;
 - the package is `@promptlang/core` and its entry point exports the compiler API;
 - the rules followed for every change are in
-  [`docs/ENGINEERING_STANDARDS.md`](docs/ENGINEERING_STANDARDS.md): agent output is
-  reviewed by a second agent with fresh context, then audited by the maintainer.
+  [`docs/ENGINEERING_STANDARDS.md`](docs/ENGINEERING_STANDARDS.md).
+
+What the maintainer does:
+
+I design the specifications and acceptance criteria. A coding agent implements; an independent reviewer agent and a separate orchestrating model audit every delivery against written standards (docs/ENGINEERING_STANDARDS.md). I make the calls, and since November 2026 nothing merges until I pass a comprehension check on the changed code.
 
 ---
 

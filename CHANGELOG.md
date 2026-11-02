@@ -11,8 +11,8 @@ Remediation after the 2026-11-02 external audit. The version number for this
 release is chosen when it is tagged.
 
 ### Claimed but not true (corrected)
-- README marked **Native tests** and **SemVer for prompts** ✅; neither is
-  implemented. Both are now Roadmap (in progress).
+- README marked **Native tests** and **SemVer for prompts** ✅; neither was
+  implemented. Both are now implemented (see Added), with their scope in the README.
 - README marked **Multi-provider fallback** ✅; generated code sends the same model
   name to every provider, so Anthropic → OpenAI fallback fails. Now Partial.
 - README marked the **AI-powered linter** ✅ and "unique"; it is only tested with a
@@ -37,6 +37,9 @@ release is chosen when it is tagged.
 - `.promptlang/manifest.json` (schema version 2) stores project-relative POSIX
   paths; version 1 manifests with absolute paths are migrated on read.
 - `compile` rejects `.prompt` files with no declarations (exit 1).
+- The examples are versioned 2.0.0 (their target model changed) and pass the
+  project's own static analyzer: user input is delimited, with an untrusted-content
+  instruction. Each example test has a `mock:` response.
 - Examples, README, `init` template and the config default use `claude-opus-5-5`.
   They used `claude-opus-4.7`, which is not an Anthropic model ID (IDs use
   hyphens: `claude-opus-4-7`), and `classify-ticket.prompt` set `@temperature`,
@@ -58,6 +61,17 @@ release is chosen when it is tagged.
   (exact, `^`, `~`, `>`, `>=`, `<`, `<=`, space-separated AND).
 - A syntax error in any file of the import graph is reported by `install` and
   `check` with the file path, instead of an uncaught exception.
+- `promptlang semver-check [paths] [--base <ref>] [--json]`: compares each `.prompt`
+  file's interface (parameters, output type, `@model`) with its version at a Git ref
+  and exits 1 when `@version` was not bumped enough. CI runs it on `docs/examples`.
+- `promptlang test <paths> [--json] [--live [--yes]]`: runs `test` blocks against the
+  generated TypeScript, replaying `mock:` responses by default; `--live` calls
+  Anthropic after printing a worst-case cost estimate and getting approval.
+- Test syntax: `mock: "..."`, `expect contains:`, `expect matches:`, `expect schema`.
+- A test whose `input` calls a prompt or chain the file does not declare, or with
+  arguments that do not match its parameters, is a compile error.
+- `compile` and `test` warn that `eval` blocks are parsed but not executed.
+- `bun run demo`: the SemVer scenario end to end in a temporary Git repository.
 - Optional parameters: `name?: Type` in prompts and chains (`name?: T` in
   TypeScript, `NotRequired[T]` in Python; an omitted one interpolates as "").
 - `InvalidResponseError` for provider 2xx bodies that are not JSON or lack the

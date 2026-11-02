@@ -330,6 +330,8 @@ dependencies:
 
 `sources` and `compile` are used by `compile`, `install`, `list` and `check`.
 `defaults` is validated but not read by the compiler (use `@model` and friends).
+`linter` is validated but not read by `analyze`: `--ai` turns the AI linter on, and
+it runs on `claude-haiku-5-5`, 3 prompts at a time.
 `dependencies[].version` is stored, not checked. The accepted YAML subset is in
 [`yaml-support.md`](yaml-support.md).
 

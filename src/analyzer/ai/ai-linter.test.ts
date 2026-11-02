@@ -255,8 +255,10 @@ describe("AiLinter", () => {
     const linter = new AiLinter({ client: mixedClient, concurrency: 1 });
     const ctx = makeContext([{ name: "bad" }, { name: "ok" }]);
     const issues = await linter.analyze([ctx]);
-    // The failing prompt is skipped, no crash, 0 issues from the successful one
-    expect(issues).toHaveLength(0);
+    // No crash; the failure is reported for 'bad' and 'ok' is still analyzed (0 issues).
+    expect(issues.map((i) => [i.rule, i.message])).toEqual([
+      ["ai:request-failure", "AI linter request failed for prompt 'bad': rate_limit"],
+    ]);
     expect(callCount).toBe(2);
   });
 
@@ -268,6 +270,19 @@ describe("AiLinter", () => {
     } finally {
       if (savedKey !== undefined) process.env.ANTHROPIC_API_KEY = savedKey;
     }
+  });
+
+  test("a failed request is reported as an issue, not dropped", async () => {
+    const linter = new AiLinter({ client: new FailingMockClient() });
+    const issues = await linter.analyze([
+      makeContext([{ name: "p", systemContent: "Be helpful." }]),
+    ]);
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toMatchObject({
+      severity: "warning",
+      rule: "ai:request-failure",
+      message: "AI linter request failed for prompt 'p': rate_limit_error: Too many requests",
+    });
   });
 
   test("custom client bypasses ANTHROPIC_API_KEY check", () => {

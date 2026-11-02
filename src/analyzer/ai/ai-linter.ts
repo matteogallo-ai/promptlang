@@ -64,11 +64,24 @@ export class AiLinter {
       const batchResults = await Promise.allSettled(
         batch.map(({ prompt, file }) => this.analyzePrompt(prompt, file))
       );
-      for (const result of batchResults) {
+      batchResults.forEach((result, k) => {
         if (result.status === "fulfilled") {
           issues.push(...result.value);
+          return;
         }
-      }
+        // A failed call (rate limit, outage, bad key) must not read as "no issues found".
+        const { prompt, file } = batch[k]!;
+        const reason =
+          result.reason instanceof Error ? result.reason.message : String(result.reason);
+        issues.push({
+          severity: "warning",
+          rule: "ai:request-failure",
+          file,
+          line: prompt.line,
+          column: prompt.column,
+          message: `AI linter request failed for prompt '${prompt.name}': ${reason}`,
+        });
+      });
       if (this.onProgress) {
         this.onProgress(Math.min(i + batch.length, prompts.length), prompts.length);
       }

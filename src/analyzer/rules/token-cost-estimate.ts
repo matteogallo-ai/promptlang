@@ -6,7 +6,10 @@ const WORDS_TO_TOKENS_RATIO = 1.3;
 
 /** Rough word count for a string. */
 function countWords(s: string): number {
-  return s.trim().split(/\s+/).filter((w) => w.length > 0).length;
+  return s
+    .trim()
+    .split(/\s+/)
+    .filter((w) => w.length > 0).length;
 }
 
 /**
@@ -42,8 +45,7 @@ export const tokenCostEstimateRule: Rule = {
           line: prompt.line,
           column: prompt.column,
           message: `Prompt '${prompt.name}' is ~${estimatedTokens} tokens (estimated).`,
-          suggestion:
-            "Consider splitting or optimizing to reduce token usage and latency.",
+          suggestion: "Consider splitting or optimizing to reduce token usage and latency.",
         });
       }
     }

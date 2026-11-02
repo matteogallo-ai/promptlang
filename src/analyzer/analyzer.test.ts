@@ -123,10 +123,7 @@ describe("missing-tests rule", () => {
   });
 
   test("no issue when prompt has a matching test", () => {
-    const ctx = makeContext("a.prompt", [
-      makePrompt("my_prompt"),
-      makeTest("my_prompt"),
-    ]);
+    const ctx = makeContext("a.prompt", [makePrompt("my_prompt"), makeTest("my_prompt")]);
     const issues = missingTestsRule.check(ctx);
     expect(issues).toHaveLength(0);
   });
@@ -150,9 +147,11 @@ describe("missing-tests rule", () => {
 describe("unbounded-template rule", () => {
   test("reports warning when template var is not a declared param", () => {
     const ctx = makeContext("a.prompt", [
-      makePrompt("p", ["declared_param"], [
-        makeMessageSection("user", "Hello {{undeclared_var}}", true),
-      ]),
+      makePrompt(
+        "p",
+        ["declared_param"],
+        [makeMessageSection("user", "Hello {{undeclared_var}}", true)]
+      ),
     ]);
     const issues = unboundedTemplateRule.check(ctx);
     expect(issues).toHaveLength(1);
@@ -161,9 +160,7 @@ describe("unbounded-template rule", () => {
 
   test("no issue when template var is a declared param", () => {
     const ctx = makeContext("a.prompt", [
-      makePrompt("p", ["ticket"], [
-        makeMessageSection("user", "Classify: {{ticket}}", true),
-      ]),
+      makePrompt("p", ["ticket"], [makeMessageSection("user", "Classify: {{ticket}}", true)]),
     ]);
     const issues = unboundedTemplateRule.check(ctx);
     expect(issues).toHaveLength(0);
@@ -171,9 +168,7 @@ describe("unbounded-template rule", () => {
 
   test("no issue for non-template string sections", () => {
     const ctx = makeContext("a.prompt", [
-      makePrompt("p", [], [
-        makeMessageSection("system", "You are a helpful assistant.", false),
-      ]),
+      makePrompt("p", [], [makeMessageSection("system", "You are a helpful assistant.", false)]),
     ]);
     const issues = unboundedTemplateRule.check(ctx);
     expect(issues).toHaveLength(0);
@@ -187,9 +182,7 @@ describe("unbounded-template rule", () => {
 describe("prompt-injection-risk rule", () => {
   test("reports warning for undelimited user section template", () => {
     const ctx = makeContext("a.prompt", [
-      makePrompt("p", ["input"], [
-        makeMessageSection("user", "Process this: {{input}}", true),
-      ]),
+      makePrompt("p", ["input"], [makeMessageSection("user", "Process this: {{input}}", true)]),
     ]);
     const issues = promptInjectionRiskRule.check(ctx);
     expect(issues).toHaveLength(1);
@@ -198,9 +191,11 @@ describe("prompt-injection-risk rule", () => {
 
   test("no issue when content uses --- delimiters", () => {
     const ctx = makeContext("a.prompt", [
-      makePrompt("p", ["input"], [
-        makeMessageSection("user", "Process:\n---\n{{input}}\n---", true),
-      ]),
+      makePrompt(
+        "p",
+        ["input"],
+        [makeMessageSection("user", "Process:\n---\n{{input}}\n---", true)]
+      ),
     ]);
     const issues = promptInjectionRiskRule.check(ctx);
     expect(issues).toHaveLength(0);
@@ -208,9 +203,7 @@ describe("prompt-injection-risk rule", () => {
 
   test("no issue for system sections (not user-controlled input)", () => {
     const ctx = makeContext("a.prompt", [
-      makePrompt("p", ["lang"], [
-        makeMessageSection("system", "Translate to {{lang}}", true),
-      ]),
+      makePrompt("p", ["lang"], [makeMessageSection("system", "Translate to {{lang}}", true)]),
     ]);
     const issues = promptInjectionRiskRule.check(ctx);
     expect(issues).toHaveLength(0);
@@ -218,9 +211,7 @@ describe("prompt-injection-risk rule", () => {
 
   test("no issue when content uses XML-style delimiters", () => {
     const ctx = makeContext("a.prompt", [
-      makePrompt("p", ["data"], [
-        makeMessageSection("user", "Input: <DATA>{{data}}</DATA>", true),
-      ]),
+      makePrompt("p", ["data"], [makeMessageSection("user", "Input: <DATA>{{data}}</DATA>", true)]),
     ]);
     const issues = promptInjectionRiskRule.check(ctx);
     expect(issues).toHaveLength(0);
@@ -234,10 +225,14 @@ describe("prompt-injection-risk rule", () => {
 describe("token-cost-estimate rule", () => {
   test("no issue for short prompts", () => {
     const ctx = makeContext("a.prompt", [
-      makePrompt("p", [], [
-        makeMessageSection("system", "You are helpful. Classify the ticket."),
-        makeMessageSection("user", "Classify: {{ticket}}", true),
-      ]),
+      makePrompt(
+        "p",
+        [],
+        [
+          makeMessageSection("system", "You are helpful. Classify the ticket."),
+          makeMessageSection("user", "Classify: {{ticket}}", true),
+        ]
+      ),
     ]);
     const issues = tokenCostEstimateRule.check(ctx);
     expect(issues).toHaveLength(0);
@@ -247,9 +242,7 @@ describe("token-cost-estimate rule", () => {
     // ~400 words * 1.3 ≈ 520 tokens
     const longContent = Array(400).fill("word").join(" ");
     const ctx = makeContext("a.prompt", [
-      makePrompt("p", [], [
-        makeMessageSection("system", longContent),
-      ]),
+      makePrompt("p", [], [makeMessageSection("system", longContent)]),
     ]);
     const issues = tokenCostEstimateRule.check(ctx);
     expect(issues).toHaveLength(1);

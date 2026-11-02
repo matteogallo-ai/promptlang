@@ -22,8 +22,7 @@ export const duplicatePromptsRule: Rule = {
         (other) =>
           other.file !== context.file &&
           other.ast.declarations.some(
-            (d): d is PromptDeclaration =>
-              d.kind === "PromptDeclaration" && d.name === prompt.name
+            (d): d is PromptDeclaration => d.kind === "PromptDeclaration" && d.name === prompt.name
           )
       );
 
@@ -37,14 +36,12 @@ export const duplicatePromptsRule: Rule = {
       const locations = allFiles
         .filter((f) =>
           f.ast.declarations.some(
-            (d): d is PromptDeclaration =>
-              d.kind === "PromptDeclaration" && d.name === prompt.name
+            (d): d is PromptDeclaration => d.kind === "PromptDeclaration" && d.name === prompt.name
           )
         )
         .map((f) => {
           const decl = f.ast.declarations.find(
-            (d): d is PromptDeclaration =>
-              d.kind === "PromptDeclaration" && d.name === prompt.name
+            (d): d is PromptDeclaration => d.kind === "PromptDeclaration" && d.name === prompt.name
           ) as PromptDeclaration;
           return `${f.file}:${decl.line}`;
         })

@@ -45,9 +45,7 @@ export async function runInit(args: string[]): Promise<number> {
 
   const exists = await Bun.file(configPath).exists();
   if (exists && !force) {
-    console.error(
-      `${CONFIG_FILENAME} already exists in ${cwd}. Use --force to overwrite.`
-    );
+    console.error(`${CONFIG_FILENAME} already exists in ${cwd}. Use --force to overwrite.`);
     return 1;
   }
 

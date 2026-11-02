@@ -1,9 +1,5 @@
 import { join, relative } from "node:path";
-import {
-  loadConfig,
-  CONFIG_FILENAME,
-  ConfigValidationError,
-} from "../../config/config";
+import { loadConfig, CONFIG_FILENAME, ConfigValidationError } from "../../config/config";
 import { YamlParseError } from "@promptlang/yaml-parser";
 import { tokenize } from "../../lexer/lexer";
 import { parse } from "../../parser/parser";

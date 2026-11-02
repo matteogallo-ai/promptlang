@@ -3,6 +3,7 @@ import { loadConfig, CONFIG_FILENAME, ConfigValidationError } from "../../config
 import { YamlParseError } from "@promptlang/yaml-parser";
 import { check } from "../../registry/registry";
 import { ResolverError } from "../../registry/resolver";
+import { parseConfigFlag } from "../args";
 
 /**
  * Verifies that:
@@ -41,10 +42,4 @@ export async function runCheck(args: string[]): Promise<number> {
     }
     throw error;
   }
-}
-
-function parseConfigFlag(args: string[]): string | undefined {
-  const idx = args.indexOf("--config");
-  if (idx === -1) return undefined;
-  return args[idx + 1];
 }

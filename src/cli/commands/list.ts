@@ -4,6 +4,7 @@ import { YamlParseError } from "@promptlang/yaml-parser";
 import { tokenize } from "../../lexer/lexer";
 import { parse } from "../../parser/parser";
 import { discoverLocalPrompts, readManifest } from "../../registry/registry";
+import { parseConfigFlag } from "../args";
 
 interface ListedPrompt {
   file: string;
@@ -85,10 +86,4 @@ async function inspectFile(file: string): Promise<ListedPrompt> {
   } catch {
     return { file, prompts: [], chains: [], imports: [] };
   }
-}
-
-function parseConfigFlag(args: string[]): string | undefined {
-  const idx = args.indexOf("--config");
-  if (idx === -1) return undefined;
-  return args[idx + 1];
 }

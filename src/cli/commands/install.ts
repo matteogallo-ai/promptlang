@@ -3,6 +3,7 @@ import { YamlParseError } from "@promptlang/yaml-parser";
 import { install } from "../../registry/registry";
 import { ResolverError } from "../../registry/resolver";
 import { join } from "node:path";
+import { parseConfigFlag } from "../args";
 
 /**
  * Resolves the project's import graph and writes `.promptlang/manifest.json`
@@ -33,12 +34,4 @@ export async function runInstall(args: string[]): Promise<number> {
     }
     throw error;
   }
-}
-
-function parseConfigFlag(args: string[]): string | undefined {
-  const idx = args.indexOf("--config");
-  if (idx === -1) return undefined;
-  const value = args[idx + 1];
-  if (!value) return undefined;
-  return value;
 }

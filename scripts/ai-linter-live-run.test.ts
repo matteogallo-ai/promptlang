@@ -6,7 +6,7 @@ describe("ai-linter-live-run", () => {
   test("the worst-case estimate for the five prompts fits the approved budget", async () => {
     const e = estimate(await loadContexts());
     expect(e.calls).toBe(5);
-    expect(e.maxUsd).toBeLessThanOrEqual(BUDGET_USD);
+    expect(e.estimatedUsd).toBeLessThanOrEqual(BUDGET_USD);
   });
 
   test("records model, per-call usage, cost from usage, and failures as issues", async () => {

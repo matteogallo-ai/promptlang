@@ -34,9 +34,9 @@ export interface CostEstimate {
   model: string;
   calls: number;
   inputTokens: number;
-  /** Every call is assumed to use its whole max_tokens (a true bound without retries). */
+  /** Every call is assumed to use its whole max_tokens (the output side of the estimate). */
   maxOutputTokens: number;
-  maxUsd: number;
+  estimatedUsd: number;
 }
 
 export class UnpricedModelError extends Error {}
@@ -103,6 +103,6 @@ export function estimateLiveCost(program: Program): CostEstimate | null {
   }
   const inputTokens = Math.ceil(inputChars / CHARS_PER_TOKEN) + carriedTokens;
   const maxOutputTokens = calls * perCallOutput;
-  const maxUsd = (inputTokens * price[0] + maxOutputTokens * price[1]) / 1_000_000;
-  return { model, calls, inputTokens, maxOutputTokens, maxUsd };
+  const estimatedUsd = (inputTokens * price[0] + maxOutputTokens * price[1]) / 1_000_000;
+  return { model, calls, inputTokens, maxOutputTokens, estimatedUsd };
 }

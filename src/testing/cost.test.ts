@@ -17,7 +17,7 @@ describe("estimateLiveCost", () => {
       calls: 2,
       inputTokens: 26,
       maxOutputTokens: 200,
-      maxUsd: (26 * 4 + 200 * 20) / 1e6,
+      estimatedUsd: (26 * 4 + 200 * 20) / 1e6,
     });
   });
 

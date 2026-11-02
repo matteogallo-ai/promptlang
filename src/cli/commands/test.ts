@@ -66,9 +66,9 @@ function printEstimate(estimates: Array<{ file: string; estimate: CostEstimate }
     "Live run estimate (every call at its full max_tokens, input ≈ characters ÷ 3, no retries):"
   );
   for (const { file, estimate: e } of estimates) {
-    total += e.maxUsd;
+    total += e.estimatedUsd;
     console.error(
-      `  ${file}: ${e.calls} call(s) on ${e.model}, ~${e.inputTokens} input + ≤${e.maxOutputTokens} output tokens, ≈ $${e.maxUsd.toFixed(4)}`
+      `  ${file}: ${e.calls} call(s) on ${e.model}, ~${e.inputTokens} input + ≤${e.maxOutputTokens} output tokens, ≈ $${e.estimatedUsd.toFixed(4)}`
     );
   }
   console.error(`  total ≈ $${total.toFixed(4)}`);

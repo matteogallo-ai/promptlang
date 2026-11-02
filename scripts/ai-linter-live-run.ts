@@ -57,7 +57,7 @@ function price(): readonly [number, number] {
 export function estimate(contexts: AnalysisContext[]): {
   calls: number;
   inputTokens: number;
-  maxUsd: number;
+  estimatedUsd: number;
 } {
   let calls = 0;
   let chars = 0;
@@ -73,7 +73,7 @@ export function estimate(contexts: AnalysisContext[]): {
   return {
     calls,
     inputTokens,
-    maxUsd: (inputTokens * inPrice + calls * MAX_OUTPUT_TOKENS * outPrice) / 1e6,
+    estimatedUsd: (inputTokens * inPrice + calls * MAX_OUTPUT_TOKENS * outPrice) / 1e6,
   };
 }
 
@@ -128,7 +128,7 @@ export async function run(
       const v = c.ast.metadata.find((m) => m.kind === "VersionMetadata");
       return { file: c.file, version: v?.kind === "VersionMetadata" ? v.value : null };
     }),
-    estimate_max_usd: estimate(contexts).maxUsd,
+    estimate_max_usd: estimate(contexts).estimatedUsd,
     calls,
     usage,
     cost_usd: (usage.input_tokens * inPrice + usage.output_tokens * outPrice) / 1e6,
@@ -150,9 +150,9 @@ if (import.meta.main) {
   const contexts = await loadContexts();
   const e = estimate(contexts);
   console.log(
-    `${e.calls} call(s) to ${MODEL}, ~${e.inputTokens} input tokens, estimate $${e.maxUsd.toFixed(4)} at full max_tokens, no retries (budget $${BUDGET_USD})`
+    `${e.calls} call(s) to ${MODEL}, ~${e.inputTokens} input tokens, estimate $${e.estimatedUsd.toFixed(4)} at full max_tokens, no retries (budget $${BUDGET_USD})`
   );
-  if (e.maxUsd > BUDGET_USD) {
+  if (e.estimatedUsd > BUDGET_USD) {
     console.error("Estimate exceeds the approved budget; nothing was called.");
     process.exit(2);
   }

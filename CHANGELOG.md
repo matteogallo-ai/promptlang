@@ -51,6 +51,8 @@ release is chosen when it is tagged.
   delimited text as data. The prompt text used to be inserted bare.
 
 ### Added
+- `@version` is validated as SemVer 2.0.0; an invalid value is a parse error
+  positioned on the version string. **BREAKING** for files with non-SemVer values.
 - `InvalidResponseError` for provider 2xx bodies that are not JSON or lack the
   documented fields (not retried; `RoutingClient` still falls back).
 - `docs/CLAIMS.md`, `scripts/check-claims.ts`, `scripts/check-stale-narrative.ts`,

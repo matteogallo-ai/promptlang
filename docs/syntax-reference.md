@@ -29,7 +29,7 @@ import "shared/categories.prompt" as Categories
 
 | Directive | Value | Effect today |
 | --- | --- | --- |
-| `@version` | string | Copied into the generated `<prompt>_meta.version`. Optional; **not validated** as SemVer. |
+| `@version` | string | Optional. Must be a SemVer 2.0.0 version (`1.0.0`, `2.1.0-rc.1`, `1.0.0+build.5`); anything else is a parse error at the string's line and column. Copied into the generated `<prompt>_meta.version`. |
 | `@model` | identifier (may contain `-` and `.`) | Model name sent in every request from this file. Without it the generated code sends `model: ""`. |
 | `@temperature` | number | Copied into each request. No range check. Anthropic rejects a non-default `temperature` on Claude 4.7 and later (HTTP 400), so omit it for those models. |
 | `@max_tokens` | number | Copied into each request. |
@@ -163,8 +163,8 @@ An `eval` block has exactly the four fields shown, in that order.
 
 ## Section 6 — Versioning
 
-`@version` is stored as a string and copied into the generated metadata. There is no
-SemVer validation, no version constraint on imports and no breaking-change check.
+`@version` is validated as SemVer 2.0.0 when the file is parsed. There is no
+version constraint on imports and no breaking-change check.
 This is the "SemVer for prompts" item in [`roadmap.md`](roadmap.md).
 
 ---
@@ -277,5 +277,5 @@ Plus `__init__.py` and a generated `promptlang_runtime.py` (its HTTP clients nee
 
 Array types · per-prompt directives · `parallel` steps · calls to imported prompts ·
 type checking between chain steps · executing `test`/`eval` · comparison or regex
-assertions · `@version` validation and import version constraints · rule suppression
+assertions · import version constraints · rule suppression
 comments · custom analyzer rules · model aliases in config · single-quoted strings.

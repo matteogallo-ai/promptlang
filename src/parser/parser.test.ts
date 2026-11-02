@@ -40,6 +40,29 @@ function firstDecl<T>(source: string): T {
 // ---------------------------------------------------------------------------
 
 describe("Parser — Metadata", () => {
+  test("@version accepts SemVer 2.0.0 with pre-release and build metadata", () => {
+    for (const v of ["0.1.0", "1.0.0-alpha.1", "1.0.0+build.5", "2.0.0-rc.1+exp.sha.5114f85"]) {
+      expect(p(`@version "${v}"`).metadata[0]).toMatchObject({ kind: "VersionMetadata", value: v });
+    }
+  });
+
+  test("@version rejects a non-SemVer value with the string's line and column", () => {
+    for (const bad of ["not-a-version", "1.0", "v1.0.0", "01.0.0"]) {
+      let error: unknown;
+      try {
+        p(`// header\n@version   "${bad}"`);
+      } catch (e) {
+        error = e;
+      }
+      expect(error).toBeInstanceOf(ParserError);
+      expect((error as ParserError).message).toContain(
+        `"${bad}" is not a valid SemVer 2.0.0 version`
+      );
+      expect((error as ParserError).line).toBe(2);
+      expect((error as ParserError).column).toBe(12);
+    }
+  });
+
   test("parses @version", () => {
     const ast = p(`@version "1.0.0"`);
     expect(ast.metadata).toHaveLength(1);

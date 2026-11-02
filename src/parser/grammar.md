@@ -29,7 +29,7 @@ Program        ::= Import* Metadata* Declaration*
 Import         ::= "import" (STRING | TRIPLE_STRING) "as" IDENT
                    -- the path may not contain {{...}} interpolation
 
-Metadata       ::= AT_VERSION   StringLit
+Metadata       ::= AT_VERSION   StringLit     -- must be a SemVer 2.0.0 version
                  | AT_MODEL     IDENT          -- model names may contain hyphens/dots
                  | AT_TEMPERATURE NumberLit
                  | AT_MAX_TOKENS  NumberLit

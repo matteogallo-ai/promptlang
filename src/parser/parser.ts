@@ -40,6 +40,7 @@ import type {
   DescriptionMetadata,
 } from "../ast/nodes";
 import { ParserError } from "./errors";
+import { parseVersion } from "../semver/semver";
 
 // ---------------------------------------------------------------------------
 // Parser
@@ -286,6 +287,13 @@ class Parser {
     switch (tok.type) {
       case TokenType.AT_VERSION: {
         const str = this.parseStringLit('@version expects a string value, e.g. @version "1.0.0"');
+        if (!parseVersion(str.value)) {
+          throw new ParserError(
+            `@version "${str.value}" is not a valid SemVer 2.0.0 version: expected MAJOR.MINOR.PATCH with optional -pre-release and +build, e.g. "1.0.0" or "2.1.0-rc.1"`,
+            str.line,
+            str.column
+          );
+        }
         return {
           kind: "VersionMetadata",
           value: str.value,

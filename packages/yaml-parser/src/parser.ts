@@ -98,7 +98,8 @@ function stripInlineComment(s: string): string {
   let inDouble = false;
   for (let i = 0; i < s.length; i++) {
     const ch = s[i]!;
-    if ((inSingle || inDouble) && ch === "\\") {
+    // Only double-quoted strings have backslash escapes; in single quotes `\` is literal.
+    if (inDouble && ch === "\\") {
       i++;
       continue;
     }
@@ -316,7 +317,8 @@ function findKeyColon(s: string): number {
   let inDouble = false;
   for (let i = 0; i < s.length; i++) {
     const ch = s[i]!;
-    if ((inSingle || inDouble) && ch === "\\") {
+    // Only double-quoted strings have backslash escapes; in single quotes `\` is literal.
+    if (inDouble && ch === "\\") {
       i++;
       continue;
     }

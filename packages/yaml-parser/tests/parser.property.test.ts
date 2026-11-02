@@ -46,7 +46,7 @@ const scalar: fc.Arbitrary<Scalar> = fc.oneof(
   })),
   // Single-quoted strings only escape `'`; they cannot hold a line break.
   quotedText
-    .map((s) => s.replace(/[\n\r\\]/g, ""))
+    .map((s) => s.replace(/[\n\r]/g, ""))
     .map((s) => ({ value: s, text: `'${s.replace(/'/g, "''")}'` })),
   fc.integer().map((n) => ({ value: n, text: String(n) })),
   fc

@@ -12,6 +12,10 @@ and versioning follows [SemVer 2.0](https://semver.org/spec/v2.0.0.html).
 - A `__proto__` mapping key is kept as an own data property. It used to be
   dropped (`__proto__: x` parsed to `{}`), and a nested mapping under it
   became the parent object's prototype.
+- A backslash inside a single-quoted string is literal, as the YAML spec and
+  this README say. It used to escape the next character while looking for
+  comments and the key colon, so `dir: 'C:\'  # note` raised
+  "Unterminated single-quoted string".
 
 ## [1.0.0] — 2026-08-14
 

@@ -86,6 +86,12 @@ describe("yaml-parser: scalars", () => {
     expect(result.c).toBeNull();
   });
 
+  test("a backslash in a single-quoted string is literal, so a comment after it is stripped", () => {
+    expect(parseYaml("dir: 'C:\\'  # windows\n")).toEqual({ dir: "C:\\" });
+    expect(parseYaml("- 'C:\\'  # windows\n")).toEqual(["C:\\"]);
+    expect(parseYaml('dir: "C:\\\\"  # windows\n')).toEqual({ dir: "C:\\" });
+  });
+
   test("ignores full-line and inline comments", () => {
     const src =
       "# leading comment\n" + "name: p # inline comment\n" + "# another line\n" + "count: 3\n";

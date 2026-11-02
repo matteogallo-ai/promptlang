@@ -38,6 +38,7 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "knip": "knip",
+    "check:claims": "bun run scripts/check-claims.ts",
     "check:stale-narrative": "bun run scripts/check-stale-narrative.ts",
     "cli": "bun run src/cli/cli.ts"
   },

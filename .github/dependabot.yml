@@ -1,0 +1,22 @@
+# Weekly, grouped version updates: one PR per ecosystem per week.
+# Dependabot does not open security updates for Bun; vulnerabilities in bun.lock
+# are caught by the OSV-Scanner job in ci.yml instead.
+version: 2
+updates:
+  # The root package.json and the packages/yaml-parser workspace share bun.lock.
+  - package-ecosystem: "bun"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      bun-dependencies:
+        patterns: ["*"]
+
+  # Actions are pinned by SHA; Dependabot updates the SHA and the version comment.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        patterns: ["*"]

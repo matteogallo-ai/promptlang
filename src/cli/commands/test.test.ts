@@ -184,7 +184,7 @@ describe("promptlang test --live", () => {
     expect(sent).toBe(1);
     expect(r.code).toBe(3);
     expect(r.stdout).toContain(
-      "configuration error, no verdict (fix the file or the key): BudgetExceededError: budget:"
+      "configuration error, no verdict (fix the file, the key or the approved budget): BudgetExceededError: budget:"
     );
   });
 
@@ -249,7 +249,7 @@ describe("promptlang test --live", () => {
     const r = await capture(() => runTest([file, "--live", "--yes"], deps));
     expect(r.code).toBe(3);
     expect(r.stdout).toContain(
-      "configuration error, no verdict (fix the file or the key): InvalidRequestError: max_tokens: too large for this model"
+      "configuration error, no verdict (fix the file, the key or the approved budget): InvalidRequestError: max_tokens: too large for this model"
     );
     expect(r.stdout).toContain("0 passed, 0 failed, 1 without a verdict (1 configuration error)");
   });

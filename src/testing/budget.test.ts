@@ -97,10 +97,12 @@ describe("BudgetedClient", () => {
     await expect(b.complete(req(3000))).rejects.toBeInstanceOf(BudgetExceededError);
   });
 
-  test("an unpriced model is refused before any call", async () => {
+  test("an unpriced model is refused before any call, as a budget error the runner classifies", async () => {
     const { client, calls } = counting();
     const budgeted = new BudgetedClient(client, 1);
-    await expect(budgeted.complete({ ...req(10), model: "gpt-x" })).rejects.toThrow(/no price/);
+    const refused = budgeted.complete({ ...req(10), model: "gpt-x" });
+    await expect(refused).rejects.toBeInstanceOf(BudgetExceededError);
+    await expect(refused).rejects.toThrow(/no price/);
     expect(calls).toHaveLength(0);
   });
 });

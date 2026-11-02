@@ -17,8 +17,9 @@ export class BudgetExceededError extends PromptClientError {
 }
 
 /**
- * The most `request` can cost: its input at the estimate's rate (characters ÷ 3)
- * and its whole max_tokens of output. Not rounded per call: the estimates round
+ * What the estimates charge `request` at most: its input at characters ÷ 3 and
+ * its whole max_tokens of output. Not a hard bound: text that tokenizes at under
+ * 3 characters per token (CJK, base64, dense code) costs more input. Not rounded per call: the estimates round
  * the total once, and a cap set to an estimate must hold every call it counted.
  */
 export function worstCaseUsd(request: PromptRequest): number {
@@ -30,11 +31,15 @@ export function worstCaseUsd(request: PromptRequest): number {
 }
 
 /**
- * Wraps the client of a paid run and enforces the approved spend in code: each
- * call reserves its worst case before it is sent, so concurrent calls cannot
- * overshoot together, and is then charged what the provider reports. A call
- * that fails, or reports no usage, stays charged at its worst case: it may
- * have been billed.
+ * Wraps the client of a paid run and enforces the approved spend in code: a call
+ * is sent only if its estimated worst case fits in what is left, it reserves that
+ * amount while in flight, so concurrent calls cannot all pass the check together,
+ * and it is then charged what the provider reports. A call that fails, or reports
+ * no usage, stays charged at its worst case: it may have been billed.
+ *
+ * The check happens before each call, so the spend can pass the cap only by
+ * what the calls in flight cost beyond their estimate (input that tokenizes at
+ * under 3 characters per token); the next call is then refused.
  */
 export class BudgetedClient implements PromptClient {
   private spent = 0;
@@ -51,12 +56,16 @@ export class BudgetedClient implements PromptClient {
   }
 
   async complete(request: PromptRequest): Promise<PromptResponse> {
+    const price = pricePerMTok(request.model);
+    if (!price)
+      throw new BudgetExceededError(
+        `budget: no price is recorded for model ${request.model}, so its cost cannot be capped; nothing was sent`
+      );
     const worst = worstCaseUsd(request);
-    const price = pricePerMTok(request.model)!;
     // Sums of float dollars drift by ~1e-18; a run exactly at its estimate must fit.
     if (this.spent + this.reserved + worst > this.capUsd + 1e-12) {
       throw new BudgetExceededError(
-        `budget: this call could cost up to $${worst.toFixed(4)}, and $${(this.spent + this.reserved).toFixed(4)} of the approved $${this.capUsd.toFixed(4)} is already spent or reserved; nothing was sent`
+        `budget: this call is estimated at up to $${worst.toFixed(6)}, and $${(this.spent + this.reserved).toFixed(6)} of the approved $${this.capUsd.toFixed(6)} is already spent or reserved; nothing was sent`
       );
     }
     this.reserved += worst;

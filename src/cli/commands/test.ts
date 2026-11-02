@@ -68,7 +68,7 @@ function printEstimate(estimates: Array<{ file: string; estimate: CostEstimate }
 
 function describeFailure(f: ProviderFailure): string {
   return f.kind === "configuration"
-    ? `configuration error, no verdict (fix the file or the key): ${f.message}`
+    ? `configuration error, no verdict (fix the file, the key or the approved budget): ${f.message}`
     : `provider failure, no verdict (retry later): ${f.message}`;
 }
 
@@ -154,8 +154,8 @@ export async function runTest(
         console.error("Aborted: no provider call was made.");
         return EXIT_USAGE;
       }
-      // The approved total is enforced in code, not only shown: no call may take the
-      // spend past it (src/testing/budget.ts).
+      // The approved total is enforced in code, not only shown: a call whose estimated
+      // worst case would pass it is not sent (src/testing/budget.ts).
       mode = { kind: "live", client: new BudgetedClient(deps.createClient(), total) };
     } catch (error) {
       if (error instanceof UsageError || error instanceof UnpricedModelError) {

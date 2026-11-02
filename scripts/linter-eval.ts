@@ -8,8 +8,9 @@
  *
  * The estimate (every call at its full max_tokens, input ≈ characters ÷ 3) must
  * be at or under BUDGET_USD, or nothing is called; the run itself goes through
- * BudgetedClient, so no call can take the spend past the estimate. The record
- * is written under runs/live/ and its SHA-256 appended to runs/live/SHA256SUMS.
+ * BudgetedClient, which sends no call whose estimated worst case would pass the
+ * estimate. The record is written under runs/live/ and its SHA-256 appended to
+ * runs/live/SHA256SUMS.
  */
 import { appendFile } from "node:fs/promises";
 import { resolve } from "node:path";

@@ -833,3 +833,52 @@ describe("compile — empty .prompt files", () => {
     expect(code).toBe(0);
   });
 });
+
+describe("compile — --target validation", () => {
+  const DIR = "/tmp/promptlang-target-test";
+  const SOURCE = `@version "1.0.0"\nprompt hi(name: string) -> string {\n  user: "Hi {{name}}"\n}\n`;
+
+  async function compileWith(targetArgs: string[]) {
+    await rm(DIR, { recursive: true, force: true });
+    await mkdir(DIR, { recursive: true });
+    await Bun.write(join(DIR, "hi.prompt"), SOURCE);
+    const log = captureLog();
+    const err = captureError();
+    const code = await main([
+      "bun",
+      "cli",
+      "compile",
+      join(DIR, "hi.prompt"),
+      "--out",
+      join(DIR, "out"),
+      ...targetArgs,
+    ]);
+    const stderr = err.output();
+    err.restore();
+    log.restore();
+    return { code, stderr };
+  }
+
+  test("an unknown --target value is an error and writes nothing", async () => {
+    for (const value of ["py", "ts", "rust"]) {
+      const { code, stderr } = await compileWith(["--target", value]);
+      expect(code).toBe(1);
+      expect(stderr).toContain(`unknown --target '${value}'`);
+      expect(stderr).toContain("typescript, python");
+      expect(await Bun.file(join(DIR, "out", "hi.ts")).exists()).toBe(false);
+    }
+  });
+
+  test("--target without a value is an error", async () => {
+    const { code, stderr } = await compileWith(["--target"]);
+    expect(code).toBe(1);
+    expect(stderr).toContain("--target requires a value");
+  });
+
+  test("--target python still writes Python", async () => {
+    const { code } = await compileWith(["--target", "python"]);
+    expect(code).toBe(0);
+    expect(await Bun.file(join(DIR, "out", "hi.py")).exists()).toBe(true);
+    expect(await Bun.file(join(DIR, "out", "hi.ts")).exists()).toBe(false);
+  });
+});

@@ -297,7 +297,7 @@ Command-line interface. Subcommands:
 | `promptlang parse <file>` | Print the AST as a box-drawing tree |
 | `promptlang tokens <file>` | Print the token stream |
 | `promptlang analyze <path> [--json] [--strict] [--ai]` | Static rules, optionally the AI linter |
-| `promptlang compile <path> [--out dir] [--target typescript\|python] [--emit-tsconfig]` | Compile; any `--target` other than `python` yields TypeScript |
+| `promptlang compile <path> [--out dir] [--target typescript\|python] [--emit-tsconfig]` | Compile; any other `--target` value is an error (exit 1) |
 | `promptlang init` | Scaffold `promptlang.yaml` |
 | `promptlang install` | Resolve imports and write the registry |
 | `promptlang list [--json]` | List all prompts in the project |

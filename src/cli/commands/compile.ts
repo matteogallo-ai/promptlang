@@ -17,6 +17,13 @@ import { YamlParseError } from "@promptlang/yaml-parser";
 import { mkdir } from "node:fs/promises";
 import { join, basename, relative, resolve } from "node:path";
 
+const TARGETS = ["typescript", "python"] as const;
+type Target = (typeof TARGETS)[number];
+
+function isTarget(value: string): value is Target {
+  return (TARGETS as readonly string[]).includes(value);
+}
+
 export async function runCompile(args: string[]): Promise<number> {
   const outIdx = args.indexOf("--out");
   const emitTsconfig = args.includes("--emit-tsconfig");
@@ -56,12 +63,21 @@ export async function runCompile(args: string[]): Promise<number> {
   const outDir =
     outIdx !== -1 && args[outIdx + 1] ? args[outIdx + 1]! : (config?.compile.out ?? "./generated");
 
-  const explicitTarget = targetIdx !== -1 && args[targetIdx + 1];
-  const target: "typescript" | "python" = explicitTarget
-    ? args[targetIdx + 1] === "python"
-      ? "python"
-      : "typescript"
-    : (config?.compile.target ?? "typescript");
+  // An unrecognised value used to fall through to TypeScript, so `--target py`
+  // silently produced .ts files; the CLI now rejects it, like promptlang.yaml does.
+  let target: Target = config?.compile.target ?? "typescript";
+  if (targetIdx !== -1) {
+    const value = args[targetIdx + 1];
+    if (value === undefined || value.startsWith("--")) {
+      console.error(`Error: --target requires a value (${TARGETS.join(", ")})`);
+      return 1;
+    }
+    if (!isTarget(value)) {
+      console.error(`Error: unknown --target '${value}' (expected one of: ${TARGETS.join(", ")})`);
+      return 1;
+    }
+    target = value;
+  }
 
   const runtimePath =
     runtimePathIdx !== -1 && args[runtimePathIdx + 1]

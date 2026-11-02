@@ -35,6 +35,8 @@ release is chosen when it is tagged.
 - `.promptlang/integrity.json` keys are project-relative POSIX paths; legacy
   absolute keys are migrated on read.
 - `compile` rejects `.prompt` files with no declarations (exit 1).
+- **BREAKING:** `compile --target` accepts only `typescript` or `python`. Any other
+  value (e.g. `py`) used to produce TypeScript silently; it is now an error.
 - `AnthropicClient` / `OpenAIClient` throw `TypeError` on an empty API key.
 
 ### Added

@@ -226,7 +226,7 @@ dependencies:
 ## Section 9 — Compiled output
 
 `promptlang compile <file|dir> --out <dir> [--target typescript|python]`. Any
-`--target` value other than `python` produces TypeScript.
+other `--target` value (including `py` or `ts`) is an error and writes nothing.
 
 ### TypeScript (excerpt for `classify-ticket.prompt`)
 

@@ -9,11 +9,12 @@ version number by SemVer; see `CHANGELOG.md` under `[Unreleased]`.
   name on npm belongs to a third party). The CLI binary is still `promptlang`.
   Generated code still imports `promptlang/runtime`, resolved through a `paths`
   mapping (`compile --emit-tsconfig`).
-- **Empty API keys are rejected.** `new AnthropicClient({ apiKey })` and
+- **Empty API keys are rejected** (TypeScript runtime). `new AnthropicClient({ apiKey })` and
   `new OpenAIClient({ apiKey })` throw a `TypeError` when the key is undefined,
   empty or whitespace, instead of sending an unauthenticated request.
 - **Malformed provider responses** raise `InvalidResponseError` (exported from the
-  runtime) instead of an untyped `TypeError`.
+  TypeScript runtime) instead of an untyped `TypeError`. The generated Python
+  runtime is unchanged.
 - **Empty `.prompt` files** (no declarations, no imports) make `compile` exit 1.
 - **`integrity.json` keys** are project-relative POSIX paths. Older files with
   absolute keys are migrated when read; re-run `promptlang install` to rewrite them.

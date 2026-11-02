@@ -22,11 +22,15 @@ versions; the latest release is supported.
 
 What the code does today:
 
-- Provider clients (`AnthropicClient`, `OpenAIClient`) receive the key as the
-  `apiKey` constructor option. PromptLang never reads a key from a file. The
+- TypeScript provider clients (`AnthropicClient`, `OpenAIClient` in
+  `src/runtime/`) receive the key as the `apiKey` constructor option. PromptLang never reads a key from a file. The
   documented pattern is `apiKey: process.env.ANTHROPIC_API_KEY`.
-- A missing, empty or whitespace-only key is rejected at construction with a
-  `TypeError`, so a request is never sent unauthenticated.
+- In the TypeScript runtime, a missing, empty or whitespace-only key is rejected
+  at construction with a `TypeError`, so a request is never sent unauthenticated.
+- The generated Python runtime (`promptlang_runtime.py`) does **not** validate
+  `api_key`, and it reads provider responses with defaults (`data.get(..., 0)`),
+  so a malformed body yields empty content and zero token counts instead of an
+  error. Validate keys and responses yourself when you use the Python target.
 - The key is sent only in the provider's auth header (`x-api-key` for Anthropic,
   `Authorization: Bearer` for OpenAI) to the configured `baseURL`. It is not
   logged and is not included in error messages.
@@ -47,8 +51,8 @@ of the model calls made from generated code.
 | Prompt injection through interpolated input | `{{variable}}` in a template, filled at runtime with end-user or retrieved content | The static rule `prompt-injection-risk` warns when a **user**-role section interpolates a variable and contains none of the delimiter markers `---`, triple backticks, `<tag>`, `<BEGIN>`/`<END>`, `[[`/`]]` | It does not escape, sanitize or bound the interpolated value at runtime; it does not check `system` or `assistant` sections; the presence of any marker anywhere in the section silences it, whether or not the marker actually surrounds the variable; it does not add an "untrusted content" instruction |
 | Hostile `.prompt` file | Imported or copied from someone else | `install` records SHA-256 hashes in `.promptlang/integrity.json`; `check` fails when a file changed since | It does not judge whether a prompt is malicious; a hash only tells you the file changed |
 | Hostile `.prompt` file sent to the AI linter | `analyze --ai` sends each prompt's text to Claude | — | The prompt text is inserted into the linter's request without delimiters or an untrusted-content instruction, so a crafted prompt can steer the linter's verdict (for example make it report no issues). Treat AI linter output as advisory |
-| Key leakage | Keys in source, logs or committed config | Keys are passed in memory only; empty keys are rejected | It cannot stop you from hard-coding a key or committing a `.env` file |
-| Untrusted model output | The response of any provider | Typed outputs are parsed (`JSON.parse` for structs, enum membership checks); a malformed provider response raises `InvalidResponseError` | It does not validate struct field contents beyond parsing; treat model output that drives code or queries as untrusted |
+| Key leakage | Keys in source, logs or committed config | Keys are passed in memory only; the TypeScript runtime rejects empty keys | It cannot stop you from hard-coding a key or committing a `.env` file |
+| Untrusted model output | The response of any provider | Typed outputs are parsed (`JSON.parse` for structs, enum membership checks); in the TypeScript runtime a malformed provider response raises `InvalidResponseError` | It does not validate struct field contents beyond parsing; the Python runtime does not check the response shape; treat model output that drives code or queries as untrusted |
 | Generated code | Output of `compile` | Deterministic code generation; no network access at compile time (except `analyze --ai`) | Generated functions make network calls when run; review them, especially chains that make several calls |
 
 ## Reporting scope

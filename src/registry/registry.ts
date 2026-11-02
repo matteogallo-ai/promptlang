@@ -1,11 +1,12 @@
 import { mkdir } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { isAbsolute, join, resolve } from "node:path";
 import { Glob } from "bun";
 import type { PromptLangConfig } from "../config/config";
 import { resolveGraph, type ResolvedImport } from "./resolver";
 import {
   buildIntegrity,
   migrateIntegrity,
+  toProjectPath,
   verifyIntegrity,
   type IntegrityRecord,
   type IntegrityMismatch,
@@ -17,15 +18,16 @@ const MANIFEST_FILE = "manifest.json";
 const INTEGRITY_FILE = "integrity.json";
 
 /**
- * On-disk shape of `.promptlang/manifest.json`. Contains the fully-resolved
- * import graph so subsequent runs (`compile`, `check`) can skip re-resolution.
+ * On-disk shape of `.promptlang/manifest.json`: the resolved import graph. Every
+ * path is project-relative POSIX (see `toProjectPath`), so the file does not
+ * leak the machine's directory layout and matches across checkouts.
  */
 export interface Manifest {
-  /** Version of the manifest schema — bumped when the shape changes. */
-  version: 1;
+  /** Schema version. 1 stored absolute paths; 2 stores project-relative ones. */
+  version: 2;
   /** Timestamp the manifest was last written. */
   generatedAt: string;
-  /** Every discovered `.prompt` file (absolute path). */
+  /** Every discovered `.prompt` file, sorted. */
   files: string[];
   /** Every resolved import edge. */
   imports: ManifestImport[];
@@ -65,10 +67,10 @@ export async function install(
   const integrity = await buildIntegrity(graph.files, projectRoot);
 
   const manifest: Manifest = {
-    version: 1,
+    version: 2,
     generatedAt: new Date().toISOString(),
-    files: graph.files.slice().sort(),
-    imports: graph.imports.map(toManifestImport),
+    files: graph.files.map((f) => toProjectPath(f, projectRoot)).sort(),
+    imports: graph.imports.map((imp) => toManifestImport(imp, projectRoot)),
   };
 
   const registryPath = join(projectRoot, REGISTRY_DIR);
@@ -88,7 +90,25 @@ export async function readManifest(projectRoot: string): Promise<Manifest | null
   const path = join(projectRoot, REGISTRY_DIR, MANIFEST_FILE);
   const file = Bun.file(path);
   if (!(await file.exists())) return null;
-  return JSON.parse(await file.text()) as Manifest;
+  return migrateManifest(JSON.parse(await file.text()), projectRoot);
+}
+
+/** Rewrites a version 1 manifest (absolute paths) as version 2. */
+function migrateManifest(
+  raw: Omit<Manifest, "version"> & { version: number },
+  projectRoot: string
+): Manifest {
+  const rel = (p: string) => (isAbsolute(p) ? toProjectPath(p, projectRoot) : p);
+  return {
+    version: 2,
+    generatedAt: raw.generatedAt,
+    files: raw.files.map(rel),
+    imports: raw.imports.map((imp) => ({
+      ...imp,
+      fromFile: rel(imp.fromFile),
+      resolvedPath: rel(imp.resolvedPath),
+    })),
+  };
 }
 
 /**
@@ -135,11 +155,11 @@ export async function discoverLocalPrompts(
   return [...files];
 }
 
-function toManifestImport(imp: ResolvedImport): ManifestImport {
+function toManifestImport(imp: ResolvedImport, projectRoot: string): ManifestImport {
   return {
     requested: imp.requested,
     alias: imp.alias,
-    fromFile: imp.fromFile,
-    resolvedPath: imp.resolvedPath,
+    fromFile: toProjectPath(imp.fromFile, projectRoot),
+    resolvedPath: toProjectPath(imp.resolvedPath, projectRoot),
   };
 }

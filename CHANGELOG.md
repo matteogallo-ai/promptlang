@@ -34,6 +34,8 @@ release is chosen when it is tagged.
   is read from `package.json`.
 - `.promptlang/integrity.json` keys are project-relative POSIX paths; legacy
   absolute keys are migrated on read.
+- `.promptlang/manifest.json` (schema version 2) stores project-relative POSIX
+  paths; version 1 manifests with absolute paths are migrated on read.
 - `compile` rejects `.prompt` files with no declarations (exit 1).
 - **BREAKING:** `compile --target` accepts only `typescript` or `python`. Any other
   value (e.g. `py`) used to produce TypeScript silently; it is now an error.

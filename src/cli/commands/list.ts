@@ -1,4 +1,4 @@
-import { join, relative } from "node:path";
+import { join, relative, resolve } from "node:path";
 import { loadConfig, CONFIG_FILENAME, ConfigValidationError } from "../../config/config";
 import { YamlParseError } from "@promptlang/yaml-parser";
 import { tokenize } from "../../lexer/lexer";
@@ -29,7 +29,7 @@ export async function runList(args: string[]): Promise<number> {
 
     const allFiles = new Set<string>(localFiles);
     if (manifest) {
-      for (const f of manifest.files) allFiles.add(f);
+      for (const f of manifest.files) allFiles.add(resolve(cwd, f));
     }
 
     const rows: ListedPrompt[] = [];

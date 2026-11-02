@@ -20,6 +20,9 @@ version number by SemVer; see `CHANGELOG.md` under `[Unreleased]`.
   absolute keys are migrated when read, relative to the current checkout; if the
   checkout moved since the file was written, `check` reports those files as
   missing. Re-run `promptlang install` to rewrite the file in either case.
+- **`manifest.json`** is schema version 2: `files`, `fromFile` and `resolvedPath`
+  are project-relative POSIX paths. Version 1 files are read and converted;
+  `install` rewrites them.
 
 ## 0.x → 1.0
 

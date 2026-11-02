@@ -631,7 +631,7 @@ describe("install command", () => {
     expect(await Bun.file(join(dir, ".promptlang", "manifest.json")).exists()).toBe(true);
     expect(await Bun.file(join(dir, ".promptlang", "integrity.json")).exists()).toBe(true);
     const manifest = JSON.parse(await Bun.file(join(dir, ".promptlang", "manifest.json")).text());
-    expect(manifest.version).toBe(1);
+    expect(manifest.version).toBe(2);
     expect(manifest.imports).toHaveLength(1);
     expect(manifest.imports[0].alias).toBe("A");
   });

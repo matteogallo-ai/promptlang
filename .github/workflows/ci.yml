@@ -3,8 +3,8 @@ name: CI
 on:
   push:
     branches: [main]
+  # No base-branch filter: a stacked PR (based on another fix/* branch) runs CI too.
   pull_request:
-    branches: [main]
   # release.yml runs this whole workflow before it publishes anything.
   workflow_call:
 

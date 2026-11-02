@@ -193,7 +193,38 @@ An `eval` block has exactly the four fields shown, in that order.
 
 `@version` is validated as SemVer 2.0.0 when the file is parsed, and imports can
 constrain it with `requires` (Section 1).
-This is the "SemVer for prompts" item in [`roadmap.md`](roadmap.md).
+
+`promptlang semver-check [paths] [--base <git-ref>] [--json]` compares each
+`.prompt` file with its text at a Git ref (default `origin/main`, otherwise the
+most recent tag) and fails when `@version` did not move by at least what the
+changes require. The interface of a prompt or chain is its parameters (name, type,
+optional or not), its output type, and, for a prompt, the file's `@model`.
+
+| Change | Required bump |
+| --- | --- |
+| Required parameter added; parameter removed; parameter type changed; optional parameter made required | major |
+| Output type changed, including an enum gaining or losing a value; output struct field removed, retyped, made optional or required; required output field added | major |
+| `@model` changed; prompt or chain removed; prompt replaced by a chain of the same name | major |
+| Optional parameter added; required parameter made optional; optional output field added; prompt or chain added | minor |
+| Message text changed; `@temperature` or `@max_tokens` changed; chain steps changed | patch |
+| Whitespace, comments, declaration order, parameter order | none |
+
+Types are compared by structure: renaming `type Category` to `type Kind` with the
+same values is not a change. Below 1.0.0 the check reads bumps as `^0.y.z` does: a
+minor bump (`0.2.x → 0.3.0`) counts as breaking, a patch bump as compatible. A
+pre-release or build-metadata change alone is not a bump. A file absent at the base
+is reported as `new` and passes; a file deleted since the base is not reported.
+
+Exit codes: `0` every file is versioned correctly, `1` at least one file is not (or
+does not parse), `2` usage or Git error. Rationale:
+[ADR 0002](adr/0002-prompt-interface.md), [ADR 0003](adr/0003-semver-check.md).
+
+```text
+semver-check against main (c978b607e120)
+  FAIL   prompts/a.prompt  1.0.0 → 1.1.0
+         major bump required: a major change needs at least 2.0.0, got 1.1.0
+         - major: p: parameter 'x' removed
+```
 
 ---
 

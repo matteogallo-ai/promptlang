@@ -78,6 +78,13 @@ describe("diffPrograms — major", () => {
     ).toEqual(["major: p: required output field 'c' added"]);
   });
 
+  test("output struct field made optional or required", () => {
+    const req = PROMPT("x: string", "struct { a: string }");
+    const opt = PROMPT("x: string", "struct { a?: string }");
+    expect(levels(req, opt)).toEqual(["major: p: output field 'a' became optional"]);
+    expect(levels(opt, req)).toEqual(["major: p: output field 'a' became required"]);
+  });
+
   test("a named output type is compared by structure, not by name", () => {
     const base = `type T = enum { a, b }\n${PROMPT("x: string", "T")}`;
     expect(diff(base, `type U = enum { b, a }\n${PROMPT("x: string", "U")}`)).toEqual([]);

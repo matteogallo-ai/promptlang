@@ -199,8 +199,8 @@ export async function runCompile(args: string[]): Promise<number> {
     await Bun.write(tsconfigPath, buildTsconfig(runtimePath));
     console.log(`  emitted   ${tsconfigPath}`);
     console.log(`            (paths "@promptlang/core/runtime" → ${runtimePath})`);
-    console.log(`            Note: the mapping points at this checkout's runtime source,`);
-    console.log(`            because @promptlang/core is not published to npm.`);
+    console.log(`            Note: the mapping points at this checkout's runtime source;`);
+    console.log(`            with @promptlang/core installed, the import resolves without it.`);
   }
 
   return hasErrors ? 1 : 0;

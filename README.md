@@ -81,14 +81,14 @@ test "classifies feature requests correctly" {
 }
 ```
 
-Test it, then compile it:
+Test it, then compile it (the `promptlang` CLI runs on Bun ≥ 1.2.20):
 
 ```bash
-bun run cli test classify-ticket.prompt
+npx promptlang test classify-ticket.prompt
 ```
 
 ```bash
-bun run cli compile classify-ticket.prompt --out ./generated --emit-tsconfig
+npx promptlang compile classify-ticket.prompt --out ./generated
 ```
 
 Use it:
@@ -124,15 +124,25 @@ tools' public documentation and are not tested here.
 
 ## Installation
 
-`@promptlang/core` is not on npm. Clone the repository:
+```bash
+npm install @promptlang/core
+```
+
+The library (`@promptlang/core`: tokenize, parse, compile, analyze) and the runtime
+(`@promptlang/core/runtime`: the provider clients the generated code calls) are ESM
+for Node ≥ 20 and Bun. The `promptlang` CLI needs Bun ≥ 1.2.20. CI installs the
+packed tarball into an empty project, imports both entry points from Node, runs
+this quick example with the installed CLI and type-checks the generated code against
+the installed declarations (`scripts/consumer-test.ts`). No version of
+`@promptlang/core` is on npm before 2.0.0.
+
+To work on PromptLang itself:
 
 ```bash
 git clone https://github.com/matteogallo-ai/promptlang.git
 cd promptlang && bun install
 bun run cli --help
 ```
-
-Then run the CLI with `bun run cli <command>`.
 
 ---
 
@@ -394,16 +404,12 @@ const category = await classify_ticket({ ticket: "..." }, client);
 
 ---
 
-## Working out of the repository
+## Compiling against a checkout
 
-The generated TypeScript uses `import { … } from "@promptlang/core/runtime"`. Inside
-this repository that import resolves through the `paths` mapping in
-`tsconfig.json`. In an **external project** it fails with
-`TS2307: Cannot find module '@promptlang/core/runtime'`, because the package is not
-published.
-
-**Workaround** — pass `--emit-tsconfig` to `compile`. It writes a `tsconfig.json`
-with a `paths` mapping that points directly at the local runtime source:
+The generated TypeScript imports `@promptlang/core/runtime`. With the package
+installed that resolves through its `exports`. To compile against a local checkout
+instead, pass `--emit-tsconfig`: it writes a `tsconfig.json` whose `paths` mapping
+points at the checkout's runtime source.
 
 ```bash
 bun run cli compile src/prompts/ --out ./generated --emit-tsconfig
@@ -431,7 +437,7 @@ bunx tsc --project ./generated/tsconfig.json --noEmit
 ## Packages
 
 PromptLang is developed as a Bun workspace. The main package,
-`@promptlang/core` (not published to npm; the CLI binary is `promptlang`), lives in `src/`. First-party companion packages live under
+`@promptlang/core` (the CLI binary is `promptlang`), lives in `src/`. First-party companion packages live under
 `packages/` and are published under the `@promptlang/` scope on npm.
 
 | Package | Location | Version | Description |

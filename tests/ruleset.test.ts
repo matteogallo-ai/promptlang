@@ -40,4 +40,22 @@ describe.skipIf(typeof Bun.YAML === "undefined")("main ruleset", () => {
     ]);
     expect(pullRequestCheckNames("on: [push]\njobs:\n  a:\n    runs-on: x\n")).toEqual([]);
   });
+
+  test("refuses the shapes it cannot name or that can skip a required check", () => {
+    const job = "jobs:\n  a:\n    runs-on: x\n";
+    const cases: [string, string][] = [
+      [`on:\n  pull_request:\n    paths: ["src/**"]\n${job}`, "pull_request filter paths"],
+      [`on:\n  pull_request:\n    branches: [main]\n${job}`, "pull_request filter branches"],
+      [`on:\n  pull_request:\n${job}    if: github.actor != 'x'\n`, "job a has an if:"],
+      [
+        "on: [pull_request]\njobs:\n  ci:\n    uses: ./.github/workflows/ci.yml\n",
+        "job ci calls a reusable workflow",
+      ],
+      [
+        "on: [pull_request]\njobs:\n  m:\n    strategy:\n      matrix:\n        a: [1]\n        b: [2]\n",
+        "job m has a matrix",
+      ],
+    ];
+    for (const [text, message] of cases) expect(() => pullRequestCheckNames(text)).toThrow(message);
+  });
 });

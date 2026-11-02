@@ -93,4 +93,18 @@ describe.skipIf(typeof Bun.YAML === "undefined")("GitHub Actions workflows", () 
     );
     expect(workflowViolations("d.yml", list)).toEqual(["d.yml: uses pull_request_target"]);
   });
+
+  test("event values reach run scripts through env, never interpolated into the script", () => {
+    const injected = wf(
+      '    steps:\n      - run: echo "${{ github.event.pull_request.title }}"\n      - run: git checkout ${{ github.head_ref }}\n'
+    );
+    expect(workflowViolations("inj.yml", injected)).toEqual([
+      "inj.yml: job j: ${{ github.event.pull_request.title }} is interpolated into a run script; pass it through env",
+      "inj.yml: job j: ${{ github.head_ref }} is interpolated into a run script; pass it through env",
+    ]);
+    const viaEnv = wf(
+      '    steps:\n      - run: echo "$TITLE $EVENT"\n        env:\n          TITLE: ${{ github.event.pull_request.title }}\n          EVENT: ${{ github.event_name }}\n'
+    );
+    expect(workflowViolations("env.yml", viaEnv)).toEqual([]);
+  });
 });

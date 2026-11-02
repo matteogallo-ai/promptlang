@@ -66,7 +66,10 @@ function commentedWrites(lines: string[]): Map<string, boolean> {
  * - the workflow-level token is `contents: read`, or the stricter `{}`;
  * - a job never gets `write-all`, and every job-level `write` sits in a block-style
  *   `permissions:` with its own comment line right above it saying why;
- * - no `pull_request_target`, which runs with secrets on code from forks.
+ * - no `pull_request_target`, which runs with secrets on code from forks;
+ * - no `github.event.*` or `github.head_ref` expression inside a `run:` script:
+ *   a PR title or branch name is attacker-written, and interpolated it becomes
+ *   shell code. Through `env:` it stays a value.
  */
 export function workflowViolations(file: string, text: string): string[] {
   const out: string[] = [];
@@ -97,8 +100,18 @@ export function workflowViolations(file: string, text: string): string[] {
 
   if (triggers(doc.on).includes("pull_request_target"))
     out.push(`${file}: uses pull_request_target`);
+
+  for (const [name, job] of jobs)
+    for (const step of Array.isArray(job.steps) ? job.steps : [])
+      if (typeof step?.run === "string")
+        for (const m of step.run.matchAll(UNTRUSTED_IN_SCRIPT))
+          out.push(
+            `${file}: job ${name}: ${m[0]} is interpolated into a run script; pass it through env`
+          );
   return out;
 }
+
+const UNTRUSTED_IN_SCRIPT = /\$\{\{[^}]*\bgithub\.(?:event\.|head_ref\b)[^}]*\}\}/g;
 
 function triggers(on: unknown): string[] {
   return typeof on === "string" ? [on] : Array.isArray(on) ? on : Object.keys(on ?? {});
@@ -107,22 +120,40 @@ function triggers(on: unknown): string[] {
 /**
  * The check-run names a workflow reports on a pull request, as a ruleset's
  * required status checks must spell them: the job's `name` (or its key), with
- * `${{ matrix.<key> }}` expanded, or `key (value)` for an unnamed one-key
- * matrix. Matrices with `include`/`exclude` or several keys are not expanded.
+ * `${{ matrix.<key> }}` expanded, or `key (value)` for an unnamed one-key list
+ * matrix. Throws on what it cannot name for certain (a reusable-workflow job,
+ * any other matrix) and on what can leave a required check unreported, so that
+ * the pull request waits forever: a `pull_request` filter or a job-level `if:`.
  */
 export function pullRequestCheckNames(text: string): string[] {
   const doc = Bun.YAML.parse(text) as { on?: unknown; jobs?: Record<string, unknown> };
   if (!triggers(doc.on).includes("pull_request")) return [];
+  const pr = (doc.on as Record<string, unknown>)?.pull_request;
+  for (const filter of ["paths", "paths-ignore", "branches", "branches-ignore", "types"])
+    if (pr && typeof pr === "object" && filter in pr)
+      throw new Error(`pull_request filter ${filter}: a required check could never report`);
   const names: string[] = [];
   for (const [key, raw] of Object.entries(doc.jobs ?? {})) {
-    const job = raw as { name?: unknown; strategy?: { matrix?: Record<string, unknown> } };
+    const job = raw as {
+      name?: unknown;
+      if?: unknown;
+      uses?: unknown;
+      strategy?: { matrix?: Record<string, unknown> };
+    };
+    if (job.if !== undefined)
+      throw new Error(`job ${key} has an if: a required check could never report`);
+    if (job.uses !== undefined)
+      throw new Error(
+        `job ${key} calls a reusable workflow, whose check names are not derived here`
+      );
     const matrix = Object.entries(job.strategy?.matrix ?? {});
-    const values = matrix.length === 1 && Array.isArray(matrix[0]![1]) ? matrix[0]![1] : null;
-    if (!values) {
+    if (matrix.length === 0) {
       names.push(typeof job.name === "string" ? job.name : key);
       continue;
     }
-    const axis = matrix[0]![0];
+    const [axis, values] = matrix[0]!;
+    if (matrix.length > 1 || !Array.isArray(values))
+      throw new Error(`job ${key} has a matrix whose check names are not derived here`);
     for (const v of values)
       names.push(
         typeof job.name === "string"

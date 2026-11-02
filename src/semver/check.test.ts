@@ -55,8 +55,21 @@ describe("checkVersion", () => {
     });
     expect(checkVersion("2.0.0-rc.1", "2.0.0-rc.1", [patch])).toMatchObject({
       ok: false,
-      expected: "a later pre-release of 2.0.0, or 2.0.0",
+      expected: "2.0.0",
+      reason:
+        "a patch change after 2.0.0-rc.1 needs a later pre-release of 2.0.0, or 2.0.0; got 2.0.0-rc.1",
     });
+  });
+
+  test("leaving a pre-release for a later release is judged against the release", () => {
+    // ^1.0.0-rc.1 accepts 1.0.1, so a breaking change there would reach its consumers.
+    expect(checkVersion("1.0.0-rc.1", "1.0.1", [major])).toMatchObject({
+      ok: false,
+      expected: "2.0.0",
+      reason:
+        "a major change after 1.0.0-rc.1 needs a later pre-release of 1.0.0, 1.0.0 itself, or at least 2.0.0; got 1.0.1",
+    });
+    expect(checkVersion("1.0.0-rc.1", "1.0.1", [patch]).ok).toBe(true);
   });
 
   test("a lower version fails even when nothing else changed", () => {

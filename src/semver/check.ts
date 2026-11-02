@@ -43,6 +43,8 @@ function bumpOf(baseText: string, curText: string, base: SemVer, cur: SemVer): A
   if (cmp < 0) return "downgrade";
   if (cmp === 0) return "none";
   if (base.prerelease.length > 0 && triplet(base) === triplet(cur)) return "prerelease";
+  // Past its pre-release cycle, a version is judged against the release it led to.
+  if (base.prerelease.length > 0) base = { ...base, prerelease: [] };
   const order = (["major", "minor", "patch"] as const).find((k) => base[k] !== cur[k]);
   if (!order) return "none";
   if (base.major === 0 && cur.major === 0) {
@@ -53,8 +55,6 @@ function bumpOf(baseText: string, curText: string, base: SemVer, cur: SemVer): A
 }
 
 function nextVersion(base: SemVer, level: Level): string {
-  if (base.prerelease.length > 0)
-    return `a later pre-release of ${triplet(base)}, or ${triplet(base)}`;
   if (base.major === 0 && base.minor === 0) return `0.0.${base.patch + 1}`;
   if (base.major === 0) {
     return level === "major" ? `0.${base.minor + 1}.0` : `0.${base.minor}.${base.patch + 1}`;
@@ -90,6 +90,23 @@ export function checkVersion(
       (actual !== "none" && levelRank(actual) >= levelRank(required))
     ) {
       return { ...result, ok: true, actual };
+    }
+    if (base.prerelease.length > 0) {
+      const release = triplet(base);
+      // Staying on the pre-release: the release itself is the next version that passes.
+      const expected =
+        actual === "none" ? release : nextVersion({ ...base, prerelease: [] }, required);
+      const options =
+        actual === "none"
+          ? `a later pre-release of ${release}, or ${release}`
+          : `a later pre-release of ${release}, ${release} itself, or at least ${expected}`;
+      return {
+        ...result,
+        ok: false,
+        actual,
+        expected,
+        reason: `a ${required} change after ${baseVersion} needs ${options}; got ${currentVersion}`,
+      };
     }
     const expected = nextVersion(base, required);
     return {

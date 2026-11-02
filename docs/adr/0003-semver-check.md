@@ -41,7 +41,8 @@ a list of files, and a rule for what "moved enough" means.
   and `^` ranges do not select them. Staying on the same pre-release with a
   change fails.
 - **Failure output** names the file, both versions, the required level, the
-  smallest passing version, and every change with its level. `--json` emits the
+  smallest passing release (`expected`, always a version; from a pre-release the
+  reason also names the later pre-releases that pass), and every change with its level. `--json` emits the
   same data. Exit 1 on any violation or unparsable file.
 - **CI** runs it on `docs/examples` against the PR base, or the pushed-over commit,
   falling back to the merge-base with `origin/main` like the commits job.

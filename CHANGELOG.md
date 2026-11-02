@@ -37,6 +37,10 @@ release is chosen when it is tagged.
 - `.promptlang/manifest.json` (schema version 2) stores project-relative POSIX
   paths; version 1 manifests with absolute paths are migrated on read.
 - `compile` rejects `.prompt` files with no declarations (exit 1).
+- Examples, README, `init` template and the config default use `claude-opus-5-5`.
+  They used `claude-opus-4.7`, which is not an Anthropic model ID (IDs use
+  hyphens: `claude-opus-4-7`), and `classify-ticket.prompt` set `@temperature`,
+  which Claude 4.7 and later reject.
 - **BREAKING:** `compile --target` accepts only `typescript` or `python`. Any other
   value (e.g. `py`) used to produce TypeScript silently; it is now an error.
 - `AnthropicClient` / `OpenAIClient` throw `TypeError` on an empty API key.

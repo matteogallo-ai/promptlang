@@ -8,8 +8,7 @@ version: 0.1.0
 description: "A PromptLang project"
 
 defaults:
-  model: claude-opus-4.7
-  temperature: 0.3
+  model: claude-opus-5-5
   max_tokens: 1024
 
 sources:

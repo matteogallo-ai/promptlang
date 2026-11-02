@@ -295,11 +295,11 @@ class Parser {
       }
       case TokenType.AT_MODEL: {
         // Model names may contain hyphens (consumed by the lexer as part of IDENT)
-        // and dots followed by version digits (e.g. claude-opus-4.7 → IDENT "claude-opus-4" DOT NUMBER "7").
+        // and dots followed by version digits (e.g. Ollama's llama3.1 → IDENT "llama3" DOT NUMBER "1").
         // Reconstruct the full name by consuming IDENT (DOT (NUMBER|IDENT))* segments.
         const ident = this.expect(
           TokenType.IDENT,
-          "@model expects an identifier, e.g. @model claude-opus-4.7"
+          "@model expects an identifier, e.g. @model claude-opus-5-5"
         );
         let name = ident.value;
         while (this.check(TokenType.DOT)) {

@@ -4,7 +4,7 @@
 // Step 2: translate the summary to a target language.
 
 @version "1.0.0"
-@model claude-opus-4.7
+@model claude-opus-5-5
 @description "Summarize then translate — demonstrates chain composition"
 
 // --- Type declarations ---

@@ -31,7 +31,7 @@ import "shared/categories.prompt" as Categories
 | --- | --- | --- |
 | `@version` | string | Copied into the generated `<prompt>_meta.version`. Optional; **not validated** as SemVer. |
 | `@model` | identifier (may contain `-` and `.`) | Model name sent in every request from this file. Without it the generated code sends `model: ""`. |
-| `@temperature` | number | Copied into each request. No range check. |
+| `@temperature` | number | Copied into each request. No range check. Anthropic rejects a non-default `temperature` on Claude 4.7 and later (HTTP 400), so omit it for those models. |
 | `@max_tokens` | number | Copied into each request. |
 | `@description` | string | Kept in the AST; not emitted. |
 | `@breaking_changes` | string | **Parsed only.** |
@@ -239,8 +239,7 @@ export type Category = "bug" | "feature_request" | "question" | "other";
 export const classify_ticket_meta = {
   name: "classify_ticket",
   version: "1.0.0",
-  model: "claude-opus-4.7",
-  temperature: 0.3,
+  model: "claude-opus-5-5",
 } as const;
 
 export interface ClassifyTicketInput {

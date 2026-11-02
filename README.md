@@ -45,8 +45,7 @@ Not delivered, and labelled as such everywhere in this repository (see
 
 ```promptlang
 @version "1.0.0"
-@model claude-opus-4.7
-@temperature 0.3
+@model claude-opus-5-5
 
 type Category = enum { bug, feature_request, question, other }
 
@@ -205,8 +204,7 @@ For multi-file projects, create a `promptlang.yaml` at the project root:
 name: my-project
 version: 1.0.0
 defaults:
-  model: claude-opus-4.7
-  temperature: 0.3
+  model: claude-opus-5-5
 sources:
   - path: ./prompts
 compile:

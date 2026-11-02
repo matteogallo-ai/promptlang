@@ -3,8 +3,7 @@
 // This is the canonical introductory example for PromptLang.
 
 @version "1.0.0"
-@model claude-opus-4.7
-@temperature 0.3
+@model claude-opus-5-5
 @description "Support ticket classifier — enum output, multiple tests"
 
 // Declare the output type. The compiler will validate that the model's

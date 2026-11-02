@@ -44,7 +44,7 @@ interface DependencyEntry {
 /** Default values applied to fields the user did not specify. */
 export const CONFIG_DEFAULTS = {
   defaults: {
-    model: "claude-opus-4.7",
+    model: "claude-opus-5-5",
     temperature: 0.3,
     max_tokens: 1024,
   },

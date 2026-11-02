@@ -1,0 +1,244 @@
+{
+  "date": "2026-11-02T18:19:36Z",
+  "repo": {
+    "name": "github.com/matteogallo-ai/promptlang",
+    "commit": "28c92230b722b63881de598d43261f0bd49b9e6e"
+  },
+  "scorecard": {
+    "version": "v5.6.0",
+    "commit": "61e84743356275f6ffca23b1b2f2cb945e19eb96"
+  },
+  "score": 4.8,
+  "checks": [
+    {
+      "details": null,
+      "score": 10,
+      "reason": "no binaries found in the repo",
+      "name": "Binary-Artifacts",
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#binary-artifacts",
+        "short": "Determines if the project has generated executable (binary) artifacts in the source repository."
+      }
+    },
+    {
+      "details": [
+        "Info: 'allow deletion' disabled on branch 'main'",
+        "Info: 'force pushes' disabled on branch 'main'",
+        "Info: 'branch protection settings apply to administrators' is required to merge on branch 'main'",
+        "Warn: 'stale review dismissal' is disabled on branch 'main'",
+        "Warn: branch 'main' does not require approvers",
+        "Warn: codeowners review is not required on branch 'main'",
+        "Warn: 'last push approval' is disabled on branch 'main'",
+        "Warn: 'up-to-date branches' is disabled on branch 'main'",
+        "Info: status check found to merge onto on branch 'main'",
+        "Info: PRs are required in order to make changes on branch 'main'"
+      ],
+      "score": 3,
+      "reason": "branch protection is not maximal on development and all release branches",
+      "name": "Branch-Protection",
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#branch-protection",
+        "short": "Determines if the default and release branches are protected with GitHub's branch protection settings."
+      }
+    },
+    {
+      "details": null,
+      "score": 10,
+      "reason": "2 out of 2 merged PRs checked by a CI test -- score normalized to 10",
+      "name": "CI-Tests",
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#ci-tests",
+        "short": "Determines if the project runs tests before pull requests are merged."
+      }
+    },
+    {
+      "details": null,
+      "score": 0,
+      "reason": "no effort to earn an OpenSSF best practices badge detected",
+      "name": "CII-Best-Practices",
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#cii-best-practices",
+        "short": "Determines if the project has an OpenSSF (formerly CII) Best Practices Badge."
+      }
+    },
+    {
+      "details": null,
+      "score": 0,
+      "reason": "Found 0/2 approved changesets -- score normalized to 0",
+      "name": "Code-Review",
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#code-review",
+        "short": "Determines if the project requires human code review before pull requests (aka merge requests) are merged."
+      }
+    },
+    {
+      "details": null,
+      "score": 0,
+      "reason": "project has 0 contributing companies or organizations -- score normalized to 0",
+      "name": "Contributors",
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#contributors",
+        "short": "Determines if the project has a set of contributors from multiple organizations (e.g., companies)."
+      }
+    },
+    {
+      "details": null,
+      "score": 10,
+      "reason": "no dangerous workflow patterns detected",
+      "name": "Dangerous-Workflow",
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#dangerous-workflow",
+        "short": "Determines if the project's GitHub Action workflows avoid dangerous patterns."
+      }
+    },
+    {
+      "details": ["Warn: no dependency update tool configurations found"],
+      "score": 0,
+      "reason": "no update tool detected",
+      "name": "Dependency-Update-Tool",
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#dependency-update-tool",
+        "short": "Determines if the project uses a dependency update tool."
+      }
+    },
+    {
+      "details": ["Warn: no fuzzer integrations found"],
+      "score": 0,
+      "reason": "project is not fuzzed",
+      "name": "Fuzzing",
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#fuzzing",
+        "short": "Determines if the project uses fuzzing."
+      }
+    },
+    {
+      "details": [
+        "Info: project has a license file: LICENSE:0",
+        "Info: FSF or OSI recognized license: MIT License: LICENSE:0"
+      ],
+      "score": 10,
+      "reason": "license file detected",
+      "name": "License",
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#license",
+        "short": "Determines if the project has defined a license."
+      }
+    },
+    {
+      "details": ["Warn: Repository was created within the last 90 days."],
+      "score": 0,
+      "reason": "project was created within the last 90 days. Please review its contents carefully",
+      "name": "Maintained",
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#maintained",
+        "short": "Determines if the project is \"actively maintained\"."
+      }
+    },
+    {
+      "details": ["Warn: no GitHub/GitLab publishing workflow detected."],
+      "score": -1,
+      "reason": "packaging workflow not detected",
+      "name": "Packaging",
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#packaging",
+        "short": "Determines if the project is published as a package that others can easily download, install, easily update, and uninstall."
+      }
+    },
+    {
+      "details": [
+        "Warn: GitHub-owned GitHubAction not pinned by hash: .github/workflows/ci.yml:92: update your workflow using https://app.stepsecurity.io/secureworkflow/matteogallo-ai/promptlang/ci.yml/main?enable=pin",
+        "Warn: third-party GitHubAction not pinned by hash: .github/workflows/ci.yml:93: update your workflow using https://app.stepsecurity.io/secureworkflow/matteogallo-ai/promptlang/ci.yml/main?enable=pin",
+        "Warn: GitHub-owned GitHubAction not pinned by hash: .github/workflows/ci.yml:18: update your workflow using https://app.stepsecurity.io/secureworkflow/matteogallo-ai/promptlang/ci.yml/main?enable=pin",
+        "Warn: third-party GitHubAction not pinned by hash: .github/workflows/ci.yml:19: update your workflow using https://app.stepsecurity.io/secureworkflow/matteogallo-ai/promptlang/ci.yml/main?enable=pin",
+        "Warn: GitHub-owned GitHubAction not pinned by hash: .github/workflows/ci.yml:66: update your workflow using https://app.stepsecurity.io/secureworkflow/matteogallo-ai/promptlang/ci.yml/main?enable=pin",
+        "Warn: third-party GitHubAction not pinned by hash: .github/workflows/ci.yml:67: update your workflow using https://app.stepsecurity.io/secureworkflow/matteogallo-ai/promptlang/ci.yml/main?enable=pin",
+        "Warn: GitHub-owned GitHubAction not pinned by hash: .github/workflows/ci.yml:74: update your workflow using https://app.stepsecurity.io/secureworkflow/matteogallo-ai/promptlang/ci.yml/main?enable=pin",
+        "Warn: third-party GitHubAction not pinned by hash: .github/workflows/ci.yml:75: update your workflow using https://app.stepsecurity.io/secureworkflow/matteogallo-ai/promptlang/ci.yml/main?enable=pin",
+        "Warn: GitHub-owned GitHubAction not pinned by hash: .github/workflows/ci.yml:99: update your workflow using https://app.stepsecurity.io/secureworkflow/matteogallo-ai/promptlang/ci.yml/main?enable=pin",
+        "Warn: third-party GitHubAction not pinned by hash: .github/workflows/ci.yml:102: update your workflow using https://app.stepsecurity.io/secureworkflow/matteogallo-ai/promptlang/ci.yml/main?enable=pin",
+        "Warn: GitHub-owned GitHubAction not pinned by hash: .github/workflows/ci.yml:82: update your workflow using https://app.stepsecurity.io/secureworkflow/matteogallo-ai/promptlang/ci.yml/main?enable=pin",
+        "Warn: third-party GitHubAction not pinned by hash: .github/workflows/ci.yml:83: update your workflow using https://app.stepsecurity.io/secureworkflow/matteogallo-ai/promptlang/ci.yml/main?enable=pin",
+        "Warn: GitHub-owned GitHubAction not pinned by hash: .github/workflows/ci.yml:119: update your workflow using https://app.stepsecurity.io/secureworkflow/matteogallo-ai/promptlang/ci.yml/main?enable=pin",
+        "Warn: third-party GitHubAction not pinned by hash: .github/workflows/ci.yml:122: update your workflow using https://app.stepsecurity.io/secureworkflow/matteogallo-ai/promptlang/ci.yml/main?enable=pin",
+        "Warn: GitHub-owned GitHubAction not pinned by hash: .github/workflows/ci.yml:32: update your workflow using https://app.stepsecurity.io/secureworkflow/matteogallo-ai/promptlang/ci.yml/main?enable=pin",
+        "Warn: third-party GitHubAction not pinned by hash: .github/workflows/ci.yml:33: update your workflow using https://app.stepsecurity.io/secureworkflow/matteogallo-ai/promptlang/ci.yml/main?enable=pin",
+        "Warn: GitHub-owned GitHubAction not pinned by hash: .github/workflows/ci.yml:52: update your workflow using https://app.stepsecurity.io/secureworkflow/matteogallo-ai/promptlang/ci.yml/main?enable=pin",
+        "Warn: third-party GitHubAction not pinned by hash: .github/workflows/ci.yml:53: update your workflow using https://app.stepsecurity.io/secureworkflow/matteogallo-ai/promptlang/ci.yml/main?enable=pin",
+        "Warn: GitHub-owned GitHubAction not pinned by hash: .github/workflows/ci.yml:54: update your workflow using https://app.stepsecurity.io/secureworkflow/matteogallo-ai/promptlang/ci.yml/main?enable=pin",
+        "Warn: GitHub-owned GitHubAction not pinned by hash: .github/workflows/release.yml:36: update your workflow using https://app.stepsecurity.io/secureworkflow/matteogallo-ai/promptlang/release.yml/main?enable=pin",
+        "Warn: third-party GitHubAction not pinned by hash: .github/workflows/release.yml:37: update your workflow using https://app.stepsecurity.io/secureworkflow/matteogallo-ai/promptlang/release.yml/main?enable=pin",
+        "Warn: GitHub-owned GitHubAction not pinned by hash: .github/workflows/release.yml:38: update your workflow using https://app.stepsecurity.io/secureworkflow/matteogallo-ai/promptlang/release.yml/main?enable=pin",
+        "Info:   0 out of  12 GitHub-owned GitHubAction dependencies pinned",
+        "Info:   0 out of  10 third-party GitHubAction dependencies pinned"
+      ],
+      "score": 0,
+      "reason": "dependency not pinned by hash detected -- score normalized to 0",
+      "name": "Pinned-Dependencies",
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#pinned-dependencies",
+        "short": "Determines if the project has declared and pinned the dependencies of its build process."
+      }
+    },
+    {
+      "details": ["Warn: 0 commits out of 30 are checked with a SAST tool"],
+      "score": 0,
+      "reason": "SAST tool is not run on all commits -- score normalized to 0",
+      "name": "SAST",
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#sast",
+        "short": "Determines if the project uses static code analysis."
+      }
+    },
+    {
+      "details": [
+        "Info: security policy file detected: SECURITY.md:1",
+        "Info: Found linked content: SECURITY.md:1",
+        "Info: Found disclosure, vulnerability, and/or timelines in security policy: SECURITY.md:1",
+        "Info: Found text in security policy: SECURITY.md:1"
+      ],
+      "score": 10,
+      "reason": "security policy file detected",
+      "name": "Security-Policy",
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#security-policy",
+        "short": "Determines if the project has published a security policy."
+      }
+    },
+    {
+      "details": null,
+      "score": -1,
+      "reason": "no releases found",
+      "name": "Signed-Releases",
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#signed-releases",
+        "short": "Determines if the project cryptographically signs release artifacts."
+      }
+    },
+    {
+      "details": [
+        "Info: jobLevel 'contents' permission set to 'read': .github/workflows/release.yml:30",
+        "Info: topLevel 'contents' permission set to 'read': .github/workflows/ci.yml:12",
+        "Info: topLevel 'contents' permission set to 'read': .github/workflows/release.yml:13",
+        "Info: no jobLevel write permissions found"
+      ],
+      "score": 10,
+      "reason": "GitHub workflow tokens follow principle of least privilege",
+      "name": "Token-Permissions",
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#token-permissions",
+        "short": "Determines if the project's workflows follow the principle of least privilege."
+      }
+    },
+    {
+      "details": null,
+      "score": 10,
+      "reason": "0 existing vulnerabilities detected",
+      "name": "Vulnerabilities",
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#vulnerabilities",
+        "short": "Determines if the project has open, known unfixed vulnerabilities."
+      }
+    }
+  ],
+  "metadata": null
+}

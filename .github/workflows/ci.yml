@@ -131,3 +131,15 @@ jobs:
             echo "Base commit unavailable; comparing with $BASE (merge-base with main)."
           fi
           bun run cli semver-check docs/examples --base "$BASE"
+
+  osv-scanner:
+    # Dependabot opens no security updates for Bun, so this job is what fails a PR
+    # when bun.lock resolves a package with a known vulnerability (OSV database).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: No known vulnerability in bun.lock
+        uses: google/osv-scanner-action/osv-scanner-action@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
+        with:
+          scan-args: |-
+            --lockfile=./bun.lock

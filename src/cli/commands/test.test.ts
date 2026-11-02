@@ -156,7 +156,7 @@ describe("promptlang test --live", () => {
     await Bun.write(unpriced, `@version "1.0.0"\n@model llama3.1\n${PROMPT}${passing}`);
     const r = await capture(() => runTest([unpriced, "--live", "--yes"], fakeDeps(true, calls)));
     expect(r.code).toBe(2);
-    expect(r.stderr).toContain("no price is recorded for @model llama3.1");
+    expect(r.stderr).toContain("no price is recorded for model llama3.1");
     expect(calls).toEqual(["claude-haiku-4-5"]);
   });
 

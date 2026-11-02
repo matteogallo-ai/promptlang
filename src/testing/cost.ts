@@ -41,6 +41,28 @@ export interface CostEstimate {
 
 export class UnpricedModelError extends Error {}
 
+/**
+ * Prices `calls` requests to `model`: `inputChars` of text (÷ 3) plus
+ * `extraInputTokens` already counted in tokens, and `maxOutputTokens` in all.
+ */
+export function priceEstimate(
+  model: string,
+  calls: number,
+  inputChars: number,
+  extraInputTokens: number,
+  maxOutputTokens: number
+): CostEstimate {
+  const price = pricePerMTok(model);
+  if (!price) {
+    throw new UnpricedModelError(
+      `no price is recorded for model ${model} (priced: ${Object.keys(PRICES_USD_PER_MTOK).join(", ")})`
+    );
+  }
+  const inputTokens = Math.ceil(inputChars / CHARS_PER_TOKEN) + extraInputTokens;
+  const estimatedUsd = (inputTokens * price[0] + maxOutputTokens * price[1]) / 1_000_000;
+  return { model, calls, inputTokens, maxOutputTokens, estimatedUsd };
+}
+
 function argChars(call: CallExpression): number {
   let n = 0;
   for (const a of call.arguments) {
@@ -76,12 +98,6 @@ export function estimateLiveCost(program: Program): CostEstimate | null {
   const model = program.metadata.find((m) => m.kind === "ModelMetadata")?.value;
   if (typeof model !== "string")
     throw new UnpricedModelError("the file has tests but no @model to price them on");
-  const price = pricePerMTok(model);
-  if (!price) {
-    throw new UnpricedModelError(
-      `no price is recorded for @model ${model} (priced: ${Object.keys(PRICES_USD_PER_MTOK).join(", ")})`
-    );
-  }
   const maxTokens = program.metadata.find((m) => m.kind === "MaxTokensMetadata")?.value;
   const perCallOutput = typeof maxTokens === "number" ? maxTokens : DEFAULT_MAX_TOKENS;
 
@@ -101,8 +117,5 @@ export function estimateLiveCost(program: Program): CostEstimate | null {
         if (s.kind === "MessageSection") inputChars += s.content.value.length;
     }
   }
-  const inputTokens = Math.ceil(inputChars / CHARS_PER_TOKEN) + carriedTokens;
-  const maxOutputTokens = calls * perCallOutput;
-  const estimatedUsd = (inputTokens * price[0] + maxOutputTokens * price[1]) / 1_000_000;
-  return { model, calls, inputTokens, maxOutputTokens, estimatedUsd };
+  return priceEstimate(model, calls, inputChars, carriedTokens, calls * perCallOutput);
 }

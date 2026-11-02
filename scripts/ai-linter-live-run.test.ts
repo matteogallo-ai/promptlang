@@ -1,10 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import type { PromptClient } from "../src/runtime/client";
-import { BUDGET_USD, estimate, loadContexts, run } from "./ai-linter-live-run";
+import { estimateLinterCost } from "../src/analyzer/ai/estimate";
+import { BUDGET_USD, loadContexts, run } from "./ai-linter-live-run";
 
 describe("ai-linter-live-run", () => {
-  test("the worst-case estimate for the five prompts fits the approved budget", async () => {
-    const e = estimate(await loadContexts());
+  test("the estimate for the five prompts fits the approved budget", async () => {
+    const e = estimateLinterCost(await loadContexts());
     expect(e.calls).toBe(5);
     expect(e.estimatedUsd).toBeLessThanOrEqual(BUDGET_USD);
   });

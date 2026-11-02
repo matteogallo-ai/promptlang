@@ -12,11 +12,8 @@
  * BUDGET_USD, the spend approved for this run, or nothing is called.
  */
 import { resolve } from "node:path";
-import { AI_LINTER_MAX_TOKENS, AI_LINTER_MODEL, AiLinter } from "../src/analyzer/ai/ai-linter";
-import {
-  AI_LINTER_SYSTEM_PROMPT,
-  buildAnalysisUserMessage,
-} from "../src/analyzer/ai/prompts/analysis-prompt";
+import { AI_LINTER_MODEL, AiLinter } from "../src/analyzer/ai/ai-linter";
+import { estimateLinterCost } from "../src/analyzer/ai/estimate";
 import type { AnalysisContext } from "../src/analyzer/analyzer";
 import { tokenize } from "../src/lexer/lexer";
 import { parse } from "../src/parser/parser";
@@ -31,7 +28,6 @@ export const BUDGET_USD = 0.05;
 const MODEL = AI_LINTER_MODEL;
 /** Passed to the client explicitly so the record states the version actually sent. */
 const ANTHROPIC_VERSION = DEFAULT_ANTHROPIC_VERSION;
-const MAX_OUTPUT_TOKENS = AI_LINTER_MAX_TOKENS;
 const ROOT = resolve(import.meta.dir, "..");
 const FILES = [
   "docs/examples/classify-ticket.prompt",
@@ -55,36 +51,12 @@ function price(): readonly [number, number] {
   return p;
 }
 
-/** Worst case: characters ÷ 3 input tokens, full max_tokens output, per prompt. */
-export function estimate(contexts: AnalysisContext[]): {
-  calls: number;
-  inputTokens: number;
-  estimatedUsd: number;
-} {
-  let calls = 0;
-  let chars = 0;
-  for (const ctx of contexts) {
-    for (const d of ctx.ast.declarations) {
-      if (d.kind !== "PromptDeclaration") continue;
-      calls++;
-      chars += AI_LINTER_SYSTEM_PROMPT.length + buildAnalysisUserMessage(d).length;
-    }
-  }
-  const inputTokens = Math.ceil(chars / 3);
-  const [inPrice, outPrice] = price();
-  return {
-    calls,
-    inputTokens,
-    estimatedUsd: (inputTokens * inPrice + calls * MAX_OUTPUT_TOKENS * outPrice) / 1e6,
-  };
-}
-
 export interface RunRecord {
   date: string;
   model: string;
   anthropic_version: string;
   files: Array<{ file: string; version: string | null }>;
-  estimate_max_usd: number;
+  estimate_usd: number;
   calls: Array<{ input_tokens: number; output_tokens: number }>;
   usage: { input_tokens: number; output_tokens: number };
   cost_usd: number;
@@ -130,7 +102,7 @@ export async function run(
       const v = c.ast.metadata.find((m) => m.kind === "VersionMetadata");
       return { file: c.file, version: v?.kind === "VersionMetadata" ? v.value : null };
     }),
-    estimate_max_usd: estimate(contexts).estimatedUsd,
+    estimate_usd: estimateLinterCost(contexts, MODEL).estimatedUsd,
     calls,
     usage,
     cost_usd: (usage.input_tokens * inPrice + usage.output_tokens * outPrice) / 1e6,
@@ -150,7 +122,7 @@ export async function run(
 
 if (import.meta.main) {
   const contexts = await loadContexts();
-  const e = estimate(contexts);
+  const e = estimateLinterCost(contexts, MODEL);
   console.log(
     `${e.calls} call(s) to ${MODEL}, ~${e.inputTokens} input tokens, estimate $${e.estimatedUsd.toFixed(4)} at full max_tokens, no retries (budget $${BUDGET_USD})`
   );

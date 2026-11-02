@@ -3,7 +3,8 @@ import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import type { PromptClient } from "../src/runtime/client";
 import { BudgetedClient } from "../src/testing/budget";
-import { checksumMismatches } from "../scripts/checksums";
+import { checksumMismatches, listedChecksums } from "../scripts/checksums";
+import { buildCorpus } from "../scripts/linter-eval-corpus";
 import {
   type EvalRecord,
   estimate,
@@ -14,10 +15,37 @@ import {
 } from "../scripts/linter-eval";
 
 const ROOT = join(import.meta.dir, "..");
+const records = (await readdir(join(ROOT, "runs/live"))).filter((f) =>
+  f.startsWith("linter-eval-")
+);
 
 describe("linter eval corpus (evals/linter)", () => {
   test("the corpus matches its SHA256SUMS: a labelled case cannot change unnoticed", async () => {
     expect(await checksumMismatches(join(ROOT, "evals/linter"))).toEqual([]);
+  });
+
+  test("the committed corpus is exactly what scripts/linter-eval-corpus.ts builds, every file listed", async () => {
+    const { files, labels } = buildCorpus();
+    const dir = join(ROOT, "evals/linter");
+    expect(await Bun.file(join(dir, "labels.json")).json()).toEqual(labels);
+    const onDisk = (await readdir(join(dir, "cases"))).map((f) => `cases/${f}`).sort();
+    expect(onDisk).toEqual([...files.keys()].sort());
+    for (const [path, text] of files) expect(await Bun.file(join(dir, path)).text()).toBe(text);
+    const listed = (await listedChecksums(dir)).map(([, name]) => name).sort();
+    expect(listed).toEqual(["labels.json", ...files.keys()].sort());
+  });
+
+  test("every category is designed into both kinds of base and 7 or 8 times per split", async () => {
+    const { labels } = buildCorpus();
+    for (const cat of labels.categories) {
+      const cases = labels.cases.filter((c) => c.defects.includes(cat));
+      const parities = new Set(cases.map((c) => Number(c.base.slice(1)) % 2));
+      expect(parities.size).toBe(2);
+      for (const split of ["dev", "test"]) {
+        const n = cases.filter((c) => c.split === split).length;
+        expect(n === 7 || n === 8).toBe(true);
+      }
+    }
   });
 
   test("120 cases, split by base task, one designed defect at most, 45 defects and 15 clean per split", async () => {
@@ -104,11 +132,15 @@ describe("linter eval run", () => {
 describe("committed eval records", () => {
   const LIVE = join(ROOT, "runs/live");
 
-  test("the metrics of every committed eval record re-derive from its raw results", async () => {
-    const labels = (await Bun.file(join(ROOT, "evals/linter/labels.json")).json()) as Labels;
-    for (const f of (await readdir(LIVE)).filter((f) => f.startsWith("linter-eval-"))) {
-      const record = (await Bun.file(join(LIVE, f)).json()) as EvalRecord;
-      expect(rescore(record, labels)).toEqual(record.metrics);
+  // Skipped, and reported as skipped, until a measured run is committed.
+  test.skipIf(records.length === 0)(
+    "the metrics of every committed eval record re-derive from its raw results",
+    async () => {
+      const labels = (await Bun.file(join(ROOT, "evals/linter/labels.json")).json()) as Labels;
+      for (const f of records) {
+        const record = (await Bun.file(join(LIVE, f)).json()) as EvalRecord;
+        expect(rescore(record, labels)).toEqual(record.metrics);
+      }
     }
-  });
+  );
 });

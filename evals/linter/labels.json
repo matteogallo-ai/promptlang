@@ -73,13 +73,6 @@
       "defects": []
     },
     {
-      "id": "b02-vague-instructions",
-      "file": "cases/b02-vague-instructions.prompt",
-      "split": "dev",
-      "base": "b02",
-      "defects": ["VAGUE_INSTRUCTIONS"]
-    },
-    {
       "id": "b02-missing-format-spec",
       "file": "cases/b02-missing-format-spec.prompt",
       "split": "dev",
@@ -94,18 +87,18 @@
       "defects": ["CONFLICTING_INSTRUCTIONS"]
     },
     {
+      "id": "b02-undefined-terms",
+      "file": "cases/b02-undefined-terms.prompt",
+      "split": "dev",
+      "base": "b02",
+      "defects": ["UNDEFINED_TERMS"]
+    },
+    {
       "id": "b03-clean",
       "file": "cases/b03-clean.prompt",
       "split": "dev",
       "base": "b03",
       "defects": []
-    },
-    {
-      "id": "b03-undefined-terms",
-      "file": "cases/b03-undefined-terms.prompt",
-      "split": "dev",
-      "base": "b03",
-      "defects": ["UNDEFINED_TERMS"]
     },
     {
       "id": "b03-potential-hallucination-risk",
@@ -122,25 +115,18 @@
       "defects": ["TOKEN_INEFFICIENCY"]
     },
     {
+      "id": "b03-vague-instructions",
+      "file": "cases/b03-vague-instructions.prompt",
+      "split": "dev",
+      "base": "b03",
+      "defects": ["VAGUE_INSTRUCTIONS"]
+    },
+    {
       "id": "b04-clean",
       "file": "cases/b04-clean.prompt",
       "split": "dev",
       "base": "b04",
       "defects": []
-    },
-    {
-      "id": "b04-vague-instructions",
-      "file": "cases/b04-vague-instructions.prompt",
-      "split": "dev",
-      "base": "b04",
-      "defects": ["VAGUE_INSTRUCTIONS"]
-    },
-    {
-      "id": "b04-missing-format-spec",
-      "file": "cases/b04-missing-format-spec.prompt",
-      "split": "dev",
-      "base": "b04",
-      "defects": ["MISSING_FORMAT_SPEC"]
     },
     {
       "id": "b04-conflicting-instructions",
@@ -150,25 +136,25 @@
       "defects": ["CONFLICTING_INSTRUCTIONS"]
     },
     {
+      "id": "b04-undefined-terms",
+      "file": "cases/b04-undefined-terms.prompt",
+      "split": "dev",
+      "base": "b04",
+      "defects": ["UNDEFINED_TERMS"]
+    },
+    {
+      "id": "b04-potential-hallucination-risk",
+      "file": "cases/b04-potential-hallucination-risk.prompt",
+      "split": "dev",
+      "base": "b04",
+      "defects": ["POTENTIAL_HALLUCINATION_RISK"]
+    },
+    {
       "id": "b05-clean",
       "file": "cases/b05-clean.prompt",
       "split": "dev",
       "base": "b05",
       "defects": []
-    },
-    {
-      "id": "b05-undefined-terms",
-      "file": "cases/b05-undefined-terms.prompt",
-      "split": "dev",
-      "base": "b05",
-      "defects": ["UNDEFINED_TERMS"]
-    },
-    {
-      "id": "b05-potential-hallucination-risk",
-      "file": "cases/b05-potential-hallucination-risk.prompt",
-      "split": "dev",
-      "base": "b05",
-      "defects": ["POTENTIAL_HALLUCINATION_RISK"]
     },
     {
       "id": "b05-token-inefficiency",
@@ -178,6 +164,20 @@
       "defects": ["TOKEN_INEFFICIENCY"]
     },
     {
+      "id": "b05-vague-instructions",
+      "file": "cases/b05-vague-instructions.prompt",
+      "split": "dev",
+      "base": "b05",
+      "defects": ["VAGUE_INSTRUCTIONS"]
+    },
+    {
+      "id": "b05-missing-format-spec",
+      "file": "cases/b05-missing-format-spec.prompt",
+      "split": "dev",
+      "base": "b05",
+      "defects": ["MISSING_FORMAT_SPEC"]
+    },
+    {
       "id": "b06-clean",
       "file": "cases/b06-clean.prompt",
       "split": "dev",
@@ -185,25 +185,25 @@
       "defects": []
     },
     {
-      "id": "b06-vague-instructions",
-      "file": "cases/b06-vague-instructions.prompt",
+      "id": "b06-undefined-terms",
+      "file": "cases/b06-undefined-terms.prompt",
       "split": "dev",
       "base": "b06",
-      "defects": ["VAGUE_INSTRUCTIONS"]
+      "defects": ["UNDEFINED_TERMS"]
     },
     {
-      "id": "b06-missing-format-spec",
-      "file": "cases/b06-missing-format-spec.prompt",
+      "id": "b06-potential-hallucination-risk",
+      "file": "cases/b06-potential-hallucination-risk.prompt",
       "split": "dev",
       "base": "b06",
-      "defects": ["MISSING_FORMAT_SPEC"]
+      "defects": ["POTENTIAL_HALLUCINATION_RISK"]
     },
     {
-      "id": "b06-conflicting-instructions",
-      "file": "cases/b06-conflicting-instructions.prompt",
+      "id": "b06-token-inefficiency",
+      "file": "cases/b06-token-inefficiency.prompt",
       "split": "dev",
       "base": "b06",
-      "defects": ["CONFLICTING_INSTRUCTIONS"]
+      "defects": ["TOKEN_INEFFICIENCY"]
     },
     {
       "id": "b07-clean",
@@ -213,25 +213,25 @@
       "defects": []
     },
     {
-      "id": "b07-undefined-terms",
-      "file": "cases/b07-undefined-terms.prompt",
+      "id": "b07-vague-instructions",
+      "file": "cases/b07-vague-instructions.prompt",
       "split": "dev",
       "base": "b07",
-      "defects": ["UNDEFINED_TERMS"]
+      "defects": ["VAGUE_INSTRUCTIONS"]
     },
     {
-      "id": "b07-potential-hallucination-risk",
-      "file": "cases/b07-potential-hallucination-risk.prompt",
+      "id": "b07-missing-format-spec",
+      "file": "cases/b07-missing-format-spec.prompt",
       "split": "dev",
       "base": "b07",
-      "defects": ["POTENTIAL_HALLUCINATION_RISK"]
+      "defects": ["MISSING_FORMAT_SPEC"]
     },
     {
-      "id": "b07-token-inefficiency",
-      "file": "cases/b07-token-inefficiency.prompt",
+      "id": "b07-conflicting-instructions",
+      "file": "cases/b07-conflicting-instructions.prompt",
       "split": "dev",
       "base": "b07",
-      "defects": ["TOKEN_INEFFICIENCY"]
+      "defects": ["CONFLICTING_INSTRUCTIONS"]
     },
     {
       "id": "b08-clean",
@@ -241,25 +241,25 @@
       "defects": []
     },
     {
+      "id": "b08-potential-hallucination-risk",
+      "file": "cases/b08-potential-hallucination-risk.prompt",
+      "split": "dev",
+      "base": "b08",
+      "defects": ["POTENTIAL_HALLUCINATION_RISK"]
+    },
+    {
+      "id": "b08-token-inefficiency",
+      "file": "cases/b08-token-inefficiency.prompt",
+      "split": "dev",
+      "base": "b08",
+      "defects": ["TOKEN_INEFFICIENCY"]
+    },
+    {
       "id": "b08-vague-instructions",
       "file": "cases/b08-vague-instructions.prompt",
       "split": "dev",
       "base": "b08",
       "defects": ["VAGUE_INSTRUCTIONS"]
-    },
-    {
-      "id": "b08-missing-format-spec",
-      "file": "cases/b08-missing-format-spec.prompt",
-      "split": "dev",
-      "base": "b08",
-      "defects": ["MISSING_FORMAT_SPEC"]
-    },
-    {
-      "id": "b08-conflicting-instructions",
-      "file": "cases/b08-conflicting-instructions.prompt",
-      "split": "dev",
-      "base": "b08",
-      "defects": ["CONFLICTING_INSTRUCTIONS"]
     },
     {
       "id": "b09-clean",
@@ -269,6 +269,20 @@
       "defects": []
     },
     {
+      "id": "b09-missing-format-spec",
+      "file": "cases/b09-missing-format-spec.prompt",
+      "split": "dev",
+      "base": "b09",
+      "defects": ["MISSING_FORMAT_SPEC"]
+    },
+    {
+      "id": "b09-conflicting-instructions",
+      "file": "cases/b09-conflicting-instructions.prompt",
+      "split": "dev",
+      "base": "b09",
+      "defects": ["CONFLICTING_INSTRUCTIONS"]
+    },
+    {
       "id": "b09-undefined-terms",
       "file": "cases/b09-undefined-terms.prompt",
       "split": "dev",
@@ -276,25 +290,18 @@
       "defects": ["UNDEFINED_TERMS"]
     },
     {
-      "id": "b09-potential-hallucination-risk",
-      "file": "cases/b09-potential-hallucination-risk.prompt",
-      "split": "dev",
-      "base": "b09",
-      "defects": ["POTENTIAL_HALLUCINATION_RISK"]
-    },
-    {
-      "id": "b09-token-inefficiency",
-      "file": "cases/b09-token-inefficiency.prompt",
-      "split": "dev",
-      "base": "b09",
-      "defects": ["TOKEN_INEFFICIENCY"]
-    },
-    {
       "id": "b10-clean",
       "file": "cases/b10-clean.prompt",
       "split": "dev",
       "base": "b10",
       "defects": []
+    },
+    {
+      "id": "b10-token-inefficiency",
+      "file": "cases/b10-token-inefficiency.prompt",
+      "split": "dev",
+      "base": "b10",
+      "defects": ["TOKEN_INEFFICIENCY"]
     },
     {
       "id": "b10-vague-instructions",
@@ -311,18 +318,18 @@
       "defects": ["MISSING_FORMAT_SPEC"]
     },
     {
-      "id": "b10-conflicting-instructions",
-      "file": "cases/b10-conflicting-instructions.prompt",
-      "split": "dev",
-      "base": "b10",
-      "defects": ["CONFLICTING_INSTRUCTIONS"]
-    },
-    {
       "id": "b11-clean",
       "file": "cases/b11-clean.prompt",
       "split": "dev",
       "base": "b11",
       "defects": []
+    },
+    {
+      "id": "b11-conflicting-instructions",
+      "file": "cases/b11-conflicting-instructions.prompt",
+      "split": "dev",
+      "base": "b11",
+      "defects": ["CONFLICTING_INSTRUCTIONS"]
     },
     {
       "id": "b11-undefined-terms",
@@ -337,13 +344,6 @@
       "split": "dev",
       "base": "b11",
       "defects": ["POTENTIAL_HALLUCINATION_RISK"]
-    },
-    {
-      "id": "b11-token-inefficiency",
-      "file": "cases/b11-token-inefficiency.prompt",
-      "split": "dev",
-      "base": "b11",
-      "defects": ["TOKEN_INEFFICIENCY"]
     },
     {
       "id": "b12-clean",
@@ -409,13 +409,6 @@
       "defects": []
     },
     {
-      "id": "b14-vague-instructions",
-      "file": "cases/b14-vague-instructions.prompt",
-      "split": "dev",
-      "base": "b14",
-      "defects": ["VAGUE_INSTRUCTIONS"]
-    },
-    {
       "id": "b14-missing-format-spec",
       "file": "cases/b14-missing-format-spec.prompt",
       "split": "dev",
@@ -430,18 +423,18 @@
       "defects": ["CONFLICTING_INSTRUCTIONS"]
     },
     {
+      "id": "b14-undefined-terms",
+      "file": "cases/b14-undefined-terms.prompt",
+      "split": "dev",
+      "base": "b14",
+      "defects": ["UNDEFINED_TERMS"]
+    },
+    {
       "id": "b15-clean",
       "file": "cases/b15-clean.prompt",
       "split": "test",
       "base": "b15",
       "defects": []
-    },
-    {
-      "id": "b15-undefined-terms",
-      "file": "cases/b15-undefined-terms.prompt",
-      "split": "test",
-      "base": "b15",
-      "defects": ["UNDEFINED_TERMS"]
     },
     {
       "id": "b15-potential-hallucination-risk",
@@ -458,25 +451,18 @@
       "defects": ["TOKEN_INEFFICIENCY"]
     },
     {
+      "id": "b15-vague-instructions",
+      "file": "cases/b15-vague-instructions.prompt",
+      "split": "test",
+      "base": "b15",
+      "defects": ["VAGUE_INSTRUCTIONS"]
+    },
+    {
       "id": "b16-clean",
       "file": "cases/b16-clean.prompt",
       "split": "test",
       "base": "b16",
       "defects": []
-    },
-    {
-      "id": "b16-vague-instructions",
-      "file": "cases/b16-vague-instructions.prompt",
-      "split": "test",
-      "base": "b16",
-      "defects": ["VAGUE_INSTRUCTIONS"]
-    },
-    {
-      "id": "b16-missing-format-spec",
-      "file": "cases/b16-missing-format-spec.prompt",
-      "split": "test",
-      "base": "b16",
-      "defects": ["MISSING_FORMAT_SPEC"]
     },
     {
       "id": "b16-conflicting-instructions",
@@ -486,25 +472,25 @@
       "defects": ["CONFLICTING_INSTRUCTIONS"]
     },
     {
+      "id": "b16-undefined-terms",
+      "file": "cases/b16-undefined-terms.prompt",
+      "split": "test",
+      "base": "b16",
+      "defects": ["UNDEFINED_TERMS"]
+    },
+    {
+      "id": "b16-potential-hallucination-risk",
+      "file": "cases/b16-potential-hallucination-risk.prompt",
+      "split": "test",
+      "base": "b16",
+      "defects": ["POTENTIAL_HALLUCINATION_RISK"]
+    },
+    {
       "id": "b17-clean",
       "file": "cases/b17-clean.prompt",
       "split": "test",
       "base": "b17",
       "defects": []
-    },
-    {
-      "id": "b17-undefined-terms",
-      "file": "cases/b17-undefined-terms.prompt",
-      "split": "test",
-      "base": "b17",
-      "defects": ["UNDEFINED_TERMS"]
-    },
-    {
-      "id": "b17-potential-hallucination-risk",
-      "file": "cases/b17-potential-hallucination-risk.prompt",
-      "split": "test",
-      "base": "b17",
-      "defects": ["POTENTIAL_HALLUCINATION_RISK"]
     },
     {
       "id": "b17-token-inefficiency",
@@ -514,6 +500,20 @@
       "defects": ["TOKEN_INEFFICIENCY"]
     },
     {
+      "id": "b17-vague-instructions",
+      "file": "cases/b17-vague-instructions.prompt",
+      "split": "test",
+      "base": "b17",
+      "defects": ["VAGUE_INSTRUCTIONS"]
+    },
+    {
+      "id": "b17-missing-format-spec",
+      "file": "cases/b17-missing-format-spec.prompt",
+      "split": "test",
+      "base": "b17",
+      "defects": ["MISSING_FORMAT_SPEC"]
+    },
+    {
       "id": "b18-clean",
       "file": "cases/b18-clean.prompt",
       "split": "test",
@@ -521,25 +521,25 @@
       "defects": []
     },
     {
-      "id": "b18-vague-instructions",
-      "file": "cases/b18-vague-instructions.prompt",
+      "id": "b18-undefined-terms",
+      "file": "cases/b18-undefined-terms.prompt",
       "split": "test",
       "base": "b18",
-      "defects": ["VAGUE_INSTRUCTIONS"]
+      "defects": ["UNDEFINED_TERMS"]
     },
     {
-      "id": "b18-missing-format-spec",
-      "file": "cases/b18-missing-format-spec.prompt",
+      "id": "b18-potential-hallucination-risk",
+      "file": "cases/b18-potential-hallucination-risk.prompt",
       "split": "test",
       "base": "b18",
-      "defects": ["MISSING_FORMAT_SPEC"]
+      "defects": ["POTENTIAL_HALLUCINATION_RISK"]
     },
     {
-      "id": "b18-conflicting-instructions",
-      "file": "cases/b18-conflicting-instructions.prompt",
+      "id": "b18-token-inefficiency",
+      "file": "cases/b18-token-inefficiency.prompt",
       "split": "test",
       "base": "b18",
-      "defects": ["CONFLICTING_INSTRUCTIONS"]
+      "defects": ["TOKEN_INEFFICIENCY"]
     },
     {
       "id": "b19-clean",
@@ -549,25 +549,25 @@
       "defects": []
     },
     {
-      "id": "b19-undefined-terms",
-      "file": "cases/b19-undefined-terms.prompt",
+      "id": "b19-vague-instructions",
+      "file": "cases/b19-vague-instructions.prompt",
       "split": "test",
       "base": "b19",
-      "defects": ["UNDEFINED_TERMS"]
+      "defects": ["VAGUE_INSTRUCTIONS"]
     },
     {
-      "id": "b19-potential-hallucination-risk",
-      "file": "cases/b19-potential-hallucination-risk.prompt",
+      "id": "b19-missing-format-spec",
+      "file": "cases/b19-missing-format-spec.prompt",
       "split": "test",
       "base": "b19",
-      "defects": ["POTENTIAL_HALLUCINATION_RISK"]
+      "defects": ["MISSING_FORMAT_SPEC"]
     },
     {
-      "id": "b19-token-inefficiency",
-      "file": "cases/b19-token-inefficiency.prompt",
+      "id": "b19-conflicting-instructions",
+      "file": "cases/b19-conflicting-instructions.prompt",
       "split": "test",
       "base": "b19",
-      "defects": ["TOKEN_INEFFICIENCY"]
+      "defects": ["CONFLICTING_INSTRUCTIONS"]
     },
     {
       "id": "b20-clean",
@@ -577,25 +577,25 @@
       "defects": []
     },
     {
+      "id": "b20-potential-hallucination-risk",
+      "file": "cases/b20-potential-hallucination-risk.prompt",
+      "split": "test",
+      "base": "b20",
+      "defects": ["POTENTIAL_HALLUCINATION_RISK"]
+    },
+    {
+      "id": "b20-token-inefficiency",
+      "file": "cases/b20-token-inefficiency.prompt",
+      "split": "test",
+      "base": "b20",
+      "defects": ["TOKEN_INEFFICIENCY"]
+    },
+    {
       "id": "b20-vague-instructions",
       "file": "cases/b20-vague-instructions.prompt",
       "split": "test",
       "base": "b20",
       "defects": ["VAGUE_INSTRUCTIONS"]
-    },
-    {
-      "id": "b20-missing-format-spec",
-      "file": "cases/b20-missing-format-spec.prompt",
-      "split": "test",
-      "base": "b20",
-      "defects": ["MISSING_FORMAT_SPEC"]
-    },
-    {
-      "id": "b20-conflicting-instructions",
-      "file": "cases/b20-conflicting-instructions.prompt",
-      "split": "test",
-      "base": "b20",
-      "defects": ["CONFLICTING_INSTRUCTIONS"]
     },
     {
       "id": "b21-clean",
@@ -605,6 +605,20 @@
       "defects": []
     },
     {
+      "id": "b21-missing-format-spec",
+      "file": "cases/b21-missing-format-spec.prompt",
+      "split": "test",
+      "base": "b21",
+      "defects": ["MISSING_FORMAT_SPEC"]
+    },
+    {
+      "id": "b21-conflicting-instructions",
+      "file": "cases/b21-conflicting-instructions.prompt",
+      "split": "test",
+      "base": "b21",
+      "defects": ["CONFLICTING_INSTRUCTIONS"]
+    },
+    {
       "id": "b21-undefined-terms",
       "file": "cases/b21-undefined-terms.prompt",
       "split": "test",
@@ -612,25 +626,18 @@
       "defects": ["UNDEFINED_TERMS"]
     },
     {
-      "id": "b21-potential-hallucination-risk",
-      "file": "cases/b21-potential-hallucination-risk.prompt",
-      "split": "test",
-      "base": "b21",
-      "defects": ["POTENTIAL_HALLUCINATION_RISK"]
-    },
-    {
-      "id": "b21-token-inefficiency",
-      "file": "cases/b21-token-inefficiency.prompt",
-      "split": "test",
-      "base": "b21",
-      "defects": ["TOKEN_INEFFICIENCY"]
-    },
-    {
       "id": "b22-clean",
       "file": "cases/b22-clean.prompt",
       "split": "test",
       "base": "b22",
       "defects": []
+    },
+    {
+      "id": "b22-token-inefficiency",
+      "file": "cases/b22-token-inefficiency.prompt",
+      "split": "test",
+      "base": "b22",
+      "defects": ["TOKEN_INEFFICIENCY"]
     },
     {
       "id": "b22-vague-instructions",
@@ -647,18 +654,18 @@
       "defects": ["MISSING_FORMAT_SPEC"]
     },
     {
-      "id": "b22-conflicting-instructions",
-      "file": "cases/b22-conflicting-instructions.prompt",
-      "split": "test",
-      "base": "b22",
-      "defects": ["CONFLICTING_INSTRUCTIONS"]
-    },
-    {
       "id": "b23-clean",
       "file": "cases/b23-clean.prompt",
       "split": "test",
       "base": "b23",
       "defects": []
+    },
+    {
+      "id": "b23-conflicting-instructions",
+      "file": "cases/b23-conflicting-instructions.prompt",
+      "split": "test",
+      "base": "b23",
+      "defects": ["CONFLICTING_INSTRUCTIONS"]
     },
     {
       "id": "b23-undefined-terms",
@@ -673,13 +680,6 @@
       "split": "test",
       "base": "b23",
       "defects": ["POTENTIAL_HALLUCINATION_RISK"]
-    },
-    {
-      "id": "b23-token-inefficiency",
-      "file": "cases/b23-token-inefficiency.prompt",
-      "split": "test",
-      "base": "b23",
-      "defects": ["TOKEN_INEFFICIENCY"]
     },
     {
       "id": "b24-clean",
@@ -745,13 +745,6 @@
       "defects": []
     },
     {
-      "id": "b26-vague-instructions",
-      "file": "cases/b26-vague-instructions.prompt",
-      "split": "test",
-      "base": "b26",
-      "defects": ["VAGUE_INSTRUCTIONS"]
-    },
-    {
       "id": "b26-missing-format-spec",
       "file": "cases/b26-missing-format-spec.prompt",
       "split": "test",
@@ -766,18 +759,18 @@
       "defects": ["CONFLICTING_INSTRUCTIONS"]
     },
     {
+      "id": "b26-undefined-terms",
+      "file": "cases/b26-undefined-terms.prompt",
+      "split": "test",
+      "base": "b26",
+      "defects": ["UNDEFINED_TERMS"]
+    },
+    {
       "id": "b27-clean",
       "file": "cases/b27-clean.prompt",
       "split": "test",
       "base": "b27",
       "defects": []
-    },
-    {
-      "id": "b27-undefined-terms",
-      "file": "cases/b27-undefined-terms.prompt",
-      "split": "test",
-      "base": "b27",
-      "defects": ["UNDEFINED_TERMS"]
     },
     {
       "id": "b27-potential-hallucination-risk",
@@ -794,25 +787,18 @@
       "defects": ["TOKEN_INEFFICIENCY"]
     },
     {
+      "id": "b27-vague-instructions",
+      "file": "cases/b27-vague-instructions.prompt",
+      "split": "test",
+      "base": "b27",
+      "defects": ["VAGUE_INSTRUCTIONS"]
+    },
+    {
       "id": "b28-clean",
       "file": "cases/b28-clean.prompt",
       "split": "test",
       "base": "b28",
       "defects": []
-    },
-    {
-      "id": "b28-vague-instructions",
-      "file": "cases/b28-vague-instructions.prompt",
-      "split": "test",
-      "base": "b28",
-      "defects": ["VAGUE_INSTRUCTIONS"]
-    },
-    {
-      "id": "b28-missing-format-spec",
-      "file": "cases/b28-missing-format-spec.prompt",
-      "split": "test",
-      "base": "b28",
-      "defects": ["MISSING_FORMAT_SPEC"]
     },
     {
       "id": "b28-conflicting-instructions",
@@ -822,6 +808,20 @@
       "defects": ["CONFLICTING_INSTRUCTIONS"]
     },
     {
+      "id": "b28-undefined-terms",
+      "file": "cases/b28-undefined-terms.prompt",
+      "split": "test",
+      "base": "b28",
+      "defects": ["UNDEFINED_TERMS"]
+    },
+    {
+      "id": "b28-potential-hallucination-risk",
+      "file": "cases/b28-potential-hallucination-risk.prompt",
+      "split": "test",
+      "base": "b28",
+      "defects": ["POTENTIAL_HALLUCINATION_RISK"]
+    },
+    {
       "id": "b29-clean",
       "file": "cases/b29-clean.prompt",
       "split": "test",
@@ -829,25 +829,25 @@
       "defects": []
     },
     {
-      "id": "b29-undefined-terms",
-      "file": "cases/b29-undefined-terms.prompt",
-      "split": "test",
-      "base": "b29",
-      "defects": ["UNDEFINED_TERMS"]
-    },
-    {
-      "id": "b29-potential-hallucination-risk",
-      "file": "cases/b29-potential-hallucination-risk.prompt",
-      "split": "test",
-      "base": "b29",
-      "defects": ["POTENTIAL_HALLUCINATION_RISK"]
-    },
-    {
       "id": "b29-token-inefficiency",
       "file": "cases/b29-token-inefficiency.prompt",
       "split": "test",
       "base": "b29",
       "defects": ["TOKEN_INEFFICIENCY"]
+    },
+    {
+      "id": "b29-vague-instructions",
+      "file": "cases/b29-vague-instructions.prompt",
+      "split": "test",
+      "base": "b29",
+      "defects": ["VAGUE_INSTRUCTIONS"]
+    },
+    {
+      "id": "b29-missing-format-spec",
+      "file": "cases/b29-missing-format-spec.prompt",
+      "split": "test",
+      "base": "b29",
+      "defects": ["MISSING_FORMAT_SPEC"]
     }
   ]
 }

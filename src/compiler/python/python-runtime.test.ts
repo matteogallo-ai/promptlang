@@ -58,6 +58,7 @@ def key_error(cls, key):
     except ValueError as e:
         return str(e)
 
+SECRET = "sk-ant-api03-SECRET-0123456789abcdef"
 anthropic = lambda: rt.AnthropicClient("sk-test")
 openai = lambda: rt.OpenAIClient("sk-test")
 out = {
@@ -72,6 +73,10 @@ out = {
     "anthropic_429": outcome(anthropic, 429, "rate limited"),
     "anthropic_400": outcome(anthropic, 400, json.dumps({"error": {"message": "bad request"}})),
     "anthropic_529": outcome(anthropic, 529, "{}"),
+    "anthropic_echoes_key": outcome(lambda: rt.AnthropicClient(SECRET), 401,
+                                    json.dumps({"error": {"message": "invalid x-api-key: " + SECRET}})),
+    "openai_echoes_key": outcome(lambda: rt.OpenAIClient(SECRET), 500,
+                                 json.dumps({"error": {"message": "upstream rejected Bearer " + SECRET}})),
     "openai_ok": outcome(openai, 200, OPENAI_OK),
     "openai_no_choices": outcome(openai, 200, json.dumps({"usage": {"prompt_tokens": 1, "completion_tokens": 1}})),
     "openai_null_content": outcome(openai, 200, json.dumps({"choices": [{"message": {"content": None}}],
@@ -147,6 +152,18 @@ describe("Python runtime guards", () => {
     expect(results.anthropic_429).toMatchObject({ error: "RateLimitError" });
     expect(results.anthropic_400).toEqual({ error: "InvalidRequestError", message: "bad request" });
     expect(results.anthropic_529).toMatchObject({ error: "ServerError" });
+  });
+
+  // The message quotes the provider's error body; a body that echoes the key must not leak it.
+  test("an error body that echoes the API key is redacted", () => {
+    expect(results.anthropic_echoes_key).toEqual({
+      error: "AuthenticationError",
+      message: "invalid x-api-key: [redacted]",
+    });
+    expect(results.openai_echoes_key).toMatchObject({
+      error: "ServerError",
+      message: "upstream rejected Bearer [redacted]",
+    });
   });
 
   test("OpenAI: missing choices is InvalidResponseError; null content reads as empty", () => {

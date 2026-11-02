@@ -1,5 +1,5 @@
 import { describe, test, expect, afterAll } from "bun:test";
-import { runTsc, tscTest } from "../../tests/support/tsc";
+import { runTsc, subprocessTest } from "../../tests/support/subprocess";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { tokenize } from "../lexer/lexer";
@@ -500,7 +500,7 @@ afterAll(async () => {
 });
 
 describe("compile — tsc integration (within project, explicit paths mapping)", () => {
-  tscTest(
+  subprocessTest(
     "generated code compiles within a project with promptlang paths mapping (classify-ticket)",
     async () => {
       const source = await Bun.file("docs/examples/classify-ticket.prompt").text();
@@ -518,7 +518,7 @@ describe("compile — tsc integration (within project, explicit paths mapping)",
     }
   );
 
-  tscTest(
+  subprocessTest(
     "generated code compiles within a project with promptlang paths mapping (extract-invoice)",
     async () => {
       const source = await Bun.file("docs/examples/extract-invoice.prompt").text();
@@ -538,7 +538,7 @@ describe("compile — tsc integration (within project, explicit paths mapping)",
 });
 
 describe("compile — tsc integration (isolation, documented limitation)", () => {
-  tscTest(
+  subprocessTest(
     "generated code fails cleanly in isolation without paths mapping (documented limitation)",
     async () => {
       // Without a paths mapping tsc cannot resolve "promptlang/runtime". The

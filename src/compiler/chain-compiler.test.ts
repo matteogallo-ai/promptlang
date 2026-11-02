@@ -1,5 +1,5 @@
 import { describe, test, expect, afterAll } from "bun:test";
-import { runTsc, tscTest } from "../../tests/support/tsc";
+import { runProcess, runTsc, subprocessTest } from "../../tests/support/subprocess";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { tokenize } from "../lexer/lexer";
@@ -574,43 +574,46 @@ describe("chain — integration: summarize-and-translate.prompt", () => {
     expect(out).toContain("await translate(");
   });
 
-  tscTest("generated code compiles within a project with promptlang paths mapping", async () => {
-    // Uses an explicit paths mapping (not extends from parent tsconfig) to honestly
-    // verify that the generated chain code is syntactically valid TypeScript.
-    const source = await Bun.file("docs/examples/summarize-and-translate.prompt").text();
-    const ast = parse(tokenize(source));
-    const generated = compile(ast, "summarize-and-translate.prompt");
+  subprocessTest(
+    "generated code compiles within a project with promptlang paths mapping",
+    async () => {
+      // Uses an explicit paths mapping (not extends from parent tsconfig) to honestly
+      // verify that the generated chain code is syntactically valid TypeScript.
+      const source = await Bun.file("docs/examples/summarize-and-translate.prompt").text();
+      const ast = parse(tokenize(source));
+      const generated = compile(ast, "summarize-and-translate.prompt");
 
-    await mkdir(TMP_DIR, { recursive: true });
-    await writeFile(join(TMP_DIR, "summarize-and-translate.ts"), generated);
-    await writeFile(
-      join(TMP_DIR, "tsconfig.json"),
-      JSON.stringify(
-        {
-          compilerOptions: {
-            target: "ESNext",
-            module: "ESNext",
-            moduleResolution: "bundler",
-            strict: true,
-            noUnusedLocals: false,
-            noUnusedParameters: false,
-            skipLibCheck: true,
-            baseUrl: ".",
-            paths: { "promptlang/runtime": [RUNTIME_REL] },
+      await mkdir(TMP_DIR, { recursive: true });
+      await writeFile(join(TMP_DIR, "summarize-and-translate.ts"), generated);
+      await writeFile(
+        join(TMP_DIR, "tsconfig.json"),
+        JSON.stringify(
+          {
+            compilerOptions: {
+              target: "ESNext",
+              module: "ESNext",
+              moduleResolution: "bundler",
+              strict: true,
+              noUnusedLocals: false,
+              noUnusedParameters: false,
+              skipLibCheck: true,
+              baseUrl: ".",
+              paths: { "promptlang/runtime": [RUNTIME_REL] },
+            },
+            include: ["*.ts"],
           },
-          include: ["*.ts"],
-        },
-        null,
-        2
-      )
-    );
+          null,
+          2
+        )
+      );
 
-    const { exitCode, stderr } = await runTsc(join(TMP_DIR, "tsconfig.json"));
-    expect(stderr).toBe("");
-    expect(exitCode).toBe(0);
-  });
+      const { exitCode, stderr } = await runTsc(join(TMP_DIR, "tsconfig.json"));
+      expect(stderr).toBe("");
+      expect(exitCode).toBe(0);
+    }
+  );
 
-  test("end-to-end: compiled chain executes correctly with MockClient", async () => {
+  subprocessTest("end-to-end: compiled chain executes correctly with MockClient", async () => {
     const source = await Bun.file("docs/examples/summarize-and-translate.prompt").text();
     const ast = parse(tokenize(source));
     const generated = compile(ast, "summarize-and-translate.prompt");
@@ -635,14 +638,11 @@ console.log(result);
 `;
     await writeFile(join(TMP_DIR, "runner.ts"), runner);
 
-    const proc = Bun.spawn([process.execPath, "run", join(TMP_DIR, "runner.ts")], {
-      cwd: process.cwd(),
-      stdout: "pipe",
-      stderr: "pipe",
-    });
-    const exitCode = await proc.exited;
-    const stdout = await new Response(proc.stdout).text();
-    const stderr = await new Response(proc.stderr).text();
+    const { exitCode, stdout, stderr } = await runProcess([
+      process.execPath,
+      "run",
+      join(TMP_DIR, "runner.ts"),
+    ]);
 
     expect(stderr).toBe("");
     expect(exitCode).toBe(0);

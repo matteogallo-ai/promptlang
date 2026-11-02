@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeAll, afterAll } from "bun:test";
-import { runTsc, tscTest } from "../../tests/support/tsc";
+import { runTsc, subprocessTest } from "../../tests/support/subprocess";
 import { main } from "./cli";
 
 // Helpers that suppress output and capture it.
@@ -519,7 +519,7 @@ describe("compile --emit-tsconfig", () => {
     expect(output()).toContain("--emit-tsconfig");
   });
 
-  tscTest("emitted tsconfig + generated .ts compiles with tsc", async () => {
+  subprocessTest("emitted tsconfig + generated .ts compiles with tsc", async () => {
     const outDir = "/tmp/promptlang-emit-tsc-verify";
     const restore = silenceAll();
     await main([

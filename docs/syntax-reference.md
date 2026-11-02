@@ -76,151 +76,57 @@ Array types (`string[]`) are not supported.
 
 ---
 
-## Section 3 — Prompt Declarations
-
-### Basic form
+## Section 3 — Prompts
 
 ```promptlang
-prompt <name>(<params>) -> <output-type> {
-  system: """..."""
-  user: "..."
-  output: <output-type>
+prompt classify_ticket(ticket: string) -> Category {
+  system: """
+    You are a support ticket classifier.
+    Respond with exactly one category name.
+  """
+  user: "Classify this ticket:\n---\n{{ticket}}\n---"
+  output: Category
 }
 ```
 
-### Parameters
+- Parameters are `name: Type`, comma-separated.
+- Sections: `system:`, `user:`, `assistant:` (each a string) and `output:` (a type).
+  Messages are sent in the order written.
+- Strings are `"double-quoted"` (with `\n`, `\"` escapes) or `"""triple-quoted"""`.
+  Triple-quoted content is sent as written, indentation included.
+- `{{name}}` interpolates a parameter. The static rule `unbounded-template` warns when
+  `name` is not a declared parameter.
 
-```promptlang
-prompt summarize(text: string, max_words: number) -> string {
-  system: "You are a concise summarizer."
-  user: "Summarize in {{max_words}} words or fewer:\n\n{{text}}"
-  output: string
-}
-```
+### Generated output handling
 
-Parameters are referenced in template strings with `{{name}}`. The compiler
-validates that every `{{...}}` interpolation matches a declared parameter name.
-
-### Template strings
-
-PromptLang supports three string forms:
-
-```promptlang
-// Single-line
-user: "Classify: {{ticket}}"
-
-// Double-quoted multiline (escape sequences apply)
-user: "First line\nSecond line with {{variable}}"
-
-// Triple-quoted (raw, preserves whitespace, no escape processing except {{...}})
-user: """
-  Analyze the following document carefully.
-
-  Document:
-  ---
-  {{document}}
-  ---
-
-  Return your analysis in JSON.
-"""
-```
-
-Triple-quoted strings trim leading indentation relative to the opening `"""` to
-avoid unintended indentation in the prompt.
-
-### Output declaration
-
-The `output:` field tells the compiler which type to parse the model response into.
-For primitive types, the compiler generates direct coercion. For enums and structs,
-it generates a parser that validates the model's JSON output against the type schema.
-
-```promptlang
-prompt extract(text: string) -> Invoice {
-  system: "Extract invoice data. Respond with valid JSON only."
-  user: "{{text}}"
-  output: Invoice   // compiler generates JSON → Invoice parser
-}
-```
-
-### Per-prompt model directives
-
-```promptlang
-prompt fast_triage(ticket: string) -> Priority {
-  @model claude-haiku-4.5
-  @temperature 0.1
-  system: "You are a ticket triager. Respond with one priority level."
-  user: "{{ticket}}"
-  output: Priority
-}
-```
+| Output type | Generated code does |
+| --- | --- |
+| `string` | returns the trimmed response text |
+| `number` | `Number(raw)`; throws if the result is `NaN` |
+| `boolean` | accepts `true` / `false` (case-insensitive); throws otherwise |
+| enum | throws unless the trimmed text is one of the members |
+| struct | `JSON.parse` (`json.loads` in Python) and a cast; field types are **not** validated |
 
 ---
 
-## Section 4 — Chains (Prompt DAG)
-
-_Available from v0.5_
-
-A `chain` composes multiple prompts into a directed acyclic graph. The compiler
-validates that output types flow correctly between steps.
+## Section 4 — Chains
 
 ```promptlang
-chain summarize_and_classify(raw_text: string) -> Category {
-  step summary = summarize(text: raw_text, max_words: 100)
-  step category = classify_ticket(ticket: summary)
-  return category
+chain summarize_and_translate(document: string, target_language: Language) -> string {
+  step english_summary = summarize(document: document, max_words: 100)
+  step translated = translate(text: english_summary, target_language: target_language)
+  return translated
 }
 ```
 
-**Compiled TypeScript output:**
-
-```typescript
-export async function summarizeAndClassify(rawText: string): Promise<Category> {
-  const summary = await summarize(rawText, 100);
-  const category = await classifyTicket(summary);
-  return category;
-}
-```
-
-### Parallel steps
-
-Steps that do not depend on each other can be declared parallel:
-
-```promptlang
-chain analyze(document: string) -> AnalysisResult {
-  parallel {
-    step sentiment = classify_sentiment(text: document)
-    step topics = extract_topics(text: document)
-    step entities = extract_entities(text: document)
-  }
-  step result = combine_analysis(
-    sentiment: sentiment,
-    topics: topics,
-    entities: entities
-  )
-  return result
-}
-```
-
-The compiler emits `Promise.all()` for parallel steps in TypeScript.
-
-### Cross-file composition
-
-```promptlang
-@version "1.0.0"
-import { classify_ticket } from "./classify-ticket.prompt"
-import { extract_entities } from "./extract-entities.prompt"
-
-chain enrich_ticket(raw: string) -> EnrichedTicket {
-  step category = classify_ticket(ticket: raw)
-  step entities = extract_entities(text: raw)
-  step result = merge_ticket_data(
-    raw_text: raw,
-    category: category,
-    entities: entities
-  )
-  return result
-}
-```
+- A chain is one or more `step name = call(...)` lines and a final `return`.
+- A step calls a prompt (or chain) **declared in the same file**, with named
+  (`key: value`) or positional arguments. Arguments may be chain parameters, earlier
+  step names, `step.field` member access, or literals.
+- The compiler rejects a reference to an undefined variable or to a step declared
+  later. It does not check that a called prompt exists in the file, and it does not
+  check argument types between steps (on the TypeScript target, `tsc` does).
+- Not supported: `parallel { }` blocks, calls to imported prompts.
 
 ---
 

@@ -1,3 +1,4 @@
+import { checkTestReferences } from "./test-references";
 import type { Program, TypeDeclaration, PromptDeclaration, ChainDeclaration } from "../ast/nodes";
 import {
   buildTypeRegistry,
@@ -9,6 +10,7 @@ import { buildCallableRegistry, generateChain } from "./chain-compiler";
 import pkg from "../../package.json";
 
 export function compile(program: Program, sourceFile: string): string {
+  checkTestReferences(program);
   const timestamp = new Date().toISOString();
   const parts: string[] = [];
 

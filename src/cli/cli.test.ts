@@ -906,3 +906,44 @@ describe("compile — --target validation", () => {
     expect(await Bun.file(join(DIR, "out", "hi.ts")).exists()).toBe(false);
   });
 });
+
+describe("compile — test and eval blocks", () => {
+  const DIR = "/tmp/promptlang-test-blocks";
+  const PROMPT = `@version "1.0.0"\nprompt hi(name: string) -> string {\n  user: "Hi {{name}}"\n}\n`;
+
+  async function compileSource(source: string) {
+    await rm(DIR, { recursive: true, force: true });
+    await mkdir(DIR, { recursive: true });
+    const file = join(DIR, "hi.prompt");
+    await Bun.write(file, source);
+    const lines: string[] = [];
+    const orig = console.warn;
+    console.warn = (...args: unknown[]) => lines.push(args.join(" "));
+    const log = captureLog();
+    const err = captureError();
+    const code = await main(["bun", "cli", "compile", file, "--out", join(DIR, "out")]);
+    const stderr = err.output();
+    err.restore();
+    log.restore();
+    console.warn = orig;
+    return { code, stderr, warnings: lines.join("\n"), file };
+  }
+
+  test("a test on a prompt that does not exist is a compile error with its position", async () => {
+    const { code, stderr, file } = await compileSource(
+      `${PROMPT}test "t" {\n  input: hello("Ada")\n  expect: x\n}\n`
+    );
+    expect(code).toBe(1);
+    expect(stderr).toContain(`${file}:6:10: test "t": input calls 'hello'`);
+  });
+
+  test("an eval block compiles with a warning that it is not executed", async () => {
+    const { code, warnings, file } = await compileSource(
+      `${PROMPT}eval "e" {\n  dataset: "d.jsonl"\n  prompt: hi\n  metric: accuracy\n  threshold: 0.9\n}\n`
+    );
+    expect(code).toBe(0);
+    expect(warnings).toContain(
+      `${file}:5:1: eval blocks are parsed but not executed in this version`
+    );
+  });
+});

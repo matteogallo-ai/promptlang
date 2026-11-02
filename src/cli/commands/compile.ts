@@ -1,3 +1,4 @@
+import type { Program } from "../../ast/nodes";
 import { resolveFiles } from "../files";
 import { tokenize } from "../../lexer/lexer";
 import { parse } from "../../parser/parser";
@@ -133,6 +134,8 @@ export async function runCompile(args: string[]): Promise<number> {
         throw new CompilerError("file contains no declarations (empty .prompt file)", 1, 1);
       }
 
+      warnAboutEvals(ast, file);
+
       if (target === "python") {
         const generated = compilePython(ast, file);
         const outName = `${basename(file, ".prompt").replace(/-/g, "_")}.py`;
@@ -154,7 +157,11 @@ export async function runCompile(args: string[]): Promise<number> {
         error instanceof ParserError ||
         error instanceof CompilerError
       ) {
-        console.error(`  [error]   ${file}: ${(error as Error).message}`);
+        const at =
+          error instanceof CompilerError && error.line !== undefined
+            ? `:${error.line}:${error.column ?? 1}`
+            : "";
+        console.error(`  [error]   ${file}${at}: ${(error as Error).message}`);
         hasErrors = true;
       } else {
         throw error;
@@ -225,4 +232,14 @@ function buildTsconfig(runtimePath: string): string {
     null,
     2
   )}\n`;
+}
+
+/** `eval` blocks parse so files using them stay valid, but nothing runs them yet. */
+function warnAboutEvals(program: Program, file: string): void {
+  const evals = program.declarations.filter((d) => d.kind === "EvalDeclaration");
+  for (const e of evals) {
+    console.warn(
+      `  [warn]    ${file}:${e.line}:${e.column}: eval blocks are parsed but not executed in this version`
+    );
+  }
 }

@@ -32,17 +32,19 @@ describe("2.x stability: package metadata", () => {
     });
   });
 
-  // The SPDX id lives in each package.json, where npm and GitHub read it; the LICENSE
-  // text stays the unmodified MIT text, which GitHub's detection matches as "MIT".
-  test("both packages declare the SPDX id MIT and ship the MIT licence text", async () => {
+  // npm reads the SPDX id from package.json; GitHub detects the licence from the LICENSE
+  // text, which it matches as SPDX "MIT" only while that text stays unmodified.
+  test("both packages declare the SPDX id MIT and ship the unmodified MIT licence text", async () => {
     const yamlPkg = await Bun.file(
       `${import.meta.dir}/../packages/yaml-parser/package.json`
     ).json();
     expect([pkg.license, yamlPkg.license]).toEqual(["MIT", "MIT"]);
     for (const dir of ["..", "../packages/yaml-parser"]) {
-      const text = await Bun.file(`${import.meta.dir}/${dir}/LICENSE`).text();
-      expect(text.startsWith("MIT License\n")).toBe(true);
-      expect(text).toContain("Permission is hereby granted, free of charge");
+      const bytes = await Bun.file(`${import.meta.dir}/${dir}/LICENSE`).arrayBuffer();
+      // SHA-256 of the MIT text with the "Copyright (c) 2026 Matteo Gallo" line.
+      expect(new Bun.CryptoHasher("sha256").update(bytes).digest("hex")).toBe(
+        "a53505f1c2f52f02edf6bb2990a37d7b54c7d3aac6ad9f1724efb6c0b424a477"
+      );
     }
   });
 

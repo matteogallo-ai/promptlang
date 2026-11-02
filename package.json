@@ -1,5 +1,5 @@
 {
-  "name": "promptlang",
+  "name": "@promptlang/core",
   "version": "1.2.0",
   "description": "The typed language for production-grade LLM prompts",
   "workspaces": [

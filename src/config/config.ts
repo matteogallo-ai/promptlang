@@ -1,4 +1,5 @@
 import { parseYaml, YamlParseError, type YamlValue } from "@promptlang/yaml-parser";
+import type { SourceEntry } from "../registry/resolver";
 
 /**
  * Fully-resolved PromptLang project configuration.
@@ -29,10 +30,6 @@ export interface PromptLangConfig {
     };
   };
   dependencies: DependencyEntry[];
-}
-
-export interface SourceEntry {
-  path: string;
 }
 
 interface DependencyEntry {

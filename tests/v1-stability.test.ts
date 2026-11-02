@@ -21,12 +21,19 @@ describe("v1.0 stability: package metadata", () => {
 
   test("bin entry exposes the CLI", () => {
     expect(pkg.bin).toBeDefined();
-    expect((pkg.bin as Record<string, string>).promptlang).toBe("./src/cli/cli.ts");
+    expect((pkg.bin as Record<string, string>).promptlang).toBe("./dist/cli/cli.js");
   });
 
   test("runtime is exported at ./runtime for compiled stubs to import", () => {
-    const exports_ = pkg.exports as Record<string, string>;
-    expect(exports_["./runtime"]).toBe("./src/runtime/index.ts");
+    const exports_ = pkg.exports as Record<string, unknown>;
+    expect(exports_["./runtime"]).toEqual({
+      types: "./dist/runtime/index.d.ts",
+      import: "./dist/runtime/index.js",
+    });
+  });
+
+  test("the published files are the build output, not the sources", () => {
+    expect(pkg.files).toEqual(["dist", "README.md", "CHANGELOG.md", "LICENSE"]);
   });
 
   test("no third-party runtime dependencies (only first-party @promptlang/* allowed)", () => {

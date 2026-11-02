@@ -5,7 +5,6 @@ import { tokenize } from "../lexer/lexer";
 import { parse } from "../parser/parser";
 import { LexerError } from "../lexer/errors";
 import { ParserError } from "../parser/errors";
-import type { SourceEntry } from "../config/config";
 import type { Program } from "../ast/nodes";
 import { satisfies } from "../semver/semver";
 
@@ -64,6 +63,15 @@ export class VersionMismatchError extends ResolverError {
     );
     this.name = "VersionMismatchError";
   }
+}
+
+/**
+ * A source root from promptlang.yaml. Declared here, not imported from the
+ * config module, so the published declarations of resolveGraph do not pull in
+ * the YAML parser's types.
+ */
+export interface SourceEntry {
+  path: string;
 }
 
 export interface ResolverOptions {

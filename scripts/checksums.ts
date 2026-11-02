@@ -9,12 +9,24 @@ import { resolve } from "node:path";
 export const sha256 = (data: string | Uint8Array) =>
   createHash("sha256").update(data).digest("hex");
 
+/** The (hash, file name) entries of a SHA256SUMS file; a malformed line is an error. */
+export async function listedChecksums(dir: string): Promise<Array<[hash: string, name: string]>> {
+  const sums = await Bun.file(resolve(dir, "SHA256SUMS")).text();
+  return sums
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => {
+      // shasum writes "<hash>  <name>", or "<hash> *<name>" in binary mode; names may hold spaces.
+      const m = /^([0-9a-f]{64}) [ *](.+)$/.exec(line);
+      if (!m) throw new Error(`${dir}/SHA256SUMS: malformed line: ${line}`);
+      return [m[1]!, m[2]!];
+    });
+}
+
 /** Every line of a SHA256SUMS file whose file is missing or differs from its hash. */
 export async function checksumMismatches(dir: string): Promise<string[]> {
-  const sums = await Bun.file(resolve(dir, "SHA256SUMS")).text();
   const bad: string[] = [];
-  for (const line of sums.split("\n").filter(Boolean)) {
-    const [hash, name] = line.split(/\s+\*?/, 2) as [string, string];
+  for (const [hash, name] of await listedChecksums(dir)) {
     const file = Bun.file(resolve(dir, name));
     if (!(await file.exists())) bad.push(`${name}: missing`);
     else if (sha256(new Uint8Array(await file.arrayBuffer())) !== hash)

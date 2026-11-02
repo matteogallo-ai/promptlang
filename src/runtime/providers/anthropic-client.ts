@@ -23,7 +23,12 @@ export interface AnthropicClientOptions {
   maxRetries?: number;
   /** Base retry delay in ms, doubled on each attempt (exponential backoff). Defaults to 1 000. */
   retryDelay?: number;
-  /** Value of the `anthropic-version` header. Defaults to "2023-06-01". */
+  /**
+   * Value of the `anthropic-version` header. Defaults to "2026-10-21". The
+   * client never sends `temperature`, whatever the version: 2026-10-21 rejects
+   * it on every model, and earlier versions reject a non-default value on
+   * Claude 4.7 and later.
+   */
   apiVersion?: string;
 }
 
@@ -45,7 +50,7 @@ export class AnthropicClient implements PromptClient {
     this.timeout = options.timeout ?? 60_000;
     this.maxRetries = options.maxRetries ?? 3;
     this.retryDelay = options.retryDelay ?? 1_000;
-    this.apiVersion = options.apiVersion ?? "2023-06-01";
+    this.apiVersion = options.apiVersion ?? "2026-10-21";
   }
 
   async complete(request: PromptRequest): Promise<PromptResponse> {
@@ -65,10 +70,6 @@ export class AnthropicClient implements PromptClient {
 
     if (systemMessages.length > 0) {
       body.system = systemMessages.map((m) => m.content).join("\n");
-    }
-
-    if (request.temperature !== undefined) {
-      body.temperature = request.temperature;
     }
 
     const controller = new AbortController();

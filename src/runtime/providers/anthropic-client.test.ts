@@ -51,7 +51,7 @@ describe("AnthropicClient — headers and URL", () => {
     fetchSpy.mockResolvedValueOnce(okResponse());
     await new AnthropicClient({ apiKey: "key" }).complete(BASE_REQUEST);
     const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
-    expect((init.headers as Record<string, string>)["anthropic-version"]).toBe("2023-06-01");
+    expect((init.headers as Record<string, string>)["anthropic-version"]).toBe("2026-10-21");
   });
 
   test("sends content-type: application/json header", async () => {
@@ -122,7 +122,7 @@ describe("AnthropicClient — request body", () => {
     expect(body.system).toBe("Part 1.\nPart 2.");
   });
 
-  test("maps temperature when provided", async () => {
+  test("never sends temperature: API version 2026-10-21 rejects it on every model", async () => {
     fetchSpy.mockResolvedValueOnce(okResponse());
     await new AnthropicClient({ apiKey: "key" }).complete({
       ...BASE_REQUEST,
@@ -130,7 +130,7 @@ describe("AnthropicClient — request body", () => {
     });
     const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
     const body = JSON.parse(init.body as string) as Record<string, unknown>;
-    expect(body.temperature).toBe(0.7);
+    expect("temperature" in body).toBe(false);
   });
 
   test("max_tokens defaults to 1024 when not provided", async () => {
@@ -150,6 +150,39 @@ describe("AnthropicClient — request body", () => {
     const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
     const body = JSON.parse(init.body as string) as Record<string, unknown>;
     expect(body.max_tokens).toBe(512);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Contract: the exact request sent to the Messages API
+// ---------------------------------------------------------------------------
+
+describe("AnthropicClient — request contract", () => {
+  test("sends exactly these headers and this body", async () => {
+    fetchSpy.mockResolvedValueOnce(okResponse());
+    await new AnthropicClient({ apiKey: "sk-ant-test-key" }).complete({
+      model: "claude-opus-5-5",
+      temperature: 0.2,
+      max_tokens: 256,
+      messages: [
+        { role: "system", content: "Be brief." },
+        { role: "user", content: "Hi" },
+      ],
+    });
+    const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("https://api.anthropic.com/v1/messages");
+    expect(init.method).toBe("POST");
+    expect(init.headers).toEqual({
+      "x-api-key": "sk-ant-test-key",
+      "anthropic-version": "2026-10-21",
+      "content-type": "application/json",
+    });
+    expect(JSON.parse(init.body as string)).toEqual({
+      model: "claude-opus-5-5",
+      max_tokens: 256,
+      system: "Be brief.",
+      messages: [{ role: "user", content: "Hi" }],
+    });
   });
 });
 

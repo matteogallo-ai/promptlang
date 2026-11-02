@@ -37,6 +37,10 @@ release is chosen when it is tagged.
 - `.promptlang/manifest.json` (schema version 2) stores project-relative POSIX
   paths; version 1 manifests with absolute paths are migrated on read.
 - `compile` rejects `.prompt` files with no declarations (exit 1).
+- **BREAKING:** `AnthropicClient` sends `anthropic-version: 2026-10-21` and never
+  sends `temperature`, which that version rejects on every model. `@temperature`
+  has no effect on Anthropic requests; OpenAI and Ollama still receive it. The key
+  is still sent as `x-api-key`, which the API accepts on both versions.
 - The examples are versioned 2.0.0 (their target model changed) and pass the
   project's own static analyzer: user input is delimited, with an untrusted-content
   instruction. Each example test has a `mock:` response.

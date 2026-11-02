@@ -31,7 +31,7 @@ import "shared/categories.prompt" as Categories
 | --- | --- | --- |
 | `@version` | string | Optional. Must be a SemVer 2.0.0 version (`1.0.0`, `2.1.0-rc.1`, `1.0.0+build.5`); anything else is a parse error at the string's line and column. Copied into the generated `<prompt>_meta.version`. |
 | `@model` | identifier (may contain `-` and `.`) | Model name sent in every request from this file. Without it the generated code sends `model: ""`. |
-| `@temperature` | number | Copied into each request. No range check. Anthropic rejects a non-default `temperature` on Claude 4.7 and later (HTTP 400), so omit it for those models. |
+| `@temperature` | number | Copied into each request. No range check. Sent to OpenAI and Ollama only: `AnthropicClient` uses API version 2026-10-21, which rejects `temperature` on every model, so the Anthropic client leaves it out. |
 | `@max_tokens` | number | Copied into each request. |
 | `@description` | string | Kept in the AST; not emitted. |
 | `@breaking_changes` | string | **Parsed only.** |

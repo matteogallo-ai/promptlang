@@ -351,6 +351,10 @@ class Lexer {
       }
       if (ch === "\\") {
         this.advance(); // consume backslash
+        // Nothing to escape: the literal ends here unclosed, whatever the backslash meant.
+        if (this.isAtEnd() || this.peek() === "\n") {
+          throw new LexerError("Unterminated string literal", this.startLine, this.startColumn);
+        }
         const escaped = this.advance();
         switch (escaped) {
           case '"':

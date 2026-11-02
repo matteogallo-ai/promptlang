@@ -84,6 +84,23 @@ describe("lexer properties", () => {
       propertyParams(500)
     );
   });
+
+  test("every strict prefix of a string literal is reported as unterminated", () => {
+    fc.assert(
+      fc.property(
+        stringBody.filter((s) => s.length > 0),
+        fc.nat(),
+        (body, cut) => {
+          const literal = `"${escapeString(body)}"`;
+          const prefix = literal.slice(0, 1 + (cut % (literal.length - 1)));
+          const result = tokenizeOrLexerError(prefix);
+          expect(result).toBeInstanceOf(LexerError);
+          expect((result as LexerError).message).toContain("Unterminated");
+        }
+      ),
+      propertyParams(500)
+    );
+  });
 });
 
 function expectedFirstChar(token: Token): string {

@@ -368,6 +368,11 @@ describe("Single-line strings", () => {
   test("string spanning multiple lines throws LexerError", () => {
     expect(() => tokenize('"line1\nline2"')).toThrow(LexerError);
   });
+
+  test("a backslash at the end of input or line is an unterminated string, not an escape", () => {
+    expect(() => tokenize('"abc\\')).toThrow("Unterminated string literal");
+    expect(() => tokenize('"abc\\\nx"')).toThrow("Unterminated string literal");
+  });
 });
 
 // ---------------------------------------------------------------------------

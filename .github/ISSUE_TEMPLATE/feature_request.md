@@ -26,9 +26,10 @@ What other approaches did you consider? Why are they insufficient?
 
 ## Impact
 
-- Which milestone does this fit into? (see [docs/roadmap.md](../../docs/roadmap.md))
+- Which roadmap item does this relate to, if any? (see [docs/roadmap.md](../../docs/roadmap.md))
 - Is this a breaking change?
 - Does this require changes to the compiled output format?
+- Which test would prove it works (for `docs/CLAIMS.md`)?
 
 ## Additional context
 

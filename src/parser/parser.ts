@@ -40,7 +40,7 @@ import type {
   DescriptionMetadata,
 } from "../ast/nodes";
 import { ParserError } from "./errors";
-import { parseVersion } from "../semver/semver";
+import { parseRange, parseVersion } from "../semver/semver";
 
 // ---------------------------------------------------------------------------
 // Parser
@@ -247,13 +247,37 @@ class Parser {
       `Expected 'as' after import path — imports must have an alias, e.g. import "${pathTok.value}" as MyAlias`
     );
     const alias = this.expect(TokenType.IDENT, "Expected an alias identifier after 'as'");
+    const versionRange = this.parseRequiresClause();
     return {
       kind: "ImportDeclaration",
       path: pathTok.value,
       alias: alias.value,
+      ...(versionRange !== undefined && { versionRange }),
       line: tok.line,
       column: tok.column,
     };
+  }
+
+  /**
+   * RequiresClause ::= "requires" StringLit. `requires` is contextual, not a
+   * reserved word: after an import alias, a bare identifier cannot start
+   * anything else, so reading it here never shadows a user identifier.
+   */
+  private parseRequiresClause(): string | undefined {
+    const next = this.peek();
+    if (next.type !== TokenType.IDENT || next.value !== "requires") return undefined;
+    this.advance();
+    const range = this.parseStringLit(
+      "Expected a version range string after 'requires', e.g. requires \"^1.0.0\""
+    );
+    try {
+      parseRange(range.value);
+    } catch (error) {
+      // parseRange reports malformed ranges as RangeError; anything else is a bug.
+      if (!(error instanceof RangeError)) throw error;
+      throw new ParserError(error.message, range.line, range.column);
+    }
+    return range.value;
   }
 
   private isMetadataStart(): boolean {

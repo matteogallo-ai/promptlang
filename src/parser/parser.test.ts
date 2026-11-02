@@ -1158,6 +1158,31 @@ describe("import declarations", () => {
     expect(ast.imports[0]!.kind).toBe("ImportDeclaration");
   });
 
+  test("parses an optional requires version range", () => {
+    const ast = p(
+      `import "a.prompt" as A requires ">=1.2.0 <2.0.0"\nimport "b.prompt" as B\n${MIN_BODY}`
+    );
+    expect(ast.imports[0]!.versionRange).toBe(">=1.2.0 <2.0.0");
+    expect(ast.imports[1]!.versionRange).toBeUndefined();
+  });
+
+  test("rejects an invalid requires range at the range string's position", () => {
+    let error: unknown;
+    try {
+      p(`import "a.prompt" as A requires "^1.2"\n${MIN_BODY}`);
+    } catch (e) {
+      error = e;
+    }
+    expect(error).toBeInstanceOf(ParserError);
+    expect((error as ParserError).message).toContain("'^1.2'");
+    expect((error as ParserError).line).toBe(1);
+    expect((error as ParserError).column).toBe(33);
+  });
+
+  test("requires must be followed by a string", () => {
+    expect(() => p(`import "a.prompt" as A requires 1\n${MIN_BODY}`)).toThrow(/requires/);
+  });
+
   test("parses multiple imports in order", () => {
     const src =
       `import "shared/a.prompt" as A\n` +

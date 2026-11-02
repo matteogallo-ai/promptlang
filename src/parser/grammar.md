@@ -26,8 +26,10 @@ UPPER   terminal token type produced by the lexer
 ```ebnf
 Program        ::= Import* Metadata* Declaration*
 
-Import         ::= "import" (STRING | TRIPLE_STRING) "as" IDENT
+Import         ::= "import" (STRING | TRIPLE_STRING) "as" IDENT ("requires" StringLit)?
                    -- the path may not contain {{...}} interpolation
+                   -- "requires" is contextual (an IDENT), not a reserved word;
+                   -- its string must be a version range (docs/syntax-reference.md)
 
 Metadata       ::= AT_VERSION   StringLit     -- must be a SemVer 2.0.0 version
                  | AT_MODEL     IDENT          -- model names may contain hyphens/dots

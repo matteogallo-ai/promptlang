@@ -5,10 +5,11 @@ import { tokenize } from "../../lexer/lexer";
 import { ParserError } from "../../parser/errors";
 import { parse } from "../../parser/parser";
 import type { PromptClient } from "../../runtime/client";
-import { AnthropicClient } from "../../runtime/providers/anthropic-client";
 import { type CostEstimate, estimateLiveCost, UnpricedModelError } from "../../testing/cost";
 import { type RunMode, runTests, type TestResult } from "../../testing/runner";
 import { resolveFiles } from "../files";
+import { confirmInTerminal, createLiveClient } from "../live";
+import { UsageError } from "../usage-error";
 import { warnAboutEvals, warnAboutTemperature } from "../warnings";
 
 const EXIT_OK = 0;
@@ -24,26 +25,10 @@ export interface TestCommandDeps {
   confirm: (question: string) => boolean;
 }
 
-/** The --live client. No retries: the approved estimate counts each call once. */
-export function createLiveClient(
-  env: Record<string, string | undefined> = process.env
-): PromptClient {
-  const apiKey = env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new UsageError("--live needs ANTHROPIC_API_KEY in the environment");
-  return new AnthropicClient({ apiKey, maxRetries: 0 });
-}
-
 const defaultDeps: TestCommandDeps = {
-  createClient: () => createLiveClient(),
-  confirm: (question) => {
-    // Without a terminal there is nobody to answer; --yes is the explicit approval.
-    if (!process.stdin.isTTY)
-      throw new UsageError("--live without a terminal needs --yes to approve the cost");
-    return (prompt(question) ?? "").trim().toLowerCase() === "y";
-  },
+  createClient: () => createLiveClient("--live"),
+  confirm: (question) => confirmInTerminal("--live", question),
 };
-
-class UsageError extends Error {}
 
 interface FileOutcome {
   file: string;

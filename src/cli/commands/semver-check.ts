@@ -7,13 +7,12 @@ import { parse } from "../../parser/parser";
 import { checkFile, type FileCheck } from "../../semver/check";
 import { formatChange } from "../../semver/interface";
 import { resolveFiles } from "../files";
+import { UsageError } from "../usage-error";
 
 /** Exit codes: 0 every file is versioned correctly, 1 a violation, 2 a usage or git problem. */
 const EXIT_OK = 0;
 const EXIT_VIOLATION = 1;
 const EXIT_USAGE = 2;
-
-class UsageError extends Error {}
 
 function git(cwd: string, args: string[]): { ok: boolean; stdout: string; stderr: string } {
   const proc = Bun.spawnSync(["git", ...args], { cwd, stdout: "pipe", stderr: "pipe" });

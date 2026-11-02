@@ -1,0 +1,6 @@
+# Project used by `bun run demo` (scripts/demo.ts), copied into a temporary Git repository.
+name: semver-demo
+version: 1.0.0
+
+sources:
+  - path: ./prompts

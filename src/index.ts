@@ -18,7 +18,12 @@ export { parse } from "./parser/parser";
 export { ParserError } from "./parser/errors";
 export type * from "./ast/nodes";
 
-export { resolveGraph, resolveImport, ResolverError } from "./registry/resolver";
+export {
+  resolveGraph,
+  resolveImport,
+  ResolverError,
+  VersionMismatchError,
+} from "./registry/resolver";
 export type { ResolutionResult, ResolvedImport, ResolverOptions } from "./registry/resolver";
 
 export { compile } from "./compiler/compiler";

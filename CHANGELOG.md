@@ -53,6 +53,11 @@ release is chosen when it is tagged.
 ### Added
 - `@version` is validated as SemVer 2.0.0; an invalid value is a parse error
   positioned on the version string. **BREAKING** for files with non-SemVer values.
+- `import "x.prompt" as X requires "<range>"`: `install` and `check` fail with
+  `VersionMismatchError` when the imported `@version` does not satisfy the range
+  (exact, `^`, `~`, `>`, `>=`, `<`, `<=`, space-separated AND).
+- A syntax error in any file of the import graph is reported by `install` and
+  `check` with the file path, instead of an uncaught exception.
 - `InvalidResponseError` for provider 2xx bodies that are not JSON or lack the
   documented fields (not retried; `RoutingClient` still falls back).
 - `docs/CLAIMS.md`, `scripts/check-claims.ts`, `scripts/check-stale-narrative.ts`,

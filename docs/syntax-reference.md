@@ -43,6 +43,7 @@ Directives apply to the whole file; there is no per-prompt override.
 
 ```promptlang
 import "shared/x.prompt" as Alias
+import "shared/categories.prompt" as Categories requires "^1.2.0"
 ```
 
 The path is a plain string (no `{{…}}`). It is resolved relative to the importing
@@ -50,6 +51,31 @@ file first, then against each `sources[].path` in `promptlang.yaml`. Imports fee
 `promptlang install` / `check` (dependency graph, cycle detection, integrity
 hashes). A chain cannot call an imported prompt: `Alias.name(...)` does not
 parse.
+
+#### Version constraints (`requires`)
+
+`requires "<range>"` makes `install` and `check` fail with a
+`VersionMismatchError` unless the imported file's `@version` satisfies the range:
+
+```
+prompts/app.prompt:1:1: import "./lib.prompt" requires "^1.0.0", got 2.0.0. Update the requires range, or import a version of the file that satisfies it.
+```
+
+An imported file with no `@version` never satisfies a range. A malformed range is
+a parse error at the range string. Supported range syntax, every version written
+in full as `MAJOR.MINOR.PATCH`:
+
+| Range | Means |
+| --- | --- |
+| `1.2.3` or `=1.2.3` | exactly 1.2.3 |
+| `^1.2.3` | `>=1.2.3 <2.0.0`; for `0.x`, `^0.2.3` is `>=0.2.3 <0.3.0` and `^0.0.3` is `>=0.0.3 <0.0.4` |
+| `~1.2.3` | `>=1.2.3 <1.3.0` |
+| `>`, `>=`, `<`, `<=` | the comparison, by SemVer precedence |
+| `>=1.2.0 <2.0.0` | space-separated constraints must all hold |
+
+A pre-release (`2.0.0-rc.1`) satisfies a range only if the range itself names a
+pre-release of the same `MAJOR.MINOR.PATCH`. Not supported (parse error): `||`,
+partial versions (`^1.2`), wildcards (`1.x`), hyphen ranges (`1.0.0 - 2.0.0`).
 
 ---
 
@@ -163,8 +189,8 @@ An `eval` block has exactly the four fields shown, in that order.
 
 ## Section 6 — Versioning
 
-`@version` is validated as SemVer 2.0.0 when the file is parsed. There is no
-version constraint on imports and no breaking-change check.
+`@version` is validated as SemVer 2.0.0 when the file is parsed, and imports can
+constrain it with `requires` (Section 1).
 This is the "SemVer for prompts" item in [`roadmap.md`](roadmap.md).
 
 ---
@@ -277,5 +303,5 @@ Plus `__init__.py` and a generated `promptlang_runtime.py` (its HTTP clients nee
 
 Array types · per-prompt directives · `parallel` steps · calls to imported prompts ·
 type checking between chain steps · executing `test`/`eval` · comparison or regex
-assertions · import version constraints · rule suppression
+assertions · rule suppression
 comments · custom analyzer rules · model aliases in config · single-quoted strings.

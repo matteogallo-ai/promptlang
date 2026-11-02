@@ -636,6 +636,30 @@ describe("install command", () => {
     expect(manifest.imports[0].alias).toBe("A");
   });
 
+  test("exits 1 with the mismatch when an import's requires range is not met", async () => {
+    const dir = await makeProject("install-requires");
+    await Bun.write(
+      join(dir, "promptlang.yaml"),
+      "name: p\nversion: 1.0.0\nsources:\n  - path: ./prompts\n"
+    );
+    await Bun.write(
+      join(dir, "prompts", "lib.prompt"),
+      `@version "2.0.0"\nprompt lib(x: string) -> string { user: "{{x}}" output: string }\n`
+    );
+    await Bun.write(
+      join(dir, "prompts", "app.prompt"),
+      `import "./lib.prompt" as Lib requires "^1.0.0"\n@version "1.0.0"\nprompt app(x: string) -> string { user: "{{x}}" output: string }\n`
+    );
+    const log = captureLog();
+    const err = captureError();
+    const code = await withCwd(dir, () => main(["bun", "cli", "install"]));
+    const stderr = err.output();
+    err.restore();
+    log.restore();
+    expect(code).toBe(1);
+    expect(stderr).toContain('requires "^1.0.0", got 2.0.0');
+  });
+
   test("exits 1 when promptlang.yaml is missing", async () => {
     const dir = await makeProject("install-missing");
     const restore = silenceAll();

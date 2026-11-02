@@ -1,7 +1,11 @@
 import { dirname, isAbsolute, normalize, resolve } from "node:path";
 import { tokenize } from "../lexer/lexer";
 import { parse } from "../parser/parser";
+import { LexerError } from "../lexer/errors";
+import { ParserError } from "../parser/errors";
 import type { SourceEntry } from "../config/config";
+import type { Program } from "../ast/nodes";
+import { satisfies } from "../semver/semver";
 
 /**
  * A resolved entry produced by the resolver — maps a raw import path (as
@@ -35,6 +39,28 @@ export class ResolverError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "ResolverError";
+  }
+}
+
+/**
+ * An import's `requires "<range>"` is not met by the imported file's
+ * `@version` (or the imported file declares no version).
+ */
+export class VersionMismatchError extends ResolverError {
+  constructor(
+    readonly importingFile: string,
+    readonly line: number,
+    readonly column: number,
+    readonly importPath: string,
+    readonly range: string,
+    readonly actual: string | null
+  ) {
+    const found = actual === null ? `but '${importPath}' declares no @version` : `got ${actual}`;
+    super(
+      `${importingFile}:${line}:${column}: import "${importPath}" requires "${range}", ${found}. ` +
+        "Update the requires range, or import a version of the file that satisfies it."
+    );
+    this.name = "VersionMismatchError";
   }
 }
 
@@ -75,8 +101,10 @@ export async function resolveImport(
 
 /**
  * Walks the full import graph starting from `entryFiles`, resolving every
- * `import "..." as X` recursively. Detects and rejects circular imports.
+ * `import "..." as X` recursively. Detects and rejects circular imports and
+ * checks each `requires "<range>"` against the imported file's `@version`.
  *
+ * @throws {VersionMismatchError} when a `requires` range is not satisfied.
  * @throws {ResolverError} on unresolvable imports or import cycles.
  */
 export async function resolveGraph(
@@ -88,6 +116,26 @@ export async function resolveGraph(
   const imports: ResolvedImport[] = [];
   const order: string[] = [];
   const visiting = new Set<string>();
+  const asts = new Map<string, Program>();
+
+  async function load(file: string): Promise<Program> {
+    let ast = asts.get(file);
+    if (!ast) {
+      const source = await Bun.file(file).text();
+      try {
+        ast = parse(tokenize(source));
+      } catch (error) {
+        // Syntax errors carry a position but not the file; add it so `install`
+        // and `check` can say which file in the graph is broken.
+        if (error instanceof LexerError || error instanceof ParserError) {
+          throw new ResolverError(`${file}:${error.line}:${error.column}: ${error.message}`);
+        }
+        throw error;
+      }
+      asts.set(file, ast);
+    }
+    return ast;
+  }
 
   async function visit(file: string, stack: string[]): Promise<void> {
     if (visiting.has(file)) {
@@ -96,10 +144,22 @@ export async function resolveGraph(
     }
     if (files.has(file)) return;
     visiting.add(file);
-    const source = await Bun.file(file).text();
-    const ast = parse(tokenize(source));
+    const ast = await load(file);
     for (const imp of ast.imports) {
       const resolved = await resolveImport(imp.path, file, options);
+      if (imp.versionRange !== undefined) {
+        const version = (await load(resolved)).metadata.find((m) => m.kind === "VersionMetadata");
+        if (!version || !satisfies(version.value, imp.versionRange)) {
+          throw new VersionMismatchError(
+            file,
+            imp.line,
+            imp.column,
+            imp.path,
+            imp.versionRange,
+            version?.value ?? null
+          );
+        }
+      }
       imports.push({
         requested: imp.path,
         alias: imp.alias,

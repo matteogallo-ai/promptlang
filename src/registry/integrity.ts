@@ -1,11 +1,30 @@
 import { createHash } from "node:crypto";
+import { isAbsolute, join, relative, sep } from "node:path";
 
 /**
- * Contents of `.promptlang/integrity.json`: a map from absolute file path
- * to its SHA-256 digest at the time of the last `install`/`check`.
+ * Contents of `.promptlang/integrity.json`: a map from a file path, relative to
+ * the project root and POSIX-separated, to its SHA-256 digest at the time of the
+ * last `install`. Relative keys keep the file identical across checkouts and
+ * machines, so it can be committed.
  */
 export interface IntegrityRecord {
-  [absolutePath: string]: string;
+  [projectRelativePath: string]: string;
+}
+
+function toRecordKey(file: string, projectRoot: string): string {
+  return relative(projectRoot, file).split(sep).join("/");
+}
+
+/**
+ * Rewrites keys written by older versions (absolute paths) as project-relative
+ * POSIX paths. Relative keys pass through unchanged.
+ */
+export function migrateIntegrity(record: IntegrityRecord, projectRoot: string): IntegrityRecord {
+  const migrated: IntegrityRecord = {};
+  for (const [key, hash] of Object.entries(record)) {
+    migrated[isAbsolute(key) ? toRecordKey(key, projectRoot) : key] = hash;
+  }
+  return migrated;
 }
 
 /**
@@ -28,10 +47,13 @@ export function hashString(source: string): string {
  * Builds an integrity record for a set of files. Order does not matter —
  * the resulting object is a plain path→hash lookup.
  */
-export async function buildIntegrity(files: string[]): Promise<IntegrityRecord> {
+export async function buildIntegrity(
+  files: string[],
+  projectRoot: string
+): Promise<IntegrityRecord> {
   const record: IntegrityRecord = {};
-  for (const file of files) {
-    record[file] = await hashFile(file);
+  for (const file of [...files].sort()) {
+    record[toRecordKey(file, projectRoot)] = await hashFile(file);
   }
   return record;
 }
@@ -42,15 +64,18 @@ export async function buildIntegrity(files: string[]): Promise<IntegrityRecord> 
  * Files that no longer exist are reported as `mismatched` too, with a
  * sentinel `<missing>` hash in the diagnostic.
  */
-export async function verifyIntegrity(record: IntegrityRecord): Promise<IntegrityMismatch[]> {
+export async function verifyIntegrity(
+  record: IntegrityRecord,
+  projectRoot: string
+): Promise<IntegrityMismatch[]> {
   const mismatches: IntegrityMismatch[] = [];
   for (const [file, expected] of Object.entries(record)) {
-    const exists = await Bun.file(file).exists();
-    if (!exists) {
+    const path = join(projectRoot, file);
+    if (!(await Bun.file(path).exists())) {
       mismatches.push({ file, expected, actual: "<missing>" });
       continue;
     }
-    const actual = await hashFile(file);
+    const actual = await hashFile(path);
     if (actual !== expected) {
       mismatches.push({ file, expected, actual });
     }

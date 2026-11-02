@@ -5,6 +5,7 @@ import type { PromptLangConfig } from "../config/config";
 import { resolveGraph, type ResolvedImport } from "./resolver";
 import {
   buildIntegrity,
+  migrateIntegrity,
   verifyIntegrity,
   type IntegrityRecord,
   type IntegrityMismatch,
@@ -61,7 +62,7 @@ export async function install(
     sources: config.sources,
     projectRoot,
   });
-  const integrity = await buildIntegrity(graph.files);
+  const integrity = await buildIntegrity(graph.files, projectRoot);
 
   const manifest: Manifest = {
     version: 1,
@@ -98,7 +99,7 @@ async function readIntegrity(projectRoot: string): Promise<IntegrityRecord> {
   const path = join(projectRoot, REGISTRY_DIR, INTEGRITY_FILE);
   const file = Bun.file(path);
   if (!(await file.exists())) return {};
-  return JSON.parse(await file.text()) as IntegrityRecord;
+  return migrateIntegrity(JSON.parse(await file.text()) as IntegrityRecord, projectRoot);
 }
 
 /**
@@ -114,7 +115,7 @@ export async function check(
     const result = await install(config, projectRoot);
     record = result.integrity;
   }
-  return verifyIntegrity(record);
+  return verifyIntegrity(record, projectRoot);
 }
 
 /** Scans the project for all local `.prompt` files under configured sources. */

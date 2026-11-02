@@ -32,6 +32,20 @@ describe("2.x stability: package metadata", () => {
     });
   });
 
+  // The SPDX id lives in each package.json, where npm and GitHub read it; the LICENSE
+  // text stays the unmodified MIT text, which GitHub's detection matches as "MIT".
+  test("both packages declare the SPDX id MIT and ship the MIT licence text", async () => {
+    const yamlPkg = await Bun.file(
+      `${import.meta.dir}/../packages/yaml-parser/package.json`
+    ).json();
+    expect([pkg.license, yamlPkg.license]).toEqual(["MIT", "MIT"]);
+    for (const dir of ["..", "../packages/yaml-parser"]) {
+      const text = await Bun.file(`${import.meta.dir}/${dir}/LICENSE`).text();
+      expect(text.startsWith("MIT License\n")).toBe(true);
+      expect(text).toContain("Permission is hereby granted, free of charge");
+    }
+  });
+
   test("the published files are the build output, not the sources", () => {
     expect(pkg.files).toEqual(["dist", "README.md", "CHANGELOG.md", "LICENSE"]);
   });

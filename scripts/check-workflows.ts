@@ -14,6 +14,38 @@ interface Job {
   uses?: unknown;
   steps?: unknown;
   permissions?: unknown;
+  needs?: unknown;
+}
+
+const ATTEST = /^actions\/attest(-build-provenance)?@/;
+
+function runScripts(job: Job): string[] {
+  if (!Array.isArray(job.steps)) return [];
+  return job.steps.map((s) => (typeof s?.run === "string" ? s.run : ""));
+}
+
+/**
+ * A job running `gh release create` must ship a `.sigstore.json` asset and must
+ * itself, or through a job it `needs`, run an attestation step. Scorecard's
+ * Signed-Releases counts an unsigned release as 0, and a user could not verify
+ * the tarball. Releases made by other actions are not recognised.
+ */
+function unsignedReleases(file: string, jobs: Record<string, Job>): string[] {
+  const out: string[] = [];
+  for (const [name, job] of Object.entries(jobs)) {
+    const scripts = runScripts(job);
+    if (!scripts.some((r) => /\bgh release create\b/.test(r))) continue;
+    const needs =
+      typeof job.needs === "string" ? [job.needs] : Array.isArray(job.needs) ? job.needs : [];
+    const attested = [name, ...needs].some((n) =>
+      actionRefs(jobs[n] ?? {}).some((ref) => ATTEST.test(ref))
+    );
+    if (!attested || !scripts.some((r) => r.includes(".sigstore.json")))
+      out.push(
+        `${file}: job ${name}: creates a GitHub Release without the .sigstore.json bundle of an actions/attest-build-provenance step`
+      );
+  }
+  return out;
 }
 
 function actionRefs(job: Job): string[] {
@@ -66,7 +98,8 @@ function commentedWrites(lines: string[]): Map<string, boolean> {
  * - the workflow-level token is `contents: read`, or the stricter `{}`;
  * - a job never gets `write-all`, and every job-level `write` sits in a block-style
  *   `permissions:` with its own comment line right above it saying why;
- * - no `pull_request_target`, which runs with secrets on code from forks.
+ * - no `pull_request_target`, which runs with secrets on code from forks;
+ * - no `gh release create` without a signed attestation bundle (see unsignedReleases).
  */
 export function workflowViolations(file: string, text: string): string[] {
   const out: string[] = [];
@@ -98,5 +131,6 @@ export function workflowViolations(file: string, text: string): string[] {
   const on = doc.on;
   const events = typeof on === "string" ? [on] : Array.isArray(on) ? on : Object.keys(on ?? {});
   if (events.includes("pull_request_target")) out.push(`${file}: uses pull_request_target`);
+  out.push(...unsignedReleases(file, Object.fromEntries(jobs)));
   return out;
 }

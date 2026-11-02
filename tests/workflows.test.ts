@@ -93,4 +93,18 @@ describe.skipIf(typeof Bun.YAML === "undefined")("GitHub Actions workflows", () 
     );
     expect(workflowViolations("d.yml", list)).toEqual(["d.yml: uses pull_request_target"]);
   });
+
+  test("a GitHub Release ships the attestation bundle of an attest-build-provenance step", () => {
+    const attest = `      - uses: actions/attest-build-provenance@${SHA} # v4.2.2\n`;
+    const release = (assets: string) =>
+      `  r:\n    needs: j\n    runs-on: ubuntu-latest\n    steps:\n      - run: gh release create "$GITHUB_REF_NAME" ${assets}\n`;
+    const signed = wf(`    steps:\n${attest}${release("a.tgz a.tgz.sigstore.json")}`);
+    expect(workflowViolations("signed.yml", signed)).toEqual([]);
+    const message = (f: string) =>
+      `${f}: job r: creates a GitHub Release without the .sigstore.json bundle of an actions/attest-build-provenance step`;
+    const noAttest = wf(`    steps: []\n${release("a.tgz a.tgz.sigstore.json")}`);
+    expect(workflowViolations("no-attest.yml", noAttest)).toEqual([message("no-attest.yml")]);
+    const noBundle = wf(`    steps:\n${attest}${release("a.tgz")}`);
+    expect(workflowViolations("no-bundle.yml", noBundle)).toEqual([message("no-bundle.yml")]);
+  });
 });

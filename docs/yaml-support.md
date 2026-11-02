@@ -18,7 +18,7 @@ Two-space indentation, arbitrary nesting depth:
 
 ```yaml
 defaults:
-  model: claude-opus-4.7
+  model: claude-opus-5-5
   temperature: 0.3
   linter:
     ai:
@@ -52,7 +52,7 @@ dependencies:
 
 | Kind | Examples |
 |------|----------|
-| Unquoted string | `claude-opus-4.7`, `./generated`, `^1.2.0` |
+| Unquoted string | `claude-opus-5-5`, `./generated`, `^1.2.0` |
 | Double-quoted string | `"hello"`, `"line1\nline2"`, `"a\"b"` |
 | Single-quoted string | `'x'`, `'it''s ok'` (double `''` = literal `'`) |
 | Integer | `42`, `-7`, `0` |

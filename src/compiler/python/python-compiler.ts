@@ -1,3 +1,4 @@
+import { checkTestReferences } from "../test-references";
 import type {
   Program,
   TypeDeclaration,
@@ -16,6 +17,7 @@ import pkg from "../../../package.json";
 
 /** Compiles a PromptLang Program to a Python source string. */
 export function compilePython(program: Program, sourceFile: string): string {
+  checkTestReferences(program);
   const timestamp = new Date().toISOString();
   const parts: string[] = [];
 

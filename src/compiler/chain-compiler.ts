@@ -8,6 +8,7 @@ import type {
 } from "../ast/nodes";
 import { mapType, toPascalCase } from "./type-mapper";
 import { CompilerError } from "./errors";
+import { generateInputInterface } from "./code-generator";
 
 // Maps callee name (prompt or chain) → ordered parameter list.
 export type CallableRegistry = Map<string, readonly Parameter[]>;
@@ -32,16 +33,7 @@ export function generateChain(decl: ChainDeclaration, callableRegistry: Callable
 
   const parts: string[] = [];
 
-  // Input interface
-  if (parameters.length === 0) {
-    parts.push(`export interface ${inputType} {}`);
-  } else {
-    parts.push(`export interface ${inputType} {`);
-    for (const p of parameters) {
-      parts.push(`  ${p.name}: ${mapType(p.type)};`);
-    }
-    parts.push("}");
-  }
+  parts.push(generateInputInterface(inputType, parameters));
   parts.push("");
 
   // Async function

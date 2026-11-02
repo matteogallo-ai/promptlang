@@ -30,4 +30,4 @@ export { RoutingClient } from "./providers/routing-client";
 export type { AnthropicClientOptions } from "./providers/anthropic-client";
 export type { OpenAIClientOptions } from "./providers/openai-client";
 export type { OllamaClientOptions } from "./providers/ollama-client";
-export type { RoutingClientOptions } from "./providers/routing-client";
+export type { RoutedClient, RoutingClientOptions } from "./providers/routing-client";

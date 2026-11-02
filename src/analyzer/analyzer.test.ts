@@ -331,11 +331,14 @@ describe("Integration — example files", () => {
     }
   });
 
-  test("detects prompt-injection-risk in classify-ticket (no delimiters)", async () => {
-    const ctx = await loadContext("docs/examples/classify-ticket.prompt");
-    const issues = promptInjectionRiskRule.check(ctx);
-    expect(issues.length).toBeGreaterThan(0);
-    expect(issues[0].rule).toBe("prompt-injection-risk");
+  test("detects prompt-injection-risk on an undelimited user template", () => {
+    const source = `@version "1.0.0"\nprompt classify(ticket: string) -> string {\n  user: "Classify this ticket:\\n\\n{{ticket}}"\n}\n`;
+    const issues = promptInjectionRiskRule.check({
+      file: "f.prompt",
+      ast: parse(tokenize(source)),
+    });
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toMatchObject({ rule: "prompt-injection-risk", line: 3 });
   });
 
   test("extract-invoice has no injection warning (uses --- delimiters)", async () => {
@@ -344,11 +347,10 @@ describe("Integration — example files", () => {
     expect(issues).toHaveLength(0);
   });
 
-  test("analyze across the example files returns issues", async () => {
+  test("the shipped examples raise no warning or error from the project's own rules", async () => {
     const contexts = await Promise.all(PARSEABLE_FILES.map(loadContext));
-    const issues = analyze(contexts);
-    const injectionIssues = issues.filter((i) => i.rule === "prompt-injection-risk");
-    expect(injectionIssues.length).toBeGreaterThan(0);
+    const issues = analyze(contexts).filter((i) => i.severity !== "info");
+    expect(issues).toEqual([]);
   });
 
   test("formatJsonReport returns valid JSON structure", () => {
@@ -370,8 +372,8 @@ describe("Integration — example files", () => {
     expect(json.summary.errors).toBe(0);
   });
 
-  test("classify-ticket and extract-invoice have no missing-tests issues", async () => {
-    const contexts = await Promise.all(PARSEABLE_FILES.slice(0, 2).map(loadContext));
+  test("no example has a missing-tests issue", async () => {
+    const contexts = await Promise.all(PARSEABLE_FILES.map(loadContext));
     const issues = contexts.flatMap((ctx) => missingTestsRule.check(ctx));
     expect(issues).toHaveLength(0);
   });

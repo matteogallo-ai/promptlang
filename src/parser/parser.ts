@@ -40,6 +40,7 @@ import type {
   DescriptionMetadata,
 } from "../ast/nodes";
 import { ParserError } from "./errors";
+import { parseRange, parseVersion } from "../semver/semver";
 
 // ---------------------------------------------------------------------------
 // Parser
@@ -246,13 +247,37 @@ class Parser {
       `Expected 'as' after import path — imports must have an alias, e.g. import "${pathTok.value}" as MyAlias`
     );
     const alias = this.expect(TokenType.IDENT, "Expected an alias identifier after 'as'");
+    const versionRange = this.parseRequiresClause();
     return {
       kind: "ImportDeclaration",
       path: pathTok.value,
       alias: alias.value,
+      ...(versionRange !== undefined && { versionRange }),
       line: tok.line,
       column: tok.column,
     };
+  }
+
+  /**
+   * RequiresClause ::= "requires" StringLit. `requires` is contextual, not a
+   * reserved word: after an import alias, a bare identifier cannot start
+   * anything else, so reading it here never shadows a user identifier.
+   */
+  private parseRequiresClause(): string | undefined {
+    const next = this.peek();
+    if (next.type !== TokenType.IDENT || next.value !== "requires") return undefined;
+    this.advance();
+    const range = this.parseStringLit(
+      "Expected a version range string after 'requires', e.g. requires \"^1.0.0\""
+    );
+    try {
+      parseRange(range.value);
+    } catch (error) {
+      // parseRange reports malformed ranges as RangeError; anything else is a bug.
+      if (!(error instanceof RangeError)) throw error;
+      throw new ParserError(error.message, range.line, range.column);
+    }
+    return range.value;
   }
 
   private isMetadataStart(): boolean {
@@ -286,6 +311,13 @@ class Parser {
     switch (tok.type) {
       case TokenType.AT_VERSION: {
         const str = this.parseStringLit('@version expects a string value, e.g. @version "1.0.0"');
+        if (!parseVersion(str.value)) {
+          throw new ParserError(
+            `@version "${str.value}" is not a valid SemVer 2.0.0 version: expected MAJOR.MINOR.PATCH with optional -pre-release and +build, e.g. "1.0.0" or "2.1.0-rc.1"`,
+            str.line,
+            str.column
+          );
+        }
         return {
           kind: "VersionMetadata",
           value: str.value,
@@ -295,11 +327,11 @@ class Parser {
       }
       case TokenType.AT_MODEL: {
         // Model names may contain hyphens (consumed by the lexer as part of IDENT)
-        // and dots followed by version digits (e.g. claude-opus-4.7 → IDENT "claude-opus-4" DOT NUMBER "7").
+        // and dots followed by version digits (e.g. Ollama's llama3.1 → IDENT "llama3" DOT NUMBER "1").
         // Reconstruct the full name by consuming IDENT (DOT (NUMBER|IDENT))* segments.
         const ident = this.expect(
           TokenType.IDENT,
-          "@model expects an identifier, e.g. @model claude-opus-4.7"
+          "@model expects an identifier, e.g. @model claude-opus-5-5"
         );
         let name = ident.value;
         while (this.check(TokenType.DOT)) {
@@ -595,15 +627,20 @@ class Parser {
     return params;
   }
 
-  /** Parameter ::= IDENT ":" TypeExpression */
+  /** Parameter ::= IDENT "?"? ":" TypeExpression */
   private parseParameter(): Parameter {
     const nameTok = this.parseAnyIdent("Expected a parameter name");
-    this.expect(TokenType.COLON, `Expected ':' after parameter name '${nameTok.value}'`);
+    const optional = this.match(TokenType.QUESTION);
+    this.expect(
+      TokenType.COLON,
+      `Expected ':' after parameter name '${nameTok.value}${optional ? "?" : ""}'`
+    );
     const type = this.parseTypeExpression();
     return {
       kind: "Parameter",
       name: nameTok.value,
       type,
+      ...(optional && { optional: true }),
       line: nameTok.line,
       column: nameTok.column,
     };
@@ -855,6 +892,11 @@ class Parser {
    *                       Expectation+
    *                     "}"
    */
+  /**
+   * TestDeclaration ::= "test" StringLit "{" "input" ":" Expression
+   *                       [ "mock" ":" StringLit ] TestClause+ "}"
+   * `mock` is contextual, like `requires`.
+   */
   private parseTestDeclaration(): TestDeclaration {
     const tok = this.expect(TokenType.TEST, "Expected 'test'");
     const desc = this.parseStringLit("Expected a test description string after 'test'");
@@ -862,40 +904,47 @@ class Parser {
     this.expect(TokenType.INPUT, "Expected 'input' as the first statement in a test body");
     this.expect(TokenType.COLON, "Expected ':' after 'input'");
     const input = this.parseExpression();
-    const expectations = this.parseExpectations();
+    let mock: StringLiteral | undefined;
+    if (this.peek().type === TokenType.IDENT && this.peek().value === "mock") {
+      this.advance();
+      this.expect(TokenType.COLON, "Expected ':' after 'mock'");
+      mock = this.parseStringLit("Expected the mock model response as a string after 'mock:'");
+    }
+    const expectations: Expectation[] = [];
+    let expectsSchema = false;
+    while (this.check(TokenType.EXPECT)) {
+      const clause = this.parseExpectation();
+      if (clause === "schema") expectsSchema = true;
+      else expectations.push(clause);
+    }
+    if (expectations.length === 0 && !expectsSchema) {
+      const next = this.peek();
+      throw new ParserError(
+        "Test body must contain at least one 'expect' clause.",
+        next.line,
+        next.column
+      );
+    }
     this.expect(TokenType.RBRACE, "Expected '}' to close test body");
     return {
       kind: "TestDeclaration",
       description: desc.value,
       input,
+      ...(mock ? { mock } : {}),
       expectations,
+      ...(expectsSchema ? { expectsSchema: true as const } : {}),
       line: tok.line,
       column: tok.column,
     };
   }
 
   /**
-   * Expectation+ — at least one expect clause.
-   * Expectation ::= "expect" ":" Literal
-   *               | "expect" "." IDENT ":" Literal
+   * TestClause ::= "expect" [ "." IDENT ] ":" Literal
+   *              | "expect" [ "." IDENT ] ( "contains" | "matches" ) ":" StringLit
+   *              | "expect" "schema"
+   * `contains`, `matches` and `schema` are contextual.
    */
-  private parseExpectations(): Expectation[] {
-    const expectations: Expectation[] = [];
-    while (this.check(TokenType.EXPECT)) {
-      expectations.push(this.parseExpectation());
-    }
-    if (expectations.length === 0) {
-      const tok = this.peek();
-      throw new ParserError(
-        "Test body must contain at least one 'expect' clause.",
-        tok.line,
-        tok.column
-      );
-    }
-    return expectations;
-  }
-
-  private parseExpectation(): Expectation {
+  private parseExpectation(): Expectation | "schema" {
     const tok = this.expect(TokenType.EXPECT, "Expected 'expect'");
     const path: string[] = ["expect"];
 
@@ -904,9 +953,54 @@ class Parser {
       path.push(field.value);
     }
 
-    this.expect(TokenType.COLON, `Expected ':' after '${path.join(".")}'`);
-    const value = this.parseLiteral();
-    return { kind: "Expectation", path, value, line: tok.line, column: tok.column };
+    const word = this.peek();
+    if (word.type === TokenType.IDENT && word.value === "schema" && path.length === 1) {
+      this.advance();
+      return "schema";
+    }
+    let op: Expectation["op"] = "equals";
+    if (word.type === TokenType.IDENT && (word.value === "contains" || word.value === "matches")) {
+      this.advance();
+      op = word.value;
+    } else if (word.type !== TokenType.COLON) {
+      throw new ParserError(
+        `After '${path.join(".")}', expected ':', 'contains', 'matches' or 'schema'` +
+          (path.length > 1 ? " ('schema' applies to the whole output, not to a field)" : "") +
+          ` but found '${word.value}'.`,
+        word.line,
+        word.column
+      );
+    }
+
+    this.expect(
+      TokenType.COLON,
+      `Expected ':' after '${path.join(".")}${op === "equals" ? "" : ` ${op}`}'`
+    );
+    if (op === "equals") {
+      return {
+        kind: "Expectation",
+        path,
+        op,
+        value: this.parseLiteral(),
+        line: tok.line,
+        column: tok.column,
+      };
+    }
+    const value = this.parseStringLit(`Expected a string after '${op}:'`);
+    if (op === "matches") {
+      try {
+        new RegExp(value.value);
+      } catch (error) {
+        // RegExp only throws SyntaxError; turn it into a positioned parse error.
+        if (!(error instanceof SyntaxError)) throw error;
+        throw new ParserError(
+          `"${value.value}" is not a valid regular expression: ${error.message}`,
+          value.line,
+          value.column
+        );
+      }
+    }
+    return { kind: "Expectation", path, op, value, line: tok.line, column: tok.column };
   }
 
   // ---------------------------------------------------------------------------

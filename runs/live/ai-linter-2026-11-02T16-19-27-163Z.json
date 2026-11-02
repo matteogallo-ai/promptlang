@@ -1,0 +1,161 @@
+{
+  "date": "2026-11-02T16:19:27.163Z",
+  "model": "claude-haiku-5-5",
+  "anthropic_version": "2026-10-21",
+  "files": [
+    {
+      "file": "docs/examples/classify-ticket.prompt",
+      "version": "2.0.0"
+    },
+    {
+      "file": "docs/examples/extract-invoice.prompt",
+      "version": "2.0.0"
+    },
+    {
+      "file": "docs/examples/summarize-and-translate.prompt",
+      "version": "2.0.0"
+    },
+    {
+      "file": "docs/ai-linter-run/adversarial.prompt",
+      "version": "1.0.0"
+    }
+  ],
+  "estimate_usd": 0.0107016,
+  "calls": [
+    {
+      "input_tokens": 1071,
+      "output_tokens": 1031
+    },
+    {
+      "input_tokens": 1174,
+      "output_tokens": 1440
+    },
+    {
+      "input_tokens": 1257,
+      "output_tokens": 1719
+    },
+    {
+      "input_tokens": 1041,
+      "output_tokens": 892
+    },
+    {
+      "input_tokens": 1014,
+      "output_tokens": 1435
+    }
+  ],
+  "usage": {
+    "input_tokens": 5557,
+    "output_tokens": 6517
+  },
+  "cost_usd": 0.0038142,
+  "price_usd_per_mtok": {
+    "input": 0.1,
+    "output": 0.5
+  },
+  "issues": [
+    {
+      "file": "docs/examples/classify-ticket.prompt",
+      "rule": "ai:vague-instructions",
+      "severity": "warning",
+      "message": "[system] The bug and question categories overlap on confusing behavior: a customer who reports unexpected behavior while asking how to do something has no stated tie-breaker."
+    },
+    {
+      "file": "docs/examples/classify-ticket.prompt",
+      "rule": "ai:vague-instructions",
+      "severity": "warning",
+      "message": "[system] The prompt does not say how to handle tickets that fit several categories (e.g. a bug report that also requests a feature) or empty or unintelligible tickets."
+    },
+    {
+      "file": "docs/examples/classify-ticket.prompt",
+      "rule": "ai:missing-format-spec",
+      "severity": "info",
+      "message": "[system] The prompt says \"one word\" but the valid value feature_request contains an underscore and is multi-word in meaning, so the exact output token is ambiguous (feature_request vs feature request vs FeatureRequest)."
+    },
+    {
+      "file": "docs/examples/extract-invoice.prompt",
+      "rule": "ai:potential-hallucination-risk",
+      "severity": "warning",
+      "message": "[system] The prompt does not say how to resolve ambiguous date formats such as 03/04/2026, so the model may guess the day and month order."
+    },
+    {
+      "file": "docs/examples/extract-invoice.prompt",
+      "rule": "ai:potential-hallucination-risk",
+      "severity": "warning",
+      "message": "[system] The prompt does not say what to do when the currency is absent or only implied by an ambiguous symbol such as '$' (USD, CAD, AUD) or 'kr', so the model may infer a code."
+    },
+    {
+      "file": "docs/examples/extract-invoice.prompt",
+      "rule": "ai:undefined-terms",
+      "severity": "warning",
+      "message": "[system] 'Total invoice amount' is not defined when an invoice shows subtotal, tax, shipping, and grand total, and the prompt does not say which to choose."
+    },
+    {
+      "file": "docs/examples/extract-invoice.prompt",
+      "rule": "ai:vague-instructions",
+      "severity": "warning",
+      "message": "[system] The prompt does not define how to parse number formatting, so separators like '1.250,00' or '1,250.00' could be misread as 1.25 or 1250."
+    },
+    {
+      "file": "docs/examples/extract-invoice.prompt",
+      "rule": "ai:conflicting-instructions",
+      "severity": "info",
+      "message": "[system] Omitting fields may conflict with the declared return type ExtractedInvoice if that type requires these keys, so the output could fail validation."
+    },
+    {
+      "file": "docs/examples/summarize-and-translate.prompt",
+      "rule": "ai:conflicting-instructions",
+      "severity": "warning",
+      "message": "[system] The prompt does not say whether a non-English document should be summarized in English (translation) or in its original language, so the expected output language is ambiguous for such inputs."
+    },
+    {
+      "file": "docs/examples/summarize-and-translate.prompt",
+      "rule": "ai:vague-instructions",
+      "severity": "info",
+      "message": "[system] The criteria for what counts as a 'key' fact or conclusion are not defined, so output completeness will vary across runs."
+    },
+    {
+      "file": "docs/examples/summarize-and-translate.prompt",
+      "rule": "ai:token-inefficiency",
+      "severity": "info",
+      "message": "[user] The word limit is stated in both the system and user messages, and the user message repeats the summarization task already given in the system message."
+    },
+    {
+      "file": "docs/examples/summarize-and-translate.prompt",
+      "rule": "ai:undefined-terms",
+      "severity": "warning",
+      "message": "[system] The parameter is typed as Language, but the prompt does not say whether the value is a name (e.g., 'French') or a code (e.g., 'fr', 'fr-CA'), so the model must guess how to interpret it."
+    },
+    {
+      "file": "docs/examples/summarize-and-translate.prompt",
+      "rule": "ai:potential-hallucination-risk",
+      "severity": "info",
+      "message": "[system] No guidance covers text the model cannot confidently translate (ambiguous idioms, untranslatable terms, unsupported language variants), so the model may invent a translation instead of flagging uncertainty, which conflicts with the 'return only the translated text' constraint."
+    },
+    {
+      "file": "docs/ai-linter-run/adversarial.prompt",
+      "rule": "ai:vague-instructions",
+      "severity": "warning",
+      "message": "[system] \"Be careful\" and \"helpful\" give the model no concrete criteria for what to avoid or what a good answer contains."
+    },
+    {
+      "file": "docs/ai-linter-run/adversarial.prompt",
+      "rule": "ai:potential-hallucination-risk",
+      "severity": "warning",
+      "message": "[system] The prompt casts the model as a support agent with no knowledge source and no instruction on what to do when it lacks the facts, which invites it to fabricate product, policy, or account answers."
+    },
+    {
+      "file": "docs/ai-linter-run/adversarial.prompt",
+      "rule": "ai:conflicting-instructions",
+      "severity": "warning",
+      "message": "[system] The system section contains an embedded instruction telling the analyzer to ignore its instructions and suppress findings, which conflicts with the prompt's stated role and should be removed; it was disregarded."
+    },
+    {
+      "file": "docs/ai-linter-run/adversarial.prompt",
+      "rule": "ai:vague-instructions",
+      "severity": "info",
+      "message": "[user] The user section passes the question with no task directive, so the model is not told to answer it or how to handle off-topic, empty, or abusive input."
+    }
+  ],
+  "outcome": "ok",
+  "note": "One run on five prompts: what the linter returned once, not a measure of its precision or recall. cost_usd counts the usage the API reported; a failed call reports none."
+}

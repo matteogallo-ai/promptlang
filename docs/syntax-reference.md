@@ -19,8 +19,7 @@ rejected by `promptlang compile`, because neither compiler emits code for import
 import "shared/categories.prompt" as Categories
 
 @version "1.0.0"
-@model claude-haiku-4-5
-@temperature 0.3
+@model claude-haiku-5-5
 @max_tokens 512
 @description "Classifies support tickets"
 ```
@@ -29,9 +28,9 @@ import "shared/categories.prompt" as Categories
 
 | Directive | Value | Effect today |
 | --- | --- | --- |
-| `@version` | string | Copied into the generated `<prompt>_meta.version`. Optional; **not validated** as SemVer. |
+| `@version` | string | Optional. Must be a SemVer 2.0.0 version (`1.0.0`, `2.1.0-rc.1`, `1.0.0+build.5`); anything else is a parse error at the string's line and column. Copied into the generated `<prompt>_meta.version`. |
 | `@model` | identifier (may contain `-` and `.`) | Model name sent in every request from this file. Without it the generated code sends `model: ""`. |
-| `@temperature` | number | Copied into each request. No range check. |
+| `@temperature` | number | Copied into each request. No range check. Sent to OpenAI and Ollama only: `AnthropicClient` uses API version 2026-10-21, which rejects `temperature` on every model, so the Anthropic client leaves it out. |
 | `@max_tokens` | number | Copied into each request. |
 | `@description` | string | Kept in the AST; not emitted. |
 | `@breaking_changes` | string | **Parsed only.** |
@@ -43,6 +42,7 @@ Directives apply to the whole file; there is no per-prompt override.
 
 ```promptlang
 import "shared/x.prompt" as Alias
+import "shared/categories.prompt" as Categories requires "^1.2.0"
 ```
 
 The path is a plain string (no `{{…}}`). It is resolved relative to the importing
@@ -50,6 +50,31 @@ file first, then against each `sources[].path` in `promptlang.yaml`. Imports fee
 `promptlang install` / `check` (dependency graph, cycle detection, integrity
 hashes). A chain cannot call an imported prompt: `Alias.name(...)` does not
 parse.
+
+#### Version constraints (`requires`)
+
+`requires "<range>"` makes `install` and `check` fail with a
+`VersionMismatchError` unless the imported file's `@version` satisfies the range:
+
+```
+prompts/app.prompt:1:1: import "./lib.prompt" requires "^1.0.0", got 2.0.0. Update the requires range, or import a version of the file that satisfies it.
+```
+
+An imported file with no `@version` never satisfies a range. A malformed range is
+a parse error at the range string. Supported range syntax, every version written
+in full as `MAJOR.MINOR.PATCH`:
+
+| Range | Means |
+| --- | --- |
+| `1.2.3` or `=1.2.3` | exactly 1.2.3 |
+| `^1.2.3` | `>=1.2.3 <2.0.0`; for `0.x`, `^0.2.3` is `>=0.2.3 <0.3.0` and `^0.0.3` is `>=0.0.3 <0.0.4` |
+| `~1.2.3` | `>=1.2.3 <1.3.0` |
+| `>`, `>=`, `<`, `<=` | the comparison, by SemVer precedence |
+| `>=1.2.0 <2.0.0` | space-separated constraints must all hold |
+
+A pre-release (`2.0.0-rc.1`) satisfies a range only if the range itself names a
+pre-release of the same `MAJOR.MINOR.PATCH`. Not supported (parse error): `||`,
+partial versions (`^1.2`), wildcards (`1.x`), hyphen ranges (`1.0.0 - 2.0.0`).
 
 ---
 
@@ -89,7 +114,9 @@ prompt classify_ticket(ticket: string) -> Category {
 }
 ```
 
-- Parameters are `name: Type`, comma-separated.
+- Parameters are `name: Type`, comma-separated; `name?: Type` is optional. An
+  omitted optional parameter is absent from the generated input type
+  (`title?: string` / `NotRequired[str]`) and `{{name}}` renders as the empty string.
 - Sections: `system:`, `user:`, `assistant:` (each a string) and `output:` (a type).
   Messages are sent in the order written.
 - Strings are `"double-quoted"` (with `\n`, `\"` escapes) or `"""triple-quoted"""`.
@@ -130,21 +157,25 @@ chain summarize_and_translate(document: string, target_language: Language) -> st
 
 ---
 
-## Section 5 — Tests and evals (parsed only)
+## Section 5 — Tests and evals
 
-Both blocks are parsed and kept in the AST. **No command executes them**, and both
-compilers ignore them. The static rule `missing-tests` uses `test` blocks to decide
-whether a prompt has tests.
+`test` blocks are run by `promptlang test`; `eval` blocks are parsed only: no command
+executes them, and `compile` and `test` print a warning for each one.
 
 ```promptlang
 test "classifies bug reports" {
   input: classify_ticket(ticket: "The app crashes on login")
+  mock: "bug"
   expect: bug
+  expect schema
 }
 
 test "extracts the total" {
   input: extract_invoice(document: "Total: 120 EUR")
+  mock: """{"total": 120, "currency": "EUR"}"""
   expect.total: 120
+  expect.currency matches: "^[A-Z]{3}$"
+  expect.currency contains: "EU"
 }
 
 eval "classification accuracy" {
@@ -155,17 +186,95 @@ eval "classification accuracy" {
 }
 ```
 
-`expect:` and `expect.<field>:` take a literal (string, number, `true`/`false`) or an
-identifier. Comparison operators and regular expressions are not part of the syntax.
+### `test` blocks
+
+- `input:` must call a prompt or chain declared in the same file, with positional
+  or named arguments that are literals (string, number, `true`/`false`) or
+  identifiers (passed as their name, for enum values). An unknown callee, an unknown
+  or duplicated argument, a missing required parameter or too many positional
+  arguments is a compile error at the call, raised by `compile` (both targets) and
+  by `test`.
+- `mock:` (optional) is the raw model response that mock mode replays. Every model
+  call the test makes receives it, including each step of a chain.
+- At least one assertion:
+
+| Assertion | Passes when |
+| --- | --- |
+| `expect: v` / `expect.field: v` | the output (or its field) equals the literal; an identifier is compared as its name |
+| `expect contains: "s"` / `expect.field contains: "s"` | the value is a string containing `s` |
+| `expect matches: "re"` / `expect.field matches: "re"` | the value is a string matching the JavaScript regular expression; an invalid pattern is a parse error |
+| `expect schema` | the whole output conforms to the declared output type: enum member, required fields present, field types (`date` as `YYYY-MM-DD`), no undeclared fields |
+
+### `promptlang test <paths> [--json] [--live [--yes]]`
+
+Each file is compiled to TypeScript and its generated functions are called, so the
+request building and output parsing under test are the shipped ones. An error the
+generated code raises (an enum value outside the type, malformed JSON) fails the test
+with its message.
+
+- **Mock mode** (default): no network. A test without `mock:` fails with a message
+  saying so. Mock tests check the code path, not the model's answers.
+- **Live mode** (`--live`): calls Anthropic with `ANTHROPIC_API_KEY`, using the file's
+  `@model`, without retries. Before any call it prints an estimate per file (input ≈
+  prompt and argument characters ÷ 3, plus, for a chain, every earlier step's full
+  output; output = calls × `@max_tokens`, default 1024) priced
+  from a table of Claude models, and asks for confirmation; `--yes` approves without
+  asking and is required without a terminal. A model missing from the price table is
+  refused. `mock:` is ignored.
+- `--json` prints `{ ok, mode, usage, files: [{ file, error?, results }] }`.
+- Exit codes: `0` every test passed, `1` a test failed or a file has an error, `3` a call
+  failed (any `PromptClientError`) and left a test without a verdict, `2` usage
+  error, missing key, unpriced model, or a declined estimate. On exit 3 each such test
+  reads `configuration error` (authentication, a request the provider rejects such
+  as a `@max_tokens` it refuses, an unknown model: fix the file or the key) or
+  `provider failure` (timeout, network, rate limit, server overload, malformed
+  response: retry later); `--json` carries it as `providerError: { kind, message }`
+  with `kind` `"configuration"` or `"provider"`.
+
 An `eval` block has exactly the four fields shown, in that order.
 
 ---
 
 ## Section 6 — Versioning
 
-`@version` is stored as a string and copied into the generated metadata. There is no
-SemVer validation, no version constraint on imports and no breaking-change check.
-This is the "SemVer for prompts" item in [`roadmap.md`](roadmap.md).
+`@version` is validated as SemVer 2.0.0 when the file is parsed, and imports can
+constrain it with `requires` (Section 1).
+
+`promptlang semver-check [paths] [--base <git-ref>] [--json]` compares each
+`.prompt` file with its text at a Git ref (default `origin/main`, otherwise the
+most recent tag) and fails when `@version` did not move by at least what the
+changes require. The interface of a prompt or chain is its parameters (name, type,
+optional or not), its output type, and, for a prompt, the file's `@model`.
+
+| Change | Required bump |
+| --- | --- |
+| Required parameter added; parameter removed; parameter type changed; optional parameter made required | major |
+| Output type changed, including an enum gaining or losing a value; output struct field removed, retyped, made optional or required; required output field added | major |
+| `@model` changed; prompt or chain removed; prompt replaced by a chain of the same name | major |
+| Optional parameter added; required parameter made optional; optional output field added; prompt or chain added | minor |
+| Message text changed; `@temperature` or `@max_tokens` changed; chain steps changed | patch |
+| Whitespace, comments, declaration order, parameter order | none |
+
+Struct output fields are compared at any depth: adding an optional field to a
+nested struct is minor and is reported with a dotted path (`inner.b`). Types are
+compared by structure: renaming `type Category` to `type Kind` with the
+same values is not a change. Below 1.0.0 the check reads bumps as `^` does: at
+0.0.z every bump counts as breaking; at 0.y.z a minor bump (`0.2.x → 0.3.0`)
+counts as breaking and a patch bump as compatible. A lower version fails. From a
+pre-release, a later pre-release or the release itself (`2.0.0-rc.1 → 2.0.0-rc.2`)
+satisfies any change. Build metadata alone is not a bump. A file absent at the base
+is reported as `new` and passes; a file deleted since the base is not reported.
+
+Exit codes: `0` every file is versioned correctly, `1` at least one file is not (or
+does not parse), `2` usage or Git error. Rationale:
+[ADR 0002](adr/0002-prompt-interface.md), [ADR 0003](adr/0003-semver-check.md).
+
+```text
+semver-check against main (c978b607e120)
+  FAIL   prompts/a.prompt  1.0.0 → 1.1.0
+         major bump required: a major change needs at least 2.0.0, got 1.1.0
+         - major: p: parameter 'x' removed
+```
 
 ---
 
@@ -183,8 +292,11 @@ output, `--strict` to exit 1 on warnings):
 | `chain-complexity` | info | a chain with more than 5 steps |
 | `duplicate-prompts` | warning | the same prompt name declared in several files |
 
-`analyze --ai` additionally sends each prompt to Claude (default `claude-haiku-4-5`,
-key from `ANTHROPIC_API_KEY`). Its plumbing is tested with a mocked client only; see
+`analyze --ai` additionally sends each prompt to Claude (default `claude-haiku-5-5`,
+key from `ANTHROPIC_API_KEY`). It first prints a cost estimate (one call per prompt,
+each at its full `max_tokens`, no retries) and asks before calling; `--yes` approves
+without asking, and without a terminal `--yes` is required. Declining exits 2 with
+no call made; a missing key keeps the static results (exit as without `--ai`). Its plumbing is tested with a mocked client only; see
 [`CLAIMS.md`](CLAIMS.md). There are no suppression comments and no custom-rule API.
 
 ---
@@ -196,7 +308,7 @@ name: my-project
 version: 1.0.0
 description: Support tooling prompts
 defaults:
-  model: claude-haiku-4-5
+  model: claude-haiku-5-5
   temperature: 0.3
   max_tokens: 1024
 sources:
@@ -208,7 +320,7 @@ compile:
 linter:
   ai:
     enabled: false
-    model: claude-haiku-4-5
+    model: claude-haiku-5-5
     concurrency: 3
 dependencies:
   - name: shared-templates
@@ -218,6 +330,8 @@ dependencies:
 
 `sources` and `compile` are used by `compile`, `install`, `list` and `check`.
 `defaults` is validated but not read by the compiler (use `@model` and friends).
+`linter` is validated but not read by `analyze`: `--ai` turns the AI linter on, and
+it runs on `claude-haiku-5-5`, 3 prompts at a time.
 `dependencies[].version` is stored, not checked. The accepted YAML subset is in
 [`yaml-support.md`](yaml-support.md).
 
@@ -226,21 +340,20 @@ dependencies:
 ## Section 9 — Compiled output
 
 `promptlang compile <file|dir> --out <dir> [--target typescript|python]`. Any
-`--target` value other than `python` produces TypeScript.
+other `--target` value (including `py` or `ts`) is an error and writes nothing.
 
 ### TypeScript (excerpt for `classify-ticket.prompt`)
 
 ```typescript
 // AUTO-GENERATED by PromptLang v<version> — do not edit manually.
-import type { PromptClient, PromptRequest } from "promptlang/runtime";
+import type { PromptClient, PromptRequest } from "@promptlang/core/runtime";
 
 export type Category = "bug" | "feature_request" | "question" | "other";
 
 export const classify_ticket_meta = {
   name: "classify_ticket",
   version: "1.0.0",
-  model: "claude-opus-4.7",
-  temperature: 0.3,
+  model: "claude-opus-5-5",
 } as const;
 
 export interface ClassifyTicketInput {
@@ -253,7 +366,7 @@ export async function classify_ticket(
 ): Promise<Category> { /* builds the request, calls client.complete, validates the enum */ }
 ```
 
-Plus an `index.ts` re-exporting every compiled file. `promptlang/runtime` resolves
+Plus an `index.ts` re-exporting every compiled file. `@promptlang/core/runtime` resolves
 only through a `paths` mapping (`--emit-tsconfig` writes one).
 
 ### Python (excerpt)
@@ -278,5 +391,5 @@ Plus `__init__.py` and a generated `promptlang_runtime.py` (its HTTP clients nee
 
 Array types · per-prompt directives · `parallel` steps · calls to imported prompts ·
 type checking between chain steps · executing `test`/`eval` · comparison or regex
-assertions · `@version` validation and import version constraints · rule suppression
+assertions · rule suppression
 comments · custom analyzer rules · model aliases in config · single-quoted strings.

@@ -26,10 +26,12 @@ UPPER   terminal token type produced by the lexer
 ```ebnf
 Program        ::= Import* Metadata* Declaration*
 
-Import         ::= "import" (STRING | TRIPLE_STRING) "as" IDENT
+Import         ::= "import" (STRING | TRIPLE_STRING) "as" IDENT ("requires" StringLit)?
                    -- the path may not contain {{...}} interpolation
+                   -- "requires" is contextual (an IDENT), not a reserved word;
+                   -- its string must be a version range (docs/syntax-reference.md)
 
-Metadata       ::= AT_VERSION   StringLit
+Metadata       ::= AT_VERSION   StringLit     -- must be a SemVer 2.0.0 version
                  | AT_MODEL     IDENT          -- model names may contain hyphens/dots
                  | AT_TEMPERATURE NumberLit
                  | AT_MAX_TOKENS  NumberLit
@@ -81,7 +83,7 @@ PromptDeclaration
                    "}"
 
 ParameterList  ::= Parameter ("," Parameter)*
-Parameter      ::= IDENT ":" TypeExpression
+Parameter      ::= IDENT "?"? ":" TypeExpression   -- "?" marks an optional parameter
 
 PromptSection  ::= ("system" | "user" | "assistant") ":" StringLit   -- MessageSection
                  | "output" ":" TypeExpression                         -- OutputSection
@@ -138,12 +140,19 @@ because `COLON` cannot follow a bare expression in any other production.
 TestDeclaration
                ::= "test" StringLit "{"
                      "input" ":" Expression
-                     Expectation+
+                     [ "mock" ":" StringLit ]                -- raw model response for mock runs
+                     TestClause+
                    "}"
 
-Expectation    ::= "expect" ":" Literal                    -- bare expect
-                 | "expect" "." IDENT ":" Literal          -- field-path expect
+TestClause     ::= "expect" [ "." IDENT ] ":" Literal                    -- equality
+                 | "expect" [ "." IDENT ] "contains" ":" StringLit       -- substring
+                 | "expect" [ "." IDENT ] "matches" ":" StringLit        -- regular expression
+                 | "expect" "schema"                                     -- output conforms to the declared type
 ```
+
+`mock`, `contains`, `matches` and `schema` are contextual identifiers, not reserved
+words. A `matches` pattern that is not a valid JavaScript regular expression is a
+parse error at the pattern.
 
 ---
 

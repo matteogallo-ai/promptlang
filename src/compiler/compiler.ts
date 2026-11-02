@@ -1,3 +1,4 @@
+import { checkTestReferences } from "./test-references";
 import type { Program, TypeDeclaration, PromptDeclaration, ChainDeclaration } from "../ast/nodes";
 import {
   buildTypeRegistry,
@@ -9,6 +10,7 @@ import { buildCallableRegistry, generateChain } from "./chain-compiler";
 import pkg from "../../package.json";
 
 export function compile(program: Program, sourceFile: string): string {
+  checkTestReferences(program);
   const timestamp = new Date().toISOString();
   const parts: string[] = [];
 
@@ -16,7 +18,7 @@ export function compile(program: Program, sourceFile: string): string {
   parts.push(`// Source: ${sourceFile}`);
   parts.push(`// Generated at: ${timestamp}`);
   parts.push("");
-  parts.push(`import type { PromptClient, PromptRequest } from "promptlang/runtime";`);
+  parts.push(`import type { PromptClient, PromptRequest } from "@promptlang/core/runtime";`);
   parts.push("");
 
   const registry = buildTypeRegistry(program);

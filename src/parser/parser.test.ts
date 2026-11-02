@@ -40,6 +40,29 @@ function firstDecl<T>(source: string): T {
 // ---------------------------------------------------------------------------
 
 describe("Parser — Metadata", () => {
+  test("@version accepts SemVer 2.0.0 with pre-release and build metadata", () => {
+    for (const v of ["0.1.0", "1.0.0-alpha.1", "1.0.0+build.5", "2.0.0-rc.1+exp.sha.5114f85"]) {
+      expect(p(`@version "${v}"`).metadata[0]).toMatchObject({ kind: "VersionMetadata", value: v });
+    }
+  });
+
+  test("@version rejects a non-SemVer value with the string's line and column", () => {
+    for (const bad of ["not-a-version", "1.0", "v1.0.0", "01.0.0"]) {
+      let error: unknown;
+      try {
+        p(`// header\n@version   "${bad}"`);
+      } catch (e) {
+        error = e;
+      }
+      expect(error).toBeInstanceOf(ParserError);
+      expect((error as ParserError).message).toContain(
+        `"${bad}" is not a valid SemVer 2.0.0 version`
+      );
+      expect((error as ParserError).line).toBe(2);
+      expect((error as ParserError).column).toBe(12);
+    }
+  });
+
   test("parses @version", () => {
     const ast = p(`@version "1.0.0"`);
     expect(ast.metadata).toHaveLength(1);
@@ -661,6 +684,68 @@ describe("Parser — TestDeclaration", () => {
   });
 });
 
+describe("Parser — test assertions and mock responses", () => {
+  test("a test without operators is equality, with no mock and no schema check", () => {
+    const decl = firstDecl<TestDeclaration>(`test "t" {\n  input: f("x")\n  expect: bug\n}`);
+    expect(decl.expectations[0]!.op).toBe("equals");
+    expect(decl.mock).toBeUndefined();
+    expect(decl.expectsSchema).toBeUndefined();
+  });
+
+  test("parses mock, contains, matches and schema", () => {
+    const decl = firstDecl<TestDeclaration>(`
+      test "t" {
+        input: f("x")
+        mock: "{\\"a\\": \\"hello\\"}"
+        expect.a: "hello"
+        expect.a contains: "ell"
+        expect matches: "^\\\\{"
+        expect schema
+      }
+    `);
+    expect(decl.mock?.value).toBe('{"a": "hello"}');
+    expect(decl.expectations.map((e) => [e.path.join("."), e.op])).toEqual([
+      ["expect.a", "equals"],
+      ["expect.a", "contains"],
+      ["expect", "matches"],
+    ]);
+    expect(decl.expectsSchema).toBe(true);
+  });
+
+  test("a test with only 'expect schema' is valid", () => {
+    const decl = firstDecl<TestDeclaration>(`test "t" {\n  input: f("x")\n  expect schema\n}`);
+    expect(decl.expectations).toEqual([]);
+    expect(decl.expectsSchema).toBe(true);
+  });
+
+  test("an invalid regular expression is a parse error at the pattern", () => {
+    const err = (() => {
+      try {
+        p(`test "t" {\n  input: f("x")\n  expect matches: "(unclosed"\n}`);
+      } catch (e) {
+        return e as ParserError;
+      }
+    })();
+    expect(err).toBeInstanceOf(ParserError);
+    expect(err?.message).toContain("is not a valid regular expression");
+    expect([err?.line, err?.column]).toEqual([3, 19]);
+  });
+
+  test("contains and matches take a string", () => {
+    expect(() => p(`test "t" {\n  input: f("x")\n  expect contains: 3\n}`)).toThrow(ParserError);
+  });
+
+  test("an unknown assertion word is rejected with the supported list", () => {
+    expect(() => p(`test "t" {\n  input: f("x")\n  expect equals: 3\n}`)).toThrow(
+      "expected ':', 'contains', 'matches' or 'schema'"
+    );
+  });
+
+  test("schema applies to the whole output, not to a field", () => {
+    expect(() => p(`test "t" {\n  input: f("x")\n  expect.a schema\n}`)).toThrow(ParserError);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // 11. EvalDeclaration
 // ---------------------------------------------------------------------------
@@ -1133,6 +1218,31 @@ describe("import declarations", () => {
     expect(ast.imports[0]!.path).toBe("shared/classify.prompt");
     expect(ast.imports[0]!.alias).toBe("Classify");
     expect(ast.imports[0]!.kind).toBe("ImportDeclaration");
+  });
+
+  test("parses an optional requires version range", () => {
+    const ast = p(
+      `import "a.prompt" as A requires ">=1.2.0 <2.0.0"\nimport "b.prompt" as B\n${MIN_BODY}`
+    );
+    expect(ast.imports[0]!.versionRange).toBe(">=1.2.0 <2.0.0");
+    expect(ast.imports[1]!.versionRange).toBeUndefined();
+  });
+
+  test("rejects an invalid requires range at the range string's position", () => {
+    let error: unknown;
+    try {
+      p(`import "a.prompt" as A requires "^1.2"\n${MIN_BODY}`);
+    } catch (e) {
+      error = e;
+    }
+    expect(error).toBeInstanceOf(ParserError);
+    expect((error as ParserError).message).toContain("'^1.2'");
+    expect((error as ParserError).line).toBe(1);
+    expect((error as ParserError).column).toBe(33);
+  });
+
+  test("requires must be followed by a string", () => {
+    expect(() => p(`import "a.prompt" as A requires 1\n${MIN_BODY}`)).toThrow(/requires/);
   });
 
   test("parses multiple imports in order", () => {

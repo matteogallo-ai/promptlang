@@ -69,11 +69,13 @@ analyzer (`analyze`) runs on the AST independently of compilation.
 | Static analyzer (6 rules) | delivered |
 | TypeScript and Python compilers, chain compilation | delivered |
 | `--emit-tsconfig` bridge | delivered |
-| Runtime clients (Anthropic, OpenAI, Ollama, Routing) | delivered; cross-provider fallback partial |
+| Runtime clients (Anthropic, OpenAI, Ollama, Routing) | delivered |
 | AI-powered linter | partial (mocked tests only) |
 | Project config + local registry | delivered |
-| CLI (parse/tokens/analyze/compile/init/install/list/check/version) | delivered |
-| `test` / `eval` execution, SemVer checks | not implemented |
+| CLI (parse/tokens/analyze/compile/init/install/list/check/semver-check/test/version) | delivered |
+| SemVer: `@version` validation, `requires` ranges, `semver-check` | delivered |
+| `test` execution (`promptlang test`) | delivered |
+| `eval` execution | not implemented |
 | npm package, streaming, remote registry, IDE support | not implemented |
 
 See [`CLAIMS.md`](CLAIMS.md) for the test behind each delivered item.
@@ -114,7 +116,7 @@ TypeDecl      = "type" IDENT "=" TypeExpression
 TypeExpression= PrimitiveType | EnumType | StructType | TypeReference
 PromptDecl    = "prompt" IDENT "(" ParamList? ")" "->" TypeExpression "{" Section+ "}"
 ChainDecl     = "chain" IDENT "(" ParamList? ")" "->" TypeExpression "{" Step+ "return" Expr "}"
-TestDecl      = "test" StringLit "{" "input" ":" Expr Expectation+ "}"
+TestDecl      = "test" StringLit "{" "input" ":" Expr [ "mock" ":" StringLit ] TestClause+ "}"
 EvalDecl      = "eval" StringLit "{" dataset prompt metric threshold "}"
 ```
 
@@ -137,7 +139,7 @@ Code generator that walks the AST and emits TypeScript source. Design goals:
 - The generated code is **human-readable** — it should look like code a competent
   developer would write, not a macro expansion.
 - Generated functions use `async/await` and return typed values.
-- No runtime dependency on PromptLang internals beyond the thin `promptlang/runtime`
+- No runtime dependency on PromptLang internals beyond the thin `@promptlang/core/runtime`
   package (model calls, output parsing).
 
 ### `src/compiler/python/`
@@ -180,7 +182,7 @@ Static analysis pass that runs against the parsed AST. Two tiers:
 | `chain-complexity` | Chains with too many steps |
 | `duplicate-prompts` | The same prompt name declared in several files |
 
-**AI rules** (`src/analyzer/ai/`) — opt-in via `--ai` flag. Invokes Claude Haiku to detect semantic issues:
+**AI rules** (`src/analyzer/ai/`) — opt-in via `--ai` flag. Invokes Claude (default `claude-haiku-5-5`) to detect semantic issues:
 
 Six semantic categories detected:
 - `VAGUE_INSTRUCTIONS` — non-actionable phrases without concrete criteria
@@ -277,7 +279,7 @@ All runtime errors extend `PromptClientError → Error`. Sub-classes:
 - `AnthropicClient` — POST `/v1/messages`; separates system messages into the top-level `system` field; max_tokens defaults to 1024.
 - `OpenAIClient` — POST `/v1/chat/completions`; messages forwarded unchanged; normalizes `prompt_tokens`/`completion_tokens` to `input_tokens`/`output_tokens`.
 - `OllamaClient` — POST `/api/chat`; no auth; maps `options.temperature` / `options.num_predict`; `stream: false`; pedagogical errors for ECONNREFUSED and 404.
-- `RoutingClient` — tries `primary`, then each `fallback` in order; `AuthenticationError` short-circuits without trying fallbacks; aggregates all errors in `AllProvidersFailedError`.
+- `RoutingClient` — tries `primary`, then each `fallback` in order, each with an optional `modelMap` from the requested model to its own; `AuthenticationError` short-circuits without trying fallbacks; aggregates all errors in `AllProvidersFailedError`.
 
 All provider clients use a shared `withRetry` utility (exponential backoff, configurable `maxRetries` and `retryDelay`).
 
@@ -297,27 +299,16 @@ Command-line interface. Subcommands:
 | `promptlang parse <file>` | Print the AST as a box-drawing tree |
 | `promptlang tokens <file>` | Print the token stream |
 | `promptlang analyze <path> [--json] [--strict] [--ai]` | Static rules, optionally the AI linter |
-| `promptlang compile <path> [--out dir] [--target typescript\|python] [--emit-tsconfig]` | Compile; any `--target` other than `python` yields TypeScript |
+| `promptlang compile <path> [--out dir] [--target typescript\|python] [--emit-tsconfig]` | Compile; any other `--target` value is an error (exit 1) |
 | `promptlang init` | Scaffold `promptlang.yaml` |
 | `promptlang install` | Resolve imports and write the registry |
 | `promptlang list [--json]` | List all prompts in the project |
 | `promptlang check` | Verify integrity + import resolution |
+| `promptlang semver-check [paths] [--base ref] [--json]` | Compare `@version` bumps with interface changes against a Git ref |
+| `promptlang test <paths> [--json] [--live [--yes]]` | Run `test` blocks: mock responses by default, the provider after a cost estimate with `--live` |
 | `promptlang version` | Print version, repository and licence |
 
-There is no `test`, `eval`, `lint` or `viz` command.
-
------------------------------------------- | ----- | ---------------------------------- |
-| `promptlang parse <file>`                  | v0.2  | Print AST as JSON                  |
-| `promptlang compile <file> --target ts`    | v0.3  | Compile to TypeScript              |
-| `promptlang compile <file> --target py`    | v0.8  | Compile to Python                  |
-| `promptlang init`                          | v0.9  | Scaffold a new project             |
-| `promptlang install`                       | v0.9  | Resolve imports and write registry |
-| `promptlang list [--json]`                 | v0.9  | List all prompts in the project    |
-| `promptlang check`                         | v0.9  | Verify integrity + import resolution |
-| `promptlang test <file>`                   | v0.6  | Run test blocks                    |
-| `promptlang eval <file> --data <csv>`      | v0.6  | Run eval block against dataset     |
-| `promptlang lint <file>`                   | v0.7  | Run linter rules                   |
-| `promptlang viz <file>`                    | v0.5  | Render chain as ASCII DAG          |
+There is no `eval`, `lint` or `viz` command.
 
 ---
 

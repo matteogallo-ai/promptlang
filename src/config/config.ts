@@ -1,4 +1,5 @@
 import { parseYaml, YamlParseError, type YamlValue } from "@promptlang/yaml-parser";
+import type { SourceEntry } from "../registry/resolver";
 
 /**
  * Fully-resolved PromptLang project configuration.
@@ -31,10 +32,6 @@ export interface PromptLangConfig {
   dependencies: DependencyEntry[];
 }
 
-export interface SourceEntry {
-  path: string;
-}
-
 interface DependencyEntry {
   name: string;
   version: string;
@@ -44,7 +41,7 @@ interface DependencyEntry {
 /** Default values applied to fields the user did not specify. */
 export const CONFIG_DEFAULTS = {
   defaults: {
-    model: "claude-opus-4.7",
+    model: "claude-opus-5-5",
     temperature: 0.3,
     max_tokens: 1024,
   },
@@ -56,7 +53,7 @@ export const CONFIG_DEFAULTS = {
   linter: {
     ai: {
       enabled: false,
-      model: "claude-haiku-4-5",
+      model: "claude-haiku-5-5",
       concurrency: 3,
     },
   },

@@ -9,6 +9,8 @@ import { runInit } from "./commands/init";
 import { runInstall } from "./commands/install";
 import { runList } from "./commands/list";
 import { runCheck } from "./commands/check";
+import { runSemverCheck } from "./commands/semver-check";
+import { runTest } from "./commands/test";
 
 const HELP = `
 promptlang — the typed language for production-grade LLM prompts
@@ -23,6 +25,13 @@ Project commands:
   install                   Resolve imports and write .promptlang/manifest.json
   list [--json]             List every prompt in the project (local + imported)
   check                     Verify integrity + import resolution
+  semver-check [paths] [flags]
+                            Fail when a .prompt file's @version does not move
+                            by at least what its interface changes require.
+                            Flags: --base <git-ref>  (default: origin/main,
+                                     else the latest tag)
+                                   --json
+                            Exit: 0 ok, 1 violation, 2 usage or git error
 
 File commands:
   parse <file>              Print AST of a .prompt file
@@ -37,9 +46,19 @@ File commands:
                                    --config <path>  Alternative config file
                                    --emit-tsconfig  Emit tsconfig.json with
                                      the correct paths mapping for
-                                     promptlang/runtime.
+                                     @promptlang/core/runtime.
                                    --runtime-path <path>  Override the path to
-                                     promptlang/runtime in the emitted tsconfig.
+                                     @promptlang/core/runtime in the emitted tsconfig.
+  test <paths> [flags]      Run the test blocks of .prompt files. By default
+                            each test's mock: response is replayed through
+                            the generated code, with no network call.
+                            Flags: --json
+                                   --live  Call the provider (Anthropic,
+                                     ANTHROPIC_API_KEY) after showing a
+                                     cost estimate and asking
+                                   --yes   Approve the estimate without asking
+                            Exit: 0 all pass, 1 a failure, 2 usage error,
+                                  3 provider error (no verdict)
   version                   Show version and repository info
 
 Examples:
@@ -49,6 +68,8 @@ Examples:
   promptlang parse docs/examples/classify-ticket.prompt
   promptlang analyze docs/examples/
   promptlang compile docs/examples/ --out ./generated --emit-tsconfig
+  promptlang semver-check docs/examples/ --base main
+  promptlang test docs/examples/
 `.trim();
 
 export async function main(argv: string[]): Promise<number> {
@@ -73,6 +94,10 @@ export async function main(argv: string[]): Promise<number> {
         return await runList(args.slice(1));
       case "check":
         return await runCheck(args.slice(1));
+      case "semver-check":
+        return await runSemverCheck(args.slice(1));
+      case "test":
+        return await runTest(args.slice(1));
       case "version":
         return runVersion();
       case undefined:

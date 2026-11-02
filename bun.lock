@@ -4,11 +4,9 @@
   "workspaces": {
     "": {
       "name": "promptlang",
-      "dependencies": {
-        "@promptlang/yaml-parser": "workspace:*",
-      },
       "devDependencies": {
         "@biomejs/biome": "2.6.4",
+        "@promptlang/yaml-parser": "workspace:*",
         "@types/bun": "latest",
         "knip": "6.44.1",
         "typescript": "^5.6.0",

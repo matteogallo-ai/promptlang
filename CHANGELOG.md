@@ -7,14 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Remediation after the 2026-11-02 external audit. The version number for this
-release is chosen when it is tagged.
+### Changed
+- **AI-powered linter** is `shipped` in `docs/CLAIMS.md`: the first live run is
+  committed under `runs/live/` (5/5 calls returned, $0.0038). It is one sample,
+  not a measure of the findings' quality.
+
+## [2.0.0] - 2026-11-02
+
+Remediation after the 2026-11-02 external audit, and the first release of
+`@promptlang/core` on npm.
+
+**Why 2.0.0 and not 1.3.0.** Code written against 1.2.0 breaks in at least these
+ways, each of which SemVer reserves for a major version:
+- the package name (`promptlang` → `@promptlang/core`) and its `exports` (TypeScript
+  sources under `./src` → built `./dist` with `types`/`import` conditions), so every
+  import of 1.2.0 stops resolving;
+- generated code imports `@promptlang/core/runtime`, so 1.2.0 output must be
+  recompiled;
+- `@version` must be SemVer and `compile --target` must be `typescript` or
+  `python`, so files and scripts that 1.2.0 accepted are rejected;
+- `AnthropicClient` no longer sends `temperature`, so the same file samples
+  differently.
 
 ### Claimed but not true (corrected)
-- README marked **Native tests** and **SemVer for prompts** ✅; neither is
-  implemented. Both are now Roadmap (in progress).
+- README marked **Native tests** and **SemVer for prompts** ✅; neither was
+  implemented. Both are now implemented (see Added), with their scope in the README.
 - README marked **Multi-provider fallback** ✅; generated code sends the same model
-  name to every provider, so Anthropic → OpenAI fallback fails. Now Partial.
+  name to every provider, so Anthropic → OpenAI fallback failed. Now true:
+  `RoutingClient` maps the model per provider (see Added).
 - README marked the **AI-powered linter** ✅ and "unique"; it is only tested with a
   mocked client. Now Partial.
 - The test badge said "626 passing": it counted `@promptlang/yaml-parser`'s 23
@@ -34,16 +54,87 @@ release is chosen when it is tagged.
   is read from `package.json`.
 - `.promptlang/integrity.json` keys are project-relative POSIX paths; legacy
   absolute keys are migrated on read.
+- `.promptlang/manifest.json` (schema version 2) stores project-relative POSIX
+  paths; version 1 manifests with absolute paths are migrated on read.
 - `compile` rejects `.prompt` files with no declarations (exit 1).
+- **BREAKING:** generated TypeScript imports `@promptlang/core/runtime` instead of
+  `promptlang/runtime`, the package's real name; recompile existing output.
+- **BREAKING:** `AnthropicClient` sends `anthropic-version: 2026-10-21` and never
+  sends `temperature`, which that version rejects on every model. `@temperature`
+  has no effect on Anthropic requests; OpenAI and Ollama still receive it. The key
+  is still sent as `x-api-key`, which the API accepts on both versions.
+- The examples are versioned 2.0.0 (their target model changed) and pass the
+  project's own static analyzer: user input is delimited, with an untrusted-content
+  instruction. Each example test has a `mock:` response.
+- Examples, README, `init` template and the config default use `claude-opus-5-5`.
+  They used `claude-opus-4.7`, which is not an Anthropic model ID (IDs use
+  hyphens: `claude-opus-4-7`), and `classify-ticket.prompt` set `@temperature`,
+  which Claude 4.7 and later reject.
+- **BREAKING:** `compile --target` accepts only `typescript` or `python`. Any other
+  value (e.g. `py`) used to produce TypeScript silently; it is now an error.
 - `AnthropicClient` / `OpenAIClient` throw `TypeError` on an empty API key.
+- The AI linter runs on `claude-haiku-5-5` (was `claude-haiku-4-5`, still active but
+  ten times the price) with `max_tokens` 4096 and no `temperature`; `init` and the
+  config default follow.
+- The published package is built: ESM for Node ≥ 20 and Bun, with `.d.ts`
+  declarations; `@promptlang/yaml-parser` is bundled in, so `@promptlang/core` has no
+  runtime dependency. The CLI needs Bun ≥ 1.2.20.
+
+### Security
+- The AI linter wraps each analyzed section in `<untrusted_prompt>` delimiters,
+  escapes delimiter tags found in the text, and tells the model to treat the
+  delimited text as data. The prompt text used to be inserted bare.
 
 ### Added
+- `@version` is validated as SemVer 2.0.0; an invalid value is a parse error
+  positioned on the version string. **BREAKING** for files with non-SemVer values.
+- `import "x.prompt" as X requires "<range>"`: `install` and `check` fail with
+  `VersionMismatchError` when the imported `@version` does not satisfy the range
+  (exact, `^`, `~`, `>`, `>=`, `<`, `<=`, space-separated AND).
+- A syntax error in any file of the import graph is reported by `install` and
+  `check` with the file path, instead of an uncaught exception.
+- `promptlang semver-check [paths] [--base <ref>] [--json]`: compares each `.prompt`
+  file's interface (parameters, output type, `@model`) with its version at a Git ref
+  and exits 1 when `@version` was not bumped enough. CI runs it on `docs/examples`.
+- `promptlang test <paths> [--json] [--live [--yes]]`: runs `test` blocks against the
+  generated TypeScript, replaying `mock:` responses by default; `--live` calls
+  Anthropic after printing an approximate cost estimate and getting approval.
+- `RoutingClient` accepts `{ client, modelMap }` entries, so an Anthropic → OpenAI
+  fallback sends OpenAI its own model name; a provider with no mapping for the
+  requested model is skipped.
+- HTTP clients read `Retry-After` on a 429 (seconds or HTTP-date) into
+  `RateLimitError.retryAfter`, and retries wait that long instead of the backoff;
+  above 60 s the error is thrown without waiting.
+- Python runtime: empty keys are refused, HTTP errors and malformed responses raise
+  typed `PromptClientError` subclasses (the names TypeScript uses), and the Anthropic
+  client sends version 2026-10-21 without `temperature`.
+- `analyze --ai` prints a cost estimate and asks before any call (`--yes` approves;
+  required without a terminal). It makes no retries, so the estimate counts each
+  call once.
+- `promptlang test` exits 3 when a failed call (any `PromptClientError`) left a
+  test without a verdict, so an outage is never reported as a failed assertion. The
+  report labels each one a configuration error (authentication, rejected request,
+  unknown model) or a provider failure (timeout, network, rate limit, server,
+  malformed response).
+- Test syntax: `mock: "..."`, `expect contains:`, `expect matches:`, `expect schema`.
+- A test whose `input` calls a prompt or chain the file does not declare, or with
+  arguments that do not match its parameters, is a compile error.
+- `compile` and `test` warn that `eval` blocks are parsed but not executed, and that
+  `@temperature` is not sent to Anthropic.
+- `.github/workflows/release.yml`: a `v*` tag runs CI, then `npm publish --provenance`;
+  see `docs/RELEASING.md`. CI packs the tarball, installs it into an empty project
+  and uses it from Node 20 and the current LTS (`scripts/consumer-test.ts`).
+- `bun run demo`: the SemVer scenario end to end in a temporary Git repository.
+- Optional parameters: `name?: Type` in prompts and chains (`name?: T` in
+  TypeScript, `NotRequired[T]` in Python; an omitted one interpolates as "").
 - `InvalidResponseError` for provider 2xx bodies that are not JSON or lack the
   documented fields (not retried; `RoutingClient` still falls back).
 - `docs/CLAIMS.md`, `scripts/check-claims.ts`, `scripts/check-stale-narrative.ts`,
   `benchmarks/bench.ts`; Biome and knip configuration; CI jobs for each.
 
 ### Fixed
+- `resolveGraph` / `resolveImport` used `Bun.file` and failed under Node.
+- The stale-narrative check missed "requires the v0.6 …" in a `.prompt` comment.
 - Tests that spawn `tsc` had bun's 5 s default timeout and flaked on cold runners.
 - Python type mapper fell through from primitive to enum on an unknown primitive.
 
@@ -52,8 +143,8 @@ release is chosen when it is tagged.
   `src/compiler/typescript/` directories, the placeholder `build` script.
 
 ### Tags
-- `v0.5.0-alpha.0` exists in the local repository but was never pushed to
-  `origin`. History is not rewritten; push it with `git push origin v0.5.0-alpha.0`.
+- `v0.5.0-alpha.0` was missing from `origin`; it is now pushed, on the commit it
+  always pointed to (`f6765ae`). History is not rewritten.
 
 ## [1.2.0] — 2026-08-19
 

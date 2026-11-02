@@ -25,13 +25,18 @@ export interface Program extends AstNode {
 // Imports
 // ---------------------------------------------------------------------------
 
-/** `import "path/to/other.prompt" as Alias` — always appears at file top. */
+/**
+ * `import "path/to/other.prompt" as Alias [requires "<range>"]` — always appears
+ * at file top.
+ */
 export interface ImportDeclaration extends AstNode {
   kind: "ImportDeclaration";
   /** The raw path string as written in the source (e.g. "shared/x.prompt"). */
   path: string;
   /** The alias used to reference the imported module (`Alias`). */
   alias: string;
+  /** Version range from `requires "..."`, checked against the imported file's `@version`. */
+  versionRange?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -146,6 +151,8 @@ export interface Parameter extends AstNode {
   kind: "Parameter";
   name: string;
   type: TypeExpression;
+  /** True for `name?: Type`; absent for a required parameter. */
+  optional?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -242,13 +249,19 @@ export interface TestDeclaration extends AstNode {
   kind: "TestDeclaration";
   description: string;
   input: Expression;
+  /** `mock: "..."`: the raw model response `promptlang test` replays without a provider. */
+  mock?: StringLiteral;
   expectations: Expectation[];
+  /** `expect schema`: the output must conform to the prompt's declared output type. */
+  expectsSchema?: true;
 }
 
 export interface Expectation extends AstNode {
   kind: "Expectation";
   /** ["expect"] for bare `expect: val`, ["expect", "field"] for `expect.field: val`. */
   path: string[];
+  /** `expect: v` is equals; `expect contains: "s"` and `expect matches: "re"` take a string. */
+  op: "equals" | "contains" | "matches";
   value: Literal;
 }
 

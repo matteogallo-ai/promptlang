@@ -11,7 +11,11 @@ export interface IntegrityRecord {
   [projectRelativePath: string]: string;
 }
 
-function toRecordKey(file: string, projectRoot: string): string {
+/**
+ * A path relative to the project root with `/` separators. Registry files use it
+ * so they are identical across checkouts, machines and operating systems.
+ */
+export function toProjectPath(file: string, projectRoot: string): string {
   return relative(projectRoot, file).split(sep).join("/");
 }
 
@@ -22,7 +26,7 @@ function toRecordKey(file: string, projectRoot: string): string {
 export function migrateIntegrity(record: IntegrityRecord, projectRoot: string): IntegrityRecord {
   const migrated: IntegrityRecord = {};
   for (const [key, hash] of Object.entries(record)) {
-    migrated[isAbsolute(key) ? toRecordKey(key, projectRoot) : key] = hash;
+    migrated[isAbsolute(key) ? toProjectPath(key, projectRoot) : key] = hash;
   }
   return migrated;
 }
@@ -53,7 +57,7 @@ export async function buildIntegrity(
 ): Promise<IntegrityRecord> {
   const record: IntegrityRecord = {};
   for (const file of [...files].sort()) {
-    record[toRecordKey(file, projectRoot)] = await hashFile(file);
+    record[toProjectPath(file, projectRoot)] = await hashFile(file);
   }
   return record;
 }

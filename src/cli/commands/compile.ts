@@ -1,4 +1,5 @@
-import { Glob } from "bun";
+import { resolveFiles } from "../files";
+import { warnAboutEvals, warnAboutTemperature } from "../warnings";
 import { tokenize } from "../../lexer/lexer";
 import { parse } from "../../parser/parser";
 import { compile } from "../../compiler/compiler";
@@ -16,6 +17,13 @@ import {
 import { YamlParseError } from "@promptlang/yaml-parser";
 import { mkdir } from "node:fs/promises";
 import { join, basename, relative, resolve } from "node:path";
+
+const TARGETS = ["typescript", "python"] as const;
+type Target = (typeof TARGETS)[number];
+
+function isTarget(value: string): value is Target {
+  return (TARGETS as readonly string[]).includes(value);
+}
 
 export async function runCompile(args: string[]): Promise<number> {
   const outIdx = args.indexOf("--out");
@@ -56,12 +64,21 @@ export async function runCompile(args: string[]): Promise<number> {
   const outDir =
     outIdx !== -1 && args[outIdx + 1] ? args[outIdx + 1]! : (config?.compile.out ?? "./generated");
 
-  const explicitTarget = targetIdx !== -1 && args[targetIdx + 1];
-  const target: "typescript" | "python" = explicitTarget
-    ? args[targetIdx + 1] === "python"
-      ? "python"
-      : "typescript"
-    : (config?.compile.target ?? "typescript");
+  // Reject unknown values rather than defaulting: a fallback to TypeScript would
+  // hand `--target py` users .ts files with no warning. promptlang.yaml does the same.
+  let target: Target = config?.compile.target ?? "typescript";
+  if (targetIdx !== -1) {
+    const value = args[targetIdx + 1];
+    if (value === undefined || value.startsWith("--")) {
+      console.error(`Error: --target requires a value (${TARGETS.join(", ")})`);
+      return 1;
+    }
+    if (!isTarget(value)) {
+      console.error(`Error: unknown --target '${value}' (expected one of: ${TARGETS.join(", ")})`);
+      return 1;
+    }
+    target = value;
+  }
 
   const runtimePath =
     runtimePathIdx !== -1 && args[runtimePathIdx + 1]
@@ -117,6 +134,9 @@ export async function runCompile(args: string[]): Promise<number> {
         throw new CompilerError("file contains no declarations (empty .prompt file)", 1, 1);
       }
 
+      warnAboutEvals(ast, file);
+      warnAboutTemperature(ast, file);
+
       if (target === "python") {
         const generated = compilePython(ast, file);
         const outName = `${basename(file, ".prompt").replace(/-/g, "_")}.py`;
@@ -138,7 +158,11 @@ export async function runCompile(args: string[]): Promise<number> {
         error instanceof ParserError ||
         error instanceof CompilerError
       ) {
-        console.error(`  [error]   ${file}: ${(error as Error).message}`);
+        const at =
+          error instanceof CompilerError && error.line !== undefined
+            ? `:${error.line}:${error.column ?? 1}`
+            : "";
+        console.error(`  [error]   ${file}${at}: ${(error as Error).message}`);
         hasErrors = true;
       } else {
         throw error;
@@ -174,9 +198,9 @@ export async function runCompile(args: string[]): Promise<number> {
     const tsconfigPath = join(outDir, "tsconfig.json");
     await Bun.write(tsconfigPath, buildTsconfig(runtimePath));
     console.log(`  emitted   ${tsconfigPath}`);
-    console.log(`            (paths "promptlang/runtime" → ${runtimePath})`);
-    console.log(`            Note: the mapping points at this checkout's runtime source,`);
-    console.log(`            because @promptlang/core is not published to npm.`);
+    console.log(`            (paths "@promptlang/core/runtime" → ${runtimePath})`);
+    console.log(`            Note: the mapping points at this checkout's runtime source;`);
+    console.log(`            with @promptlang/core installed, the import resolves without it.`);
   }
 
   return hasErrors ? 1 : 0;
@@ -201,7 +225,7 @@ function buildTsconfig(runtimePath: string): string {
         skipLibCheck: true,
         baseUrl: ".",
         paths: {
-          "promptlang/runtime": [runtimePath],
+          "@promptlang/core/runtime": [runtimePath],
         },
       },
       include: ["./*.ts"],
@@ -209,27 +233,4 @@ function buildTsconfig(runtimePath: string): string {
     null,
     2
   )}\n`;
-}
-
-async function resolveFiles(paths: string[]): Promise<string[]> {
-  const files: string[] = [];
-
-  for (const p of paths) {
-    if (p.includes("*")) {
-      const glob = new Glob(p);
-      for await (const file of glob.scan(".")) {
-        if (file.endsWith(".prompt")) files.push(file);
-      }
-    } else if (p.endsWith(".prompt")) {
-      files.push(p);
-    } else {
-      const dir = p.replace(/\/+$/, "");
-      const glob = new Glob("**/*.prompt");
-      for await (const file of glob.scan(dir)) {
-        files.push(`${dir}/${file}`);
-      }
-    }
-  }
-
-  return [...new Set(files)];
 }

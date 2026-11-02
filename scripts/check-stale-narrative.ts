@@ -7,6 +7,7 @@
  * Output: one `file:line: kind: excerpt` per finding; exit 1 when any exist.
  */
 import { readdir, readFile, stat } from "node:fs/promises";
+import { statOrNull } from "./lib/stat-or-null";
 import { join, relative, sep } from "node:path";
 
 export type FindingKind =
@@ -35,6 +36,8 @@ const PATTERNS: ReadonlyArray<{ kind: FindingKind; regex: RegExp }> = [
     ),
   },
   { kind: "future-version", regex: /\bpost-v?\d+(?:\.\d+)*/i },
+  // "requires the v0.6 engine": a feature gated on a release of this project.
+  { kind: "future-version", regex: /\b(?:requires?|needs?)\s+(?:the\s+)?v\d+(?:\.\d+)*\b/i },
   { kind: "future-version", regex: /\bv\d+(?:\.\d+)*\+/ },
   {
     kind: "future-version",
@@ -79,11 +82,13 @@ const ROOTS = ["src", "docs", "README.md"];
 /** History and the standard itself legitimately quote the forbidden phrases. */
 const EXCLUDED = new Set(["docs/ENGINEERING_STANDARDS.md", "CHANGELOG.md"]);
 
+const SKIPPED_DIRS = new Set(["node_modules", ".git"]);
+
 async function* walk(dir: string): AsyncGenerator<string> {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     const path = join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (entry.name !== "node_modules") yield* walk(path);
+      if (!SKIPPED_DIRS.has(entry.name)) yield* walk(path);
     } else {
       yield path;
     }
@@ -95,16 +100,19 @@ async function listTargets(repoRoot: string): Promise<string[]> {
   for (const pkg of await readdir(join(repoRoot, "packages"), { withFileTypes: true })) {
     if (pkg.isDirectory()) roots.push(join("packages", pkg.name, "src"));
   }
-  const files: string[] = [];
+  const files = new Set<string>();
   for (const root of roots) {
     const abs = join(repoRoot, root);
+    if ((await statOrNull(abs)) === null) continue;
     if ((await stat(abs)).isDirectory()) {
-      for await (const f of walk(abs)) files.push(f);
+      for await (const f of walk(abs)) files.add(f);
     } else {
-      files.push(abs);
+      files.add(abs);
     }
   }
-  return files
+  // .prompt files are shipped examples wherever they live, comments included.
+  for await (const f of walk(repoRoot)) if (f.endsWith(".prompt")) files.add(f);
+  return [...files]
     .map((f) => relative(repoRoot, f).split(sep).join("/"))
     .filter((f) => !EXCLUDED.has(f))
     .sort();

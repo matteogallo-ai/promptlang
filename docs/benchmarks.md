@@ -15,9 +15,9 @@ Mean per iteration over 200 iterations after 10 warm-up iterations.
 
 | Example | Source bytes | Tokens | `tokenize` | `parse` (incl. tokenize) | `compile` (TS) | `compilePython` |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| classify-ticket | 2162 | 182 | 0.07 ms | 0.05 ms | 0.01 ms | 0.01 ms |
-| extract-invoice | 2629 | 198 | 0.04 ms | 0.05 ms | 0.01 ms | 0.01 ms |
-| summarize-and-translate | 2450 | 274 | 0.04 ms | 0.04 ms | 0.02 ms | 0.02 ms |
+| classify-ticket | 3010 | 232 | 0.05 ms | 0.06 ms | 0.02 ms | 0.01 ms |
+| extract-invoice | 3337 | 225 | 0.05 ms | 0.07 ms | 0.01 ms | 0.01 ms |
+| summarize-and-translate | 3092 | 317 | 0.04 ms | 0.05 ms | 0.03 ms | 0.02 ms |
 
 ## CLI end to end
 
@@ -26,8 +26,8 @@ Bun start-up, which dominates for single files.
 
 | Command | Median | Min | Max |
 | --- | ---: | ---: | ---: |
-| `version` | 17.32 ms | 16.51 ms | 17.97 ms |
-| `parse docs/examples/classify-ticket.prompt` | 19.16 ms | 18.72 ms | 20.66 ms |
-| `analyze docs/examples/` | 21.71 ms | 20.22 ms | 35.05 ms |
-| `compile docs/examples/classify-ticket.prompt --out <tmp>` | 19.98 ms | 19.42 ms | 21.75 ms |
-| `compile docs/examples/ --out <tmp> --target python` | 21.93 ms | 20.33 ms | 22.46 ms |
+| `version` | 19.22 ms | 17.05 ms | 22.88 ms |
+| `parse docs/examples/classify-ticket.prompt` | 21.95 ms | 20.20 ms | 29.74 ms |
+| `analyze docs/examples/` | 25.38 ms | 24.13 ms | 29.99 ms |
+| `compile docs/examples/classify-ticket.prompt --out <tmp>` | 22.44 ms | 21.81 ms | 24.70 ms |
+| `compile docs/examples/ --out <tmp> --target python` | 27.20 ms | 24.91 ms | 29.49 ms |

@@ -5,8 +5,9 @@
 PromptLang is a typed DSL for LLM prompts. A `.prompt` file declares types, prompts,
 chains, tests and evals; the compiler turns it into typed TypeScript or Python
 functions that call a provider through a `PromptClient`. The package is
-`@promptlang/core` (not published to npm; CLI binary `promptlang`), built with Bun and
-TypeScript, with no third-party runtime dependencies. `docs/CLAIMS.md` is the source
+`@promptlang/core` (CLI binary `promptlang`; published from `v*` tags by
+`.github/workflows/release.yml`), built with Bun and TypeScript, with no third-party
+runtime dependencies. `docs/CLAIMS.md` is the source
 of truth for what is shipped, partial or roadmap — read it before touching docs.
 
 ## Architecture
@@ -19,8 +20,11 @@ of truth for what is shipped, partial or roadmap — read it before touching doc
 generated code ─► runtime (PromptClient, Anthropic/OpenAI/Ollama/Routing clients)
 ```
 
-There is no semantic-analysis pass; `test`/`eval` blocks are parsed and ignored by
-the compilers; `@version` is not validated.
+There is no general semantic-analysis pass. The compilers check that each `test`
+block calls a prompt or chain of the same file; `promptlang test` runs tests
+against the generated TypeScript (`src/testing/`); `eval` blocks are parsed only.
+`@version` is SemVer-validated by the parser; `src/semver/` holds the comparator,
+the interface diff and the bump check behind `semver-check`.
 
 ## Layout
 
@@ -29,14 +33,17 @@ src/index.ts         public API of @promptlang/core
 src/lexer/           tokens (token.ts, lexer.ts, errors.ts)
 src/parser/          recursive descent parser; grammar.md is the EBNF
 src/ast/             node types, printer
-src/registry/        resolver.ts, integrity.ts, registry.ts (install/check)
+src/registry/        resolver.ts (imports, requires ranges), integrity.ts, registry.ts (install/check)
+src/semver/          semver.ts (SemVer 2.0.0), interface.ts (interface diff), check.ts (bump check)
+src/testing/         runner.ts (promptlang test), schema.ts, cost.ts (live estimate)
 src/compiler/        TypeScript generator, chain-compiler.ts; python/ for Python
 src/analyzer/        analyzer.ts, rules/ (6 static rules), ai/ (AI linter)
 src/runtime/         client.ts (MockClient), errors.ts, providers/
 src/config/          promptlang.yaml loading
 src/cli/             cli.ts + commands/
 packages/yaml-parser @promptlang/yaml-parser (published separately)
-scripts/             check-claims.ts, check-stale-narrative.ts, check-commits.ts
+scripts/             check-claims.ts, check-stale-narrative.ts, check-commits.ts, demo.ts,
+                     build.ts, consumer-test.ts, ai-linter-live-run.ts
 benchmarks/bench.ts  generates docs/benchmarks.md
 tests/               cross-module tests; tests/support/ test helpers
 docs/                reference docs, CLAIMS.md, ENGINEERING_STANDARDS.md, examples/
@@ -57,11 +64,14 @@ bun run check:claims                 # docs/CLAIMS.md vs README; runs each claim
 bun run check:stale-narrative        # "coming in vX", sprint IDs, TODO without (#issue)
 bun run check:commits main..HEAD     # Conventional Commits on a range
 bun run bench --write                # regenerate docs/benchmarks.md
-bun run cli <command>                # parse | tokens | analyze | compile | init | install | list | check | version
+bun run demo                         # SemVer scenario in a temporary Git repo
+bun run build                        # dist/: ESM + .d.ts (also run by npm pack)
+bun run test:consumer                # npm pack → install → use from Node (needs npm, node)
+bun run cli <command>                # parse | tokens | analyze | compile | init | install | list | check | semver-check | test | version
 ```
 
 All of these run in CI (`.github/workflows/ci.yml`). Never make a paid provider call
-(e.g. `analyze --ai`, real `AnthropicClient` requests) without a cost estimate and
+(e.g. `analyze --ai`, `test --live`, real `AnthropicClient` requests) without a cost estimate and
 Matteo's explicit approval.
 
 ---

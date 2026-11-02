@@ -40,6 +40,7 @@ function silenceAll(): () => void {
 
 // Temp file paths for error-case tests.
 const BAD_SYNTAX_FILE = "/tmp/promptlang-test-bad-syntax.prompt";
+const WARNING_FILE = "/tmp/promptlang-test-warning.prompt";
 const BAD_LEXER_FILE = "/tmp/promptlang-test-bad-lexer.prompt";
 
 beforeAll(async () => {
@@ -96,9 +97,9 @@ describe("version", () => {
     restore();
     expect(code).toBe(0);
     expect(output()).toContain("promptlang");
-    // Version must match SemVer 1.x — asserting the exact value would
-    // couple the test to the release cadence.
-    expect(output()).toMatch(/1\.\d+\.\d+(-.+)?/);
+    // The major is pinned by tests/stability.test.ts; here any SemVer version will do,
+    // so a minor or patch release does not touch this test.
+    expect(output()).toMatch(/^promptlang \d+\.\d+\.\d+(-.+)?$/m);
   });
 
   test("prints repository URL", async () => {
@@ -249,17 +250,16 @@ describe("analyze", () => {
   });
 
   test("--strict exits 1 when warnings are present", async () => {
+    // An undelimited user template is a prompt-injection-risk warning.
+    await Bun.write(
+      WARNING_FILE,
+      '@version "1.0.0"\nprompt p(x: string) -> string {\n  user: "Say {{x}}"\n}\ntest "t" {\n  input: p("a")\n  expect: a\n}\n'
+    );
     const restore = silenceAll();
-    // classify-ticket has injection warnings, so --strict causes exit 1.
-    const code = await main([
-      "bun",
-      "cli",
-      "analyze",
-      "--strict",
-      "docs/examples/classify-ticket.prompt",
-    ]);
+    const lenient = await main(["bun", "cli", "analyze", WARNING_FILE]);
+    const strict = await main(["bun", "cli", "analyze", "--strict", WARNING_FILE]);
     restore();
-    expect(code).toBe(1);
+    expect([lenient, strict]).toEqual([0, 1]);
   });
 
   test("--ai without ANTHROPIC_API_KEY prints error and falls back to static only (exit 0)", async () => {
@@ -465,7 +465,7 @@ describe("compile --emit-tsconfig", () => {
     expect(content.compilerOptions.strict).toBe(true);
   });
 
-  test("emitted tsconfig contains paths mapping for promptlang/runtime", async () => {
+  test("emitted tsconfig contains paths mapping for @promptlang/core/runtime", async () => {
     const restore = silenceAll();
     await main([
       "bun",
@@ -479,9 +479,9 @@ describe("compile --emit-tsconfig", () => {
     restore();
     const content = JSON.parse(await Bun.file(`${EMIT_OUT}/tsconfig.json`).text());
     const paths = content.compilerOptions?.paths ?? {};
-    expect(paths["promptlang/runtime"]).toBeDefined();
-    expect(Array.isArray(paths["promptlang/runtime"])).toBe(true);
-    expect((paths["promptlang/runtime"] as string[]).length).toBeGreaterThan(0);
+    expect(paths["@promptlang/core/runtime"]).toBeDefined();
+    expect(Array.isArray(paths["@promptlang/core/runtime"])).toBe(true);
+    expect((paths["@promptlang/core/runtime"] as string[]).length).toBeGreaterThan(0);
   });
 
   test("without --emit-tsconfig, no tsconfig.json is emitted (default unchanged)", async () => {
@@ -504,12 +504,12 @@ describe("compile --emit-tsconfig", () => {
       EMIT_OUT,
       "--emit-tsconfig",
       "--runtime-path",
-      "node_modules/promptlang/runtime/index.js",
+      "node_modules/@promptlang/core/dist/runtime/index.js",
     ]);
     restore();
     const content = JSON.parse(await Bun.file(`${EMIT_OUT}/tsconfig.json`).text());
-    const paths = content.compilerOptions?.paths?.["promptlang/runtime"] as string[];
-    expect(paths[0]).toBe("node_modules/promptlang/runtime/index.js");
+    const paths = content.compilerOptions?.paths?.["@promptlang/core/runtime"] as string[];
+    expect(paths[0]).toBe("node_modules/@promptlang/core/dist/runtime/index.js");
   });
 
   test("help mentions --emit-tsconfig flag", async () => {
@@ -631,9 +631,33 @@ describe("install command", () => {
     expect(await Bun.file(join(dir, ".promptlang", "manifest.json")).exists()).toBe(true);
     expect(await Bun.file(join(dir, ".promptlang", "integrity.json")).exists()).toBe(true);
     const manifest = JSON.parse(await Bun.file(join(dir, ".promptlang", "manifest.json")).text());
-    expect(manifest.version).toBe(1);
+    expect(manifest.version).toBe(2);
     expect(manifest.imports).toHaveLength(1);
     expect(manifest.imports[0].alias).toBe("A");
+  });
+
+  test("exits 1 with the mismatch when an import's requires range is not met", async () => {
+    const dir = await makeProject("install-requires");
+    await Bun.write(
+      join(dir, "promptlang.yaml"),
+      "name: p\nversion: 1.0.0\nsources:\n  - path: ./prompts\n"
+    );
+    await Bun.write(
+      join(dir, "prompts", "lib.prompt"),
+      `@version "2.0.0"\nprompt lib(x: string) -> string { user: "{{x}}" output: string }\n`
+    );
+    await Bun.write(
+      join(dir, "prompts", "app.prompt"),
+      `import "./lib.prompt" as Lib requires "^1.0.0"\n@version "1.0.0"\nprompt app(x: string) -> string { user: "{{x}}" output: string }\n`
+    );
+    const log = captureLog();
+    const err = captureError();
+    const code = await withCwd(dir, () => main(["bun", "cli", "install"]));
+    const stderr = err.output();
+    err.restore();
+    log.restore();
+    expect(code).toBe(1);
+    expect(stderr).toContain('requires "^1.0.0", got 2.0.0');
   });
 
   test("exits 1 when promptlang.yaml is missing", async () => {
@@ -831,5 +855,110 @@ describe("compile — empty .prompt files", () => {
       `@version "1.0.0"\ntype Category = enum { a, b }\n`
     );
     expect(code).toBe(0);
+  });
+});
+
+describe("compile — --target validation", () => {
+  const DIR = "/tmp/promptlang-target-test";
+  const SOURCE = `@version "1.0.0"\nprompt hi(name: string) -> string {\n  user: "Hi {{name}}"\n}\n`;
+
+  async function compileWith(targetArgs: string[]) {
+    await rm(DIR, { recursive: true, force: true });
+    await mkdir(DIR, { recursive: true });
+    await Bun.write(join(DIR, "hi.prompt"), SOURCE);
+    const log = captureLog();
+    const err = captureError();
+    const code = await main([
+      "bun",
+      "cli",
+      "compile",
+      join(DIR, "hi.prompt"),
+      "--out",
+      join(DIR, "out"),
+      ...targetArgs,
+    ]);
+    const stderr = err.output();
+    err.restore();
+    log.restore();
+    return { code, stderr };
+  }
+
+  test("an unknown --target value is an error and writes nothing", async () => {
+    for (const value of ["py", "ts", "rust"]) {
+      const { code, stderr } = await compileWith(["--target", value]);
+      expect(code).toBe(1);
+      expect(stderr).toContain(`unknown --target '${value}'`);
+      expect(stderr).toContain("typescript, python");
+      expect(await Bun.file(join(DIR, "out", "hi.ts")).exists()).toBe(false);
+    }
+  });
+
+  test("--target without a value is an error", async () => {
+    const { code, stderr } = await compileWith(["--target"]);
+    expect(code).toBe(1);
+    expect(stderr).toContain("--target requires a value");
+  });
+
+  test("--target python still writes Python", async () => {
+    const { code } = await compileWith(["--target", "python"]);
+    expect(code).toBe(0);
+    expect(await Bun.file(join(DIR, "out", "hi.py")).exists()).toBe(true);
+    expect(await Bun.file(join(DIR, "out", "hi.ts")).exists()).toBe(false);
+  });
+});
+
+describe("compile — test and eval blocks", () => {
+  const DIR = "/tmp/promptlang-test-blocks";
+  const PROMPT = `@version "1.0.0"\nprompt hi(name: string) -> string {\n  user: "Hi {{name}}"\n}\n`;
+
+  async function compileSource(source: string) {
+    await rm(DIR, { recursive: true, force: true });
+    await mkdir(DIR, { recursive: true });
+    const file = join(DIR, "hi.prompt");
+    await Bun.write(file, source);
+    const lines: string[] = [];
+    const orig = console.warn;
+    console.warn = (...args: unknown[]) => lines.push(args.join(" "));
+    const log = captureLog();
+    const err = captureError();
+    const code = await main(["bun", "cli", "compile", file, "--out", join(DIR, "out")]);
+    const stderr = err.output();
+    err.restore();
+    log.restore();
+    console.warn = orig;
+    return { code, stderr, warnings: lines.join("\n"), file };
+  }
+
+  test("a test on a prompt that does not exist is a compile error with its position", async () => {
+    const { code, stderr, file } = await compileSource(
+      `${PROMPT}test "t" {\n  input: hello("Ada")\n  expect: x\n}\n`
+    );
+    expect(code).toBe(1);
+    expect(stderr).toContain(`${file}:6:10: test "t": input calls 'hello'`);
+  });
+
+  test("an eval block compiles with a warning that it is not executed", async () => {
+    const { code, warnings, file } = await compileSource(
+      `${PROMPT}eval "e" {\n  dataset: "d.jsonl"\n  prompt: hi\n  metric: accuracy\n  threshold: 0.9\n}\n`
+    );
+    expect(code).toBe(0);
+    expect(warnings).toContain(
+      `${file}:5:1: eval blocks are parsed but not executed in this version`
+    );
+  });
+
+  test("@temperature on a Claude model compiles with a warning that it is not sent", async () => {
+    const { code, warnings, file } = await compileSource(
+      `@model claude-opus-5-5\n@temperature 0.2\n${PROMPT}`
+    );
+    expect(code).toBe(0);
+    expect(warnings).toContain(
+      `${file}:2:1: @temperature is not sent to Anthropic (API version 2026-10-21 rejects it); it applies to OpenAI and Ollama only`
+    );
+  });
+
+  test("@temperature on a non-Claude model compiles without that warning", async () => {
+    const { warnings } = await compileSource(`@model gpt-5\n@temperature 0.2\n${PROMPT}`);
+    expect(warnings).not.toContain("@temperature");
   });
 });

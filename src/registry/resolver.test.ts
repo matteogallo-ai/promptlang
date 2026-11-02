@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import { rm, mkdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { resolveImport, resolveGraph, ResolverError } from "./resolver";
+import { resolveImport, resolveGraph, ResolverError, VersionMismatchError } from "./resolver";
 
 const ROOT = "/tmp/promptlang-resolver-test";
 const PROJECT = join(ROOT, "project");
@@ -145,5 +145,65 @@ describe("resolveGraph", () => {
       expect((e as Error).message).toContain("cycle-a.prompt");
       expect((e as Error).message).toContain("cycle-b.prompt");
     }
+  });
+});
+
+describe("import version constraints (requires)", () => {
+  const DIR = join(ROOT, "versions");
+  const lib = (version: string | null) =>
+    `${version === null ? "" : `@version "${version}"\n`}prompt lib(x: string) -> string { user: "{{x}}" output: string }\n`;
+  const consumer = (range: string) =>
+    `import "./lib.prompt" as Lib requires "${range}"\n${MIN_PROMPT("consumer")}`;
+
+  async function graph(libSource: string, range: string) {
+    await rm(DIR, { recursive: true, force: true });
+    await mkdir(DIR, { recursive: true });
+    await Bun.write(join(DIR, "lib.prompt"), libSource);
+    await Bun.write(join(DIR, "consumer.prompt"), consumer(range));
+    return resolveGraph([join(DIR, "consumer.prompt")]);
+  }
+
+  test("resolves when the imported @version satisfies the range", async () => {
+    const result = await graph(lib("1.4.2"), "^1.0.0");
+    expect(result.files).toHaveLength(2);
+  });
+
+  test("throws VersionMismatchError with an actionable message when it does not", async () => {
+    const error = await graph(lib("2.0.0"), "^1.0.0").catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(VersionMismatchError);
+    expect(error).toBeInstanceOf(ResolverError);
+    const e = error as VersionMismatchError;
+    expect(e.message).toContain('requires "^1.0.0", got 2.0.0');
+    expect(e.message).toContain("consumer.prompt:1:1");
+    expect(e.message).toContain("./lib.prompt");
+    expect(e).toMatchObject({ range: "^1.0.0", actual: "2.0.0" });
+  });
+
+  test("an imported file without @version fails a requires constraint", async () => {
+    const error = await graph(lib(null), "^1.0.0").catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(VersionMismatchError);
+    expect((error as Error).message).toContain("declares no @version");
+  });
+
+  test("a pre-release does not satisfy a release range", async () => {
+    const error = await graph(lib("2.0.0-rc.1"), ">=1.0.0").catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(VersionMismatchError);
+    expect((await graph(lib("2.0.0-rc.2"), ">=2.0.0-rc.1")).files).toHaveLength(2);
+  });
+});
+
+describe("syntax errors in the import graph", () => {
+  test("are reported as a ResolverError naming the file", async () => {
+    const dir = join(ROOT, "syntax");
+    await rm(dir, { recursive: true, force: true });
+    await mkdir(dir, { recursive: true });
+    await Bun.write(join(dir, "bad.prompt"), `@version "banana"\n`);
+    await Bun.write(
+      join(dir, "main.prompt"),
+      `import "./bad.prompt" as Bad\n${MIN_PROMPT("main")}`
+    );
+    const error = await resolveGraph([join(dir, "main.prompt")]).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(ResolverError);
+    expect((error as Error).message).toMatch(/bad\.prompt:1:10: .*not a valid SemVer/);
   });
 });

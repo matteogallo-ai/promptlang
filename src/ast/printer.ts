@@ -132,7 +132,9 @@ function printPromptDeclaration(
 ): void {
   out.push(`${conn}PromptDeclaration "${node.name}"`);
   const children = [
-    ...node.parameters.map((p) => `Parameter "${p.name}" : ${typeLabel(p.type)}`),
+    ...node.parameters.map(
+      (p) => `Parameter "${p.name}${p.optional ? "?" : ""}" : ${typeLabel(p.type)}`
+    ),
     `ReturnType : ${typeLabel(node.returnType)}`,
     ...node.sections.map((s) => sectionLabel(s)),
   ];
@@ -149,7 +151,9 @@ function printChainDeclaration(
 ): void {
   out.push(`${conn}ChainDeclaration "${node.name}"`);
   const children = [
-    ...node.parameters.map((p) => `Parameter "${p.name}" : ${typeLabel(p.type)}`),
+    ...node.parameters.map(
+      (p) => `Parameter "${p.name}${p.optional ? "?" : ""}" : ${typeLabel(p.type)}`
+    ),
     `ReturnType : ${typeLabel(node.returnType)}`,
     ...node.steps.map((s) => `ChainStep "${s.name}" = ${exprLabel(s.expression)}`),
     `return ${exprLabel(node.returnExpression)}`,
@@ -168,7 +172,11 @@ function printTestDeclaration(
   out.push(`${conn}TestDeclaration "${node.description}"`);
   const children = [
     `input: ${exprLabel(node.input)}`,
-    ...node.expectations.map((e) => `${e.path.join(".")}: ${literalLabel(e.value)}`),
+    ...(node.mock ? [`mock: ${JSON.stringify(node.mock.value)}`] : []),
+    ...node.expectations.map(
+      (e) => `${e.path.join(".")}${e.op === "equals" ? "" : ` ${e.op}`}: ${literalLabel(e.value)}`
+    ),
+    ...(node.expectsSchema ? ["expect schema"] : []),
   ];
   children.forEach((label, i) => {
     out.push(`${cont}${connector(children, i)}${label}`);

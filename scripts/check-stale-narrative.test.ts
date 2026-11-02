@@ -1,5 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { scanText } from "./check-stale-narrative";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { scanRepository, scanText } from "./check-stale-narrative";
 
 function kinds(text: string): string[] {
   return scanText("f.md", text).map((f) => f.kind);
@@ -29,6 +32,11 @@ describe("check-stale-narrative: scanText", () => {
       "future-version",
     ]);
     expect(kinds("Rule suppression via comments (v0.8+)")).toEqual(["future-version"]);
+    // The comment that sat in docs/examples/summarize-and-translate.prompt.
+    expect(
+      kinds("// Note: comparison operators (> n, <= n) and regex matchers require the v0.6")
+    ).toEqual(["future-version"]);
+    expect(kinds("needs v2 of the engine")).toEqual(["future-version"]);
   });
 
   test("flags future tense without a version number", () => {
@@ -60,11 +68,30 @@ describe("check-stale-narrative: scanText", () => {
     expect(kinds("SHA-256 hashes, S3 buckets and TODOS are fine")).toEqual([]);
     expect(kinds("The result will be cached by the caller.")).toEqual([]);
     expect(kinds("Generated functions make network calls when run.")).toEqual([]);
+    expect(kinds("The generated code requires Python 3.11 or later.")).toEqual([]);
     expect(kinds("")).toEqual([]);
   });
 
   test("reports 1-based line numbers and a trimmed excerpt", () => {
     const findings = scanText("a.md", "ok\n  coming in v2  \n");
     expect(findings[0]).toMatchObject({ line: 2, excerpt: "coming in v2" });
+  });
+});
+
+describe("check-stale-narrative: scanRepository", () => {
+  test("scans .prompt files wherever they are, not only under docs/", async () => {
+    const root = await mkdtemp(join(tmpdir(), "stale-narrative-"));
+    try {
+      await mkdir(join(root, "packages"));
+      await mkdir(join(root, "examples", "deep"), { recursive: true });
+      await mkdir(join(root, "node_modules", "dep"), { recursive: true });
+      await Bun.write(join(root, "README.md"), "ok\n");
+      await Bun.write(join(root, "examples", "deep", "a.prompt"), "// coming in v2\n");
+      await Bun.write(join(root, "node_modules", "dep", "b.prompt"), "// coming in v2\n");
+      const findings = await scanRepository(root);
+      expect(findings.map((f) => f.file)).toEqual(["examples/deep/a.prompt"]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 });

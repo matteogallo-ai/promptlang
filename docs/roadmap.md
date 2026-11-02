@@ -14,7 +14,7 @@ Release history is in [`CHANGELOG.md`](../CHANGELOG.md).
 - [x] Recursive-descent parser and typed AST for `type`, `prompt`, `chain`, `test`, `eval`, `import`
 - [x] Primitive, enum, struct (optional fields) and named types
 - [x] TypeScript code generator: one async function per prompt, typed input and output
-- [x] Python code generator (3.10+, `Literal` / `TypedDict`) with a bundled runtime module
+- [x] Python code generator (3.11+, `Literal` / `TypedDict` / `NotRequired`) with a bundled runtime module
 - [x] `chain` compilation: sequential steps calling prompts declared in the same file,
       named and positional arguments, member access on step results, undefined
       identifiers and forward references rejected at compile time
@@ -27,7 +27,14 @@ Release history is in [`CHANGELOG.md`](../CHANGELOG.md).
 - [x] `install` / `check`: `.promptlang/manifest.json` and a portable `integrity.json`
       (project-relative SHA-256 hashes)
 - [x] CLI: `parse`, `tokens`, `analyze`, `compile` (`--target`, `--emit-tsconfig`), `init`,
-      `install`, `list`, `check`, `version`
+      `install`, `list`, `check`, `semver-check`, `test`, `version`
+- [x] **SemVer for prompts**: `@version` validated as SemVer 2.0.0; `requires "<range>"`
+      on imports with `VersionMismatchError`; `semver-check` comparing each prompt's
+      interface (parameters, output type, `@model`) with a Git base, run in CI on the
+      examples; `bun run demo`
+- [x] **Native tests**: `promptlang test` running `test` blocks against the generated
+      TypeScript, `mock:` responses by default, `--live` after a cost estimate;
+      equality, `contains`, `matches`, `schema`; tests on unknown prompts are compile errors
 - [x] Six static analysis rules: missing tests, unbounded templates, prompt-injection
       risk, token cost estimate, chain complexity, duplicate prompts
 
@@ -37,6 +44,8 @@ Release history is in [`CHANGELOG.md`](../CHANGELOG.md).
 - [x] `AnthropicClient`, `OpenAIClient`, `OllamaClient`: timeout, bounded retries with
       exponential backoff on retryable errors only, typed error hierarchy,
       `InvalidResponseError` for malformed provider responses, empty API keys rejected
+- [x] Cross-provider fallback: per-provider `modelMap` in `RoutingClient`; `Retry-After`
+      honoured on rate limits
 - [x] `@promptlang/core` entry point exporting `tokenize`, `parse`, `resolveGraph`,
       `resolveImport`, `compile`, `compilePython`, `analyze`, the error classes and AST types
 
@@ -44,25 +53,14 @@ Release history is in [`CHANGELOG.md`](../CHANGELOG.md).
 
 ## Partial
 
-- **Multi-provider fallback** — `RoutingClient` tries providers in order and never falls
-  back on `AuthenticationError`. Generated code sends the same `@model` value to every
-  provider, so a fallback between providers with different model names fails.
 - **AI-powered linter** (`analyze --ai`) — request building and response parsing are
   tested with a mocked client only. No live run is committed, so the quality of its
-  findings is unmeasured. The analyzed prompt text is not delimited as untrusted
-  content in the linter's request.
+  findings is unmeasured.
 
 ---
 
 ## In progress
 
-- [ ] **SemVer for prompts** — `@version` validated as SemVer; version constraints on
-      imports with a `VersionMismatchError`; `promptlang semver-check` comparing each
-      prompt's interface (parameters, output schema, target model) against a git base
-- [ ] **Native tests** — `promptlang test` executing `test` blocks with `MockClient` by
-      default; a test referencing an unknown prompt becomes a compile error
-- [ ] **Cross-provider fallback** — per-provider model mapping in `RoutingClient`;
-      `retry-after` honoured on rate limits
 - [ ] **npm publication** of `@promptlang/core` (ESM build, type declarations, Node
       consumer test)
 
@@ -70,7 +68,8 @@ Release history is in [`CHANGELOG.md`](../CHANGELOG.md).
 
 ## Not implemented, not scheduled
 
-- `eval` blocks: parsed, not executed
+- `eval` blocks: parsed, not executed (`compile` and `test` warn)
+- `promptlang test --live` for OpenAI and Ollama models
 - `parallel { ... }` steps in chains (not in the grammar)
 - Calling an imported prompt from a chain (`Alias.prompt(...)`)
 - Type checking of data flow between chain steps (the TypeScript target relies on `tsc`)

@@ -489,7 +489,7 @@ class Lexer {
    *
    * Hyphens are allowed inside identifiers when immediately followed by an
    * alphanumeric character or underscore, to support model names such as
-   * `claude-opus-4.7` and CSS-style identifiers. A lone trailing hyphen
+   * `claude-opus-5-5` or `llama3.1` and CSS-style identifiers. A lone trailing hyphen
    * (e.g. before `>`) is NOT consumed — this keeps `->` unambiguous.
    */
   private scanIdentifier(): void {

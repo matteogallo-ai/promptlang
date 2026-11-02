@@ -1,9 +1,10 @@
 name: Release
 
 # A v* tag publishes @promptlang/core (and @promptlang/yaml-parser when its
-# version is not on npm yet), after the whole CI workflow passes on the tag.
-# Run by hand, it is always a dry run: only a tag publishes, so every published
-# version has passed the tag/version check below.
+# version is not on npm yet), after the whole CI workflow passes on the tag, then
+# creates the GitHub Release with the same tarball and its signed provenance.
+# Run by hand, it is always a dry run: only a tag publishes, attests or creates a
+# release, so every published version has passed the tag/version check below.
 on:
   push:
     tags: ["v*"]
@@ -28,8 +29,11 @@ jobs:
     environment: npm
     permissions:
       contents: read
-      # OIDC token for npm provenance: the registry records which workflow built the tarball.
+      # OIDC token for npm provenance and for the Sigstore certificate that signs the
+      # GitHub attestation: both record which workflow built the tarball.
       id-token: write
+      # Stores the tarball's build provenance in the repository's attestations.
+      attestations: write
     env:
       DRY_RUN: ${{ github.event_name != 'push' && '--dry-run' || '' }}
     steps:
@@ -50,6 +54,11 @@ jobs:
             exit 1
           fi
 
+      # The GitHub Release body; checked here because the release job runs after npm.
+      - name: The tag has release notes
+        if: github.event_name == 'push'
+        run: test -f "docs/release-notes/$GITHUB_REF_NAME.md"
+
       # Decided before anything is published, so a registry outage stops the job
       # here instead of after @promptlang/core is out. Only E404 means "not on npm".
       - name: Is this @promptlang/yaml-parser version on npm?
@@ -67,15 +76,52 @@ jobs:
             exit 1
           fi
 
+      # Packed once: npm, the attestation and the GitHub Release all get these bytes.
+      # prepack runs scripts/build.ts, so the tarball holds a fresh dist/.
+      - name: Pack @promptlang/core
+        id: pack
+        run: |
+          mkdir -p "$RUNNER_TEMP/pack"
+          npm pack --pack-destination "$RUNNER_TEMP/pack"
+          TARBALL="$(ls "$RUNNER_TEMP"/pack/*.tgz)"
+          sha256sum "$TARBALL"
+          echo "tarball=$TARBALL" >> "$GITHUB_OUTPUT"
+
+      # Before npm publish: if signing fails, nothing has been published yet.
+      - name: Attest the tarball's build provenance
+        id: attest
+        if: github.event_name == 'push'
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: ${{ steps.pack.outputs.tarball }}
+
       - name: Publish @promptlang/core
-        # prepack runs scripts/build.ts, so the tarball holds a fresh dist/.
         # A prerelease (2.1.0-rc.1) goes to the "next" dist-tag, never to "latest".
         run: |
           VERSION="$(node -p "require('./package.json').version")"
           case "$VERSION" in *-*) TAG="--tag next" ;; *) TAG="" ;; esac
-          npm publish --provenance --access public $TAG $DRY_RUN
+          npm publish "$TARBALL" --provenance --access public $TAG $DRY_RUN
         env:
+          TARBALL: ${{ steps.pack.outputs.tarball }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # The Sigstore bundle keeps a .sigstore.json name, the suffix Scorecard's
+      # Signed-Releases check reads as a signature.
+      - name: Keep the tarball and its signed attestation for the release job
+        if: github.event_name == 'push'
+        run: |
+          mkdir -p "$RUNNER_TEMP/release"
+          cp "$TARBALL" "$RUNNER_TEMP/release/"
+          cp "$BUNDLE" "$RUNNER_TEMP/release/$(basename "$TARBALL").sigstore.json"
+        env:
+          TARBALL: ${{ steps.pack.outputs.tarball }}
+          BUNDLE: ${{ steps.attest.outputs.bundle-path }}
+      - if: github.event_name == 'push'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-assets
+          path: ${{ runner.temp }}/release/
+          if-no-files-found: error
 
       - name: Publish @promptlang/yaml-parser
         if: steps.yaml_parser.outputs.publish == 'true'
@@ -86,3 +132,28 @@ jobs:
           npm publish --provenance --access public $TAG $DRY_RUN
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  github-release:
+    needs: publish
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      # Creates the GitHub Release for the tag and uploads its assets.
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-assets
+          path: release-assets
+      # No release without its signed provenance: an unsigned release asset would
+      # count against Signed-Releases, and users could not verify the tarball.
+      - name: Create the GitHub Release with the tarball and its attestation
+        run: |
+          ls release-assets/*.tgz release-assets/*.tgz.sigstore.json
+          case "$GITHUB_REF_NAME" in *-*) PRE="--prerelease" ;; *) PRE="" ;; esac
+          gh release create "$GITHUB_REF_NAME" release-assets/* --verify-tag $PRE \
+            --title "PromptLang ${GITHUB_REF_NAME#v}" \
+            --notes-file "docs/release-notes/$GITHUB_REF_NAME.md"
+        env:
+          GH_TOKEN: ${{ github.token }}

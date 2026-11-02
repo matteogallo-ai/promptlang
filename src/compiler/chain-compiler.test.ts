@@ -1,4 +1,5 @@
 import { describe, test, expect, afterAll } from "bun:test";
+import { runTsc, tscTest } from "../../tests/support/tsc";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { tokenize } from "../lexer/lexer";
@@ -573,7 +574,7 @@ describe("chain — integration: summarize-and-translate.prompt", () => {
     expect(out).toContain("await translate(");
   });
 
-  test("generated code compiles within a project with promptlang paths mapping", async () => {
+  tscTest("generated code compiles within a project with promptlang paths mapping", async () => {
     // Uses an explicit paths mapping (not extends from parent tsconfig) to honestly
     // verify that the generated chain code is syntactically valid TypeScript.
     const source = await Bun.file("docs/examples/summarize-and-translate.prompt").text();
@@ -604,12 +605,7 @@ describe("chain — integration: summarize-and-translate.prompt", () => {
       )
     );
 
-    const proc = Bun.spawn(
-      [process.execPath, "x", "tsc", "--project", join(TMP_DIR, "tsconfig.json"), "--noEmit"],
-      { cwd: process.cwd(), stderr: "pipe" }
-    );
-    const exitCode = await proc.exited;
-    const stderr = await new Response(proc.stderr).text();
+    const { exitCode, stderr } = await runTsc(join(TMP_DIR, "tsconfig.json"));
     expect(stderr).toBe("");
     expect(exitCode).toBe(0);
   });

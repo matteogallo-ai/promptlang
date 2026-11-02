@@ -17,7 +17,9 @@ version number by SemVer; see `CHANGELOG.md` under `[Unreleased]`.
   runtime is unchanged.
 - **`.prompt` files with no declarations** (empty, or only imports and metadata) make `compile` exit 1.
 - **`integrity.json` keys** are project-relative POSIX paths. Older files with
-  absolute keys are migrated when read; re-run `promptlang install` to rewrite them.
+  absolute keys are migrated when read, relative to the current checkout; if the
+  checkout moved since the file was written, `check` reports those files as
+  missing. Re-run `promptlang install` to rewrite the file in either case.
 
 ## 0.x → 1.0
 

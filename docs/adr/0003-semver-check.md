@@ -20,7 +20,7 @@ a list of files, and a rule for what "moved enough" means.
   through symlinks against the repository top; a file outside the repository is a
   usage error. A file absent at the base that Git pairs with a deleted one
   (staged rename, similarity ≥ 30%) is compared with the old path when both
-  declare at least one prompt or chain of the same name; otherwise it is `new`. A file absent at the base is `new` and passes; a
+  declare at least one prompt or chain of the same name; otherwise it is `new`. A `new` file passes; a
   failure to read a file that does exist at the base is an error, never `new`. A
   deleted file is not reported, because there is no `@version` left to bump.
 - **Known limits.** A rename combined with a rewrite below 30% similarity, or one

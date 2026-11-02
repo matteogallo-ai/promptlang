@@ -222,7 +222,8 @@ with its message.
   asking and is required without a terminal. A model missing from the price table is
   refused. `mock:` is ignored.
 - `--json` prints `{ ok, mode, usage, files: [{ file, error?, results }] }`.
-- Exit codes: `0` every test passed, `1` a test failed or a file has an error, `2` usage
+- Exit codes: `0` every test passed, `1` a test failed or a file has an error, `3` a provider
+  error (timeout, network, auth) left a test without a verdict, `2` usage
   error, missing key, unpriced model, or a declined estimate.
 
 An `eval` block has exactly the four fields shown, in that order.

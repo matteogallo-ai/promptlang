@@ -8,6 +8,7 @@ import type {
 } from "../ast/nodes";
 import { compile } from "../compiler/compiler";
 import { MockClient, type PromptClient } from "../runtime/client";
+import { PromptClientError } from "../runtime/errors";
 import type { PromptRequest, PromptResponse } from "../runtime/types";
 import { importCompiled } from "./load-compiled";
 import { schemaErrors } from "./schema";
@@ -19,6 +20,8 @@ export interface TestResult {
   passed: boolean;
   /** One line per failed assertion, or why the test could not run. */
   failures: string[];
+  /** Set when the provider failed (timeout, network, auth…): the test has no verdict. */
+  providerError?: string;
   output?: unknown;
   usage: { input_tokens: number; output_tokens: number };
 }
@@ -146,7 +149,11 @@ async function runOne(
   try {
     output = await module[call.callee]!(input, metered(base, usage));
   } catch (error) {
-    // Whatever the prompt raises (invalid enum value, malformed JSON, provider
+    // An infrastructure failure is not a verdict on the prompt; report it apart.
+    if (error instanceof PromptClientError) {
+      return { ...result([]), passed: false, providerError: `${error.name}: ${error.message}` };
+    }
+    // Whatever else the prompt raises (invalid enum value, malformed JSON, provider
     // error) is the test's verdict, recorded with its message, not a runner crash.
     return result([
       `${call.callee} threw: ${error instanceof Error ? error.message : String(error)}`,

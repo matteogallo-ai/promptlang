@@ -3,6 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { PromptClient } from "../../runtime/client";
+import { NetworkError } from "../../runtime/errors";
 import { runTest, type TestCommandDeps } from "./test";
 
 let dir: string;
@@ -115,8 +116,8 @@ describe("promptlang test --live", () => {
     const r = await capture(() => runTest([file, "--live"], fakeDeps(false, calls)));
     expect(r.code).toBe(2);
     expect(calls).toEqual([]);
-    expect(r.stdout).toContain("1 call(s) on claude-haiku-4-5");
-    expect(r.stdout).toMatch(/total ≤ \$0\.000\d/);
+    expect(r.stderr).toContain("1 call(s) on claude-haiku-4-5");
+    expect(r.stderr).toMatch(/total ≤ \$0\.000\d/);
     expect(r.stderr).toContain("Aborted: no provider call was made.");
   });
 
@@ -127,7 +128,9 @@ describe("promptlang test --live", () => {
     expect(calls).toEqual(["claude-haiku-4-5"]);
     // The live client answers "bug", so the test whose mock says "other" passes.
     expect(r.code).toBe(0);
-    const report = JSON.parse(r.stdout.slice(r.stdout.indexOf("{")));
+    // stdout is the JSON document alone; the estimate goes to stderr.
+    const report = JSON.parse(r.stdout);
+    expect(r.stderr).toContain("1 call(s) on claude-haiku-4-5");
     expect(report).toMatchObject({
       ok: true,
       mode: "live",
@@ -155,5 +158,25 @@ describe("promptlang test --live", () => {
     expect(r.code).toBe(2);
     expect(r.stderr).toContain("no price is recorded for @model llama3.1");
     expect(calls).toEqual(["claude-haiku-4-5"]);
+  });
+
+  test("provider down: exit 3 and an ERROR line, never a FAIL verdict", async () => {
+    const file = await write("live-down.prompt", passing);
+    const deps: TestCommandDeps = {
+      createClient: () => ({
+        async complete() {
+          throw new NetworkError("fetch failed: ECONNREFUSED", "anthropic");
+        },
+      }),
+      confirm: () => true,
+    };
+    const r = await capture(() => runTest([file, "--live", "--yes"], deps));
+    expect(r.code).toBe(3);
+    expect(r.stdout).toContain(`ERROR  ${file}:8  pass`);
+    expect(r.stdout).toContain(
+      "provider error, no verdict: NetworkError: fetch failed: ECONNREFUSED"
+    );
+    expect(r.stdout).not.toContain("FAIL");
+    expect(r.stdout).toContain("0 passed, 0 failed, 1 without a verdict (provider error)");
   });
 });

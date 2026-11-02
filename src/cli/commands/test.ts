@@ -14,6 +14,8 @@ import { warnAboutEvals } from "../warnings";
 const EXIT_OK = 0;
 const EXIT_FAILED = 1;
 const EXIT_USAGE = 2;
+/** A provider error left at least one test without a verdict. */
+const EXIT_PROVIDER = 3;
 
 export interface TestCommandDeps {
   /** Builds the provider client for --live; tests inject a fake. */
@@ -55,14 +57,14 @@ function load(text: string): Program | string {
 
 function printEstimate(estimates: Array<{ file: string; estimate: CostEstimate }>): number {
   let total = 0;
-  console.log("Live run estimate (worst case: every call uses its full max_tokens):");
+  console.error("Live run estimate (worst case: every call uses its full max_tokens):");
   for (const { file, estimate: e } of estimates) {
     total += e.maxUsd;
-    console.log(
+    console.error(
       `  ${file}: ${e.calls} call(s) on ${e.model}, ~${e.inputTokens} input + ≤${e.maxOutputTokens} output tokens, ≤ $${e.maxUsd.toFixed(4)}`
     );
   }
-  console.log(`  total ≤ $${total.toFixed(4)}`);
+  console.error(`  total ≤ $${total.toFixed(4)}`);
   return total;
 }
 
@@ -73,15 +75,20 @@ function printHuman(outcomes: FileOutcome[]): void {
       continue;
     }
     for (const r of o.results) {
-      console.log(`  ${r.passed ? "pass" : "FAIL"}   ${o.file}:${r.line}  ${r.test}`);
+      const label = r.providerError ? "ERROR" : r.passed ? "pass " : "FAIL ";
+      console.log(`  ${label}  ${o.file}:${r.line}  ${r.test}`);
+      if (r.providerError) console.log(`           provider error, no verdict: ${r.providerError}`);
       for (const f of r.failures) console.log(`           ${f}`);
     }
   }
   const all = outcomes.flatMap((o) => o.results);
-  const failed = all.filter((r) => !r.passed).length;
+  const noVerdict = all.filter((r) => r.providerError).length;
+  const failed = all.filter((r) => !r.passed && !r.providerError).length;
   const errors = outcomes.filter((o) => o.error).length;
   console.log(
-    `\n${all.length - failed} passed, ${failed} failed${errors ? `, ${errors} file(s) with errors` : ""}`
+    `\n${all.length - failed - noVerdict} passed, ${failed} failed` +
+      (noVerdict ? `, ${noVerdict} without a verdict (provider error)` : "") +
+      (errors ? `, ${errors} file(s) with errors` : "")
   );
 }
 
@@ -171,5 +178,8 @@ export async function runTest(
     if (all.length === 0 && outcomes.every((o) => !o.error)) console.log("no test blocks found");
     else printHuman(outcomes);
   }
-  return ok ? EXIT_OK : EXIT_FAILED;
+  if (ok) return EXIT_OK;
+  const assertionFailed =
+    outcomes.some((o) => o.error) || all.some((r) => !r.passed && !r.providerError);
+  return assertionFailed ? EXIT_FAILED : EXIT_PROVIDER;
 }

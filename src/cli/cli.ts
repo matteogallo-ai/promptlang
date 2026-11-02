@@ -57,7 +57,8 @@ File commands:
                                      ANTHROPIC_API_KEY) after showing a
                                      worst-case cost estimate and asking
                                    --yes   Approve the estimate without asking
-                            Exit: 0 all pass, 1 a failure, 2 usage error
+                            Exit: 0 all pass, 1 a failure, 2 usage error,
+                                  3 provider error (no verdict)
   version                   Show version and repository info
 
 Examples:

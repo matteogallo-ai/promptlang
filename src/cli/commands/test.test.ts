@@ -4,7 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { PromptClient } from "../../runtime/client";
 import { NetworkError } from "../../runtime/errors";
-import { runTest, type TestCommandDeps } from "./test";
+import { fetchSpy, useFetchSpy } from "../../../tests/support/fetch-spy";
+import { createLiveClient, runTest, type TestCommandDeps } from "./test";
 
 let dir: string;
 const HEADER = `@version "1.0.0"\n@model claude-haiku-4-5\n@max_tokens 10\n`;
@@ -117,7 +118,7 @@ describe("promptlang test --live", () => {
     expect(r.code).toBe(2);
     expect(calls).toEqual([]);
     expect(r.stderr).toContain("1 call(s) on claude-haiku-4-5");
-    expect(r.stderr).toMatch(/total ≤ \$0\.000\d/);
+    expect(r.stderr).toMatch(/total ≈ \$0\.000\d/);
     expect(r.stderr).toContain("Aborted: no provider call was made.");
   });
 
@@ -178,5 +179,24 @@ describe("promptlang test --live", () => {
     );
     expect(r.stdout).not.toContain("FAIL");
     expect(r.stdout).toContain("0 passed, 0 failed, 1 without a verdict (provider error)");
+  });
+});
+
+describe("createLiveClient", () => {
+  useFetchSpy();
+
+  test("makes exactly one attempt, so a retryable error is not billed again", async () => {
+    fetchSpy.mockResolvedValue(new Response('{"error":{"message":"overloaded"}}', { status: 529 }));
+    const client = createLiveClient({ ANTHROPIC_API_KEY: "sk-test" });
+    const request = {
+      model: "claude-haiku-4-5",
+      messages: [{ role: "user" as const, content: "x" }],
+    };
+    await expect(client.complete(request)).rejects.toThrow();
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test("refuses to start without ANTHROPIC_API_KEY", () => {
+    expect(() => createLiveClient({})).toThrow("--live needs ANTHROPIC_API_KEY");
   });
 });

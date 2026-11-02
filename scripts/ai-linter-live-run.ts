@@ -168,8 +168,9 @@ if (import.meta.main) {
   const now = new Date();
   const client = new AnthropicClient({ apiKey, maxRetries: 0, apiVersion: ANTHROPIC_VERSION });
   const record = await run(client, contexts, now, ANTHROPIC_VERSION);
-  // Failed runs are committed too, so the file name carries the date, not the outcome.
-  const out = resolve(ROOT, `runs/live/ai-linter-${now.toISOString().slice(0, 10)}.json`);
+  // Failed runs are committed too: the name carries the time, so a second run never overwrites the first.
+  const stamp = now.toISOString().replace(/[:.]/g, "-");
+  const out = resolve(ROOT, `runs/live/ai-linter-${stamp}.json`);
   await Bun.write(out, `${JSON.stringify(record, null, 2)}\n`);
   console.log(
     `Spent $${record.cost_usd.toFixed(5)} (${record.usage.input_tokens} in / ${record.usage.output_tokens} out). Wrote ${out}`

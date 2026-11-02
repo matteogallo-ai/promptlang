@@ -24,13 +24,17 @@ export interface TestCommandDeps {
   confirm: (question: string) => boolean;
 }
 
+/** The --live client. No retries: the approved estimate counts each call once. */
+export function createLiveClient(
+  env: Record<string, string | undefined> = process.env
+): PromptClient {
+  const apiKey = env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new UsageError("--live needs ANTHROPIC_API_KEY in the environment");
+  return new AnthropicClient({ apiKey, maxRetries: 0 });
+}
+
 const defaultDeps: TestCommandDeps = {
-  createClient: () => {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) throw new UsageError("--live needs ANTHROPIC_API_KEY in the environment");
-    // No retries: the approved estimate counts each call once.
-    return new AnthropicClient({ apiKey, maxRetries: 0 });
-  },
+  createClient: () => createLiveClient(),
   confirm: (question) => {
     // Without a terminal there is nobody to answer; --yes is the explicit approval.
     if (!process.stdin.isTTY)
@@ -64,10 +68,10 @@ function printEstimate(estimates: Array<{ file: string; estimate: CostEstimate }
   for (const { file, estimate: e } of estimates) {
     total += e.maxUsd;
     console.error(
-      `  ${file}: ${e.calls} call(s) on ${e.model}, ~${e.inputTokens} input + ≤${e.maxOutputTokens} output tokens, ≤ $${e.maxUsd.toFixed(4)}`
+      `  ${file}: ${e.calls} call(s) on ${e.model}, ~${e.inputTokens} input + ≤${e.maxOutputTokens} output tokens, ≈ $${e.maxUsd.toFixed(4)}`
     );
   }
-  console.error(`  total ≤ $${total.toFixed(4)}`);
+  console.error(`  total ≈ $${total.toFixed(4)}`);
   return total;
 }
 
@@ -98,7 +102,7 @@ function printHuman(outcomes: FileOutcome[]): void {
 /**
  * `promptlang test <paths> [--json] [--live [--yes]]`: runs the `test` blocks of
  * each file. Default: each test's `mock:` response replays through the generated
- * code, with no network. `--live` calls the provider after printing a worst-case
+ * code, with no network. `--live` calls the provider after printing a
  * cost estimate and getting approval (interactive, or `--yes`).
  */
 export async function runTest(
@@ -142,7 +146,7 @@ export async function runTest(
         return estimate ? [{ file, estimate }] : [];
       });
       const total = printEstimate(estimates);
-      if (!yes && !deps.confirm(`Spend up to $${total.toFixed(4)}? [y/N] `)) {
+      if (!yes && !deps.confirm(`Spend about $${total.toFixed(4)}? [y/N] `)) {
         console.error("Aborted: no provider call was made.");
         return EXIT_USAGE;
       }

@@ -153,8 +153,8 @@ async function runOne(
     if (error instanceof PromptClientError) {
       return { ...result([]), passed: false, providerError: `${error.name}: ${error.message}` };
     }
-    // Whatever else the prompt raises (invalid enum value, malformed JSON, provider
-    // error) is the test's verdict, recorded with its message, not a runner crash.
+    // Whatever else the prompt raises (an enum value outside the type, malformed
+    // JSON) is the test's verdict, recorded with its message, not a runner crash.
     return result([
       `${call.callee} threw: ${error instanceof Error ? error.message : String(error)}`,
     ]);

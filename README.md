@@ -163,7 +163,9 @@ test "extracts the total" {
   per token, chain steps charged with earlier steps' outputs, no retries: the client
   makes none) and asks before calling;
   `--yes` approves without asking. Models without a recorded price are refused.
-- `--json` for tools; exit 0 when every test passes, 1 on a failure, 2 on usage errors.
+- `--json` for tools; exit 0 when every test passes, 1 on a failure, 2 on usage errors,
+  3 when a provider error (timeout, network, authentication, a rejected request) left
+  a test without a verdict.
 - A test whose `input` calls a prompt or chain that the file does not declare is a
   compile error, in `compile` and in `test`. `eval` blocks are parsed, and `compile`
   and `test` warn that they are not executed.

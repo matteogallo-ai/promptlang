@@ -34,7 +34,7 @@ export interface CostEstimate {
   model: string;
   calls: number;
   inputTokens: number;
-  /** Upper bound: every call is assumed to use its whole max_tokens. */
+  /** Every call is assumed to use its whole max_tokens (a true bound without retries). */
   maxOutputTokens: number;
   maxUsd: number;
 }
@@ -87,7 +87,8 @@ export function estimateLiveCost(program: Program): CostEstimate | null {
 
   let calls = 0;
   let inputChars = 0;
-  // Upper bound for chains: every earlier step's whole output may reach a later step's input.
+  // For chains, every earlier step's whole output is charged once to each later step's input;
+  // a step that interpolates an earlier output twice is still counted once.
   let carriedTokens = 0;
   for (const t of tests) {
     const call = t.input as CallExpression;

@@ -17,9 +17,10 @@ export function subprocessTest(name: string, fn: () => Promise<void>): void {
  * for exit: awaiting `exited` first deadlocks once the output fills the pipe.
  */
 export async function runProcess(
-  cmd: string[]
+  cmd: string[],
+  cwd = process.cwd()
 ): Promise<{ exitCode: number; stdout: string; stderr: string }> {
-  const proc = Bun.spawn(cmd, { cwd: process.cwd(), stdout: "pipe", stderr: "pipe" });
+  const proc = Bun.spawn(cmd, { cwd, stdout: "pipe", stderr: "pipe" });
   const [stdout, stderr, exitCode] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),

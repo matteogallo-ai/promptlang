@@ -2,7 +2,12 @@
  * Does the `@version` change between two versions of a file cover the
  * interface changes between them? Rules: docs/adr/0003-semver-check.md.
  */
-import { type Change, type Level, levelRank, requiredLevel } from "./interface";
+import type { Program } from "../ast/nodes";
+import { LexerError } from "../lexer/errors";
+import { tokenize } from "../lexer/lexer";
+import { ParserError } from "../parser/errors";
+import { parse } from "../parser/parser";
+import { type Change, diffPrograms, type Level, levelRank, requiredLevel } from "./interface";
 import { parseVersion, type SemVer } from "./semver";
 
 export interface VersionCheck {
@@ -76,4 +81,51 @@ export function checkVersion(
         ? `@version went down from ${baseVersion} to ${currentVersion}`
         : `a ${required} change needs at least ${nextVersion(base, required)}, got ${currentVersion}`,
   };
+}
+
+type FileStatus = "ok" | "fail" | "new" | "error";
+
+export interface FileCheck extends Partial<VersionCheck> {
+  file: string;
+  status: FileStatus;
+  /** Set when `status` is "error": a version of the file did not parse. */
+  error?: string;
+}
+
+function versionOf(program: Program): string | null {
+  const m = program.metadata.find((x) => x.kind === "VersionMetadata");
+  return m ? m.value : null;
+}
+
+type Parsed = { program: Program } | { error: string };
+
+function parseText(text: string, label: string): Parsed {
+  try {
+    return { program: parse(tokenize(text)) };
+  } catch (error) {
+    // Only syntax errors are a verdict about the file; anything else is a bug and propagates.
+    if (error instanceof LexerError || error instanceof ParserError) {
+      return { error: `${label}: ${error.message}` };
+    }
+    throw error;
+  }
+}
+
+/**
+ * Checks one file. `baseText` is null when the file does not exist at the base.
+ * A version that does not parse is reported, not thrown: the check cannot say
+ * anything about that file, and the other files still deserve a verdict.
+ */
+export function checkFile(file: string, baseText: string | null, currentText: string): FileCheck {
+  const current = parseText(currentText, "current version");
+  if ("error" in current) return { file, status: "error", error: current.error };
+  if (baseText === null) return { file, status: "new", currentVersion: versionOf(current.program) };
+  const base = parseText(baseText, "base version");
+  if ("error" in base) return { file, status: "error", error: base.error };
+  const result = checkVersion(
+    versionOf(base.program),
+    versionOf(current.program),
+    diffPrograms(base.program, current.program)
+  );
+  return { file, status: result.ok ? "ok" : "fail", ...result };
 }

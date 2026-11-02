@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { checkVersion } from "./check";
+import { checkFile, checkVersion } from "./check";
 import type { Change } from "./interface";
 
 const major: Change = { level: "major", declaration: "p", description: "parameter 'y' removed" };
@@ -59,5 +59,32 @@ describe("checkVersion", () => {
 
   test("a file versioned for the first time passes", () => {
     expect(checkVersion(null, "1.0.0", [major]).ok).toBe(true);
+  });
+});
+
+describe("checkFile", () => {
+  const v = (version: string, param = "x: string") =>
+    `@version "${version}"\n@model claude-opus-5-5\nprompt p(${param}) -> string {\n  user: "Hi {{x}}"\n}\n`;
+
+  test("a breaking change without a major bump fails, naming the change", () => {
+    const r = checkFile("a.prompt", v("1.0.0", "x: string, y: string"), v("1.1.0", "x: string"));
+    expect(r).toMatchObject({ status: "fail", required: "major", expected: "2.0.0" });
+    expect(r.changes?.map((c) => c.description)).toEqual(["parameter 'y' removed"]);
+  });
+
+  test("a file absent at the base is new", () => {
+    expect(checkFile("a.prompt", null, v("1.0.0"))).toMatchObject({
+      status: "new",
+      currentVersion: "1.0.0",
+    });
+  });
+
+  test("a version that does not parse is an error naming which side", () => {
+    const r = checkFile("a.prompt", "prompt {", v("1.0.0"));
+    expect(r.status).toBe("error");
+    expect(r.error).toStartWith("base version: ");
+    expect(checkFile("a.prompt", v("1.0.0"), '@version "x"').error).toStartWith(
+      "current version: "
+    );
   });
 });

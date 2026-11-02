@@ -9,6 +9,7 @@ import { runInit } from "./commands/init";
 import { runInstall } from "./commands/install";
 import { runList } from "./commands/list";
 import { runCheck } from "./commands/check";
+import { runSemverCheck } from "./commands/semver-check";
 
 const HELP = `
 promptlang — the typed language for production-grade LLM prompts
@@ -23,6 +24,13 @@ Project commands:
   install                   Resolve imports and write .promptlang/manifest.json
   list [--json]             List every prompt in the project (local + imported)
   check                     Verify integrity + import resolution
+  semver-check [paths] [flags]
+                            Fail when a .prompt file's @version does not move
+                            by at least what its interface changes require.
+                            Flags: --base <git-ref>  (default: origin/main,
+                                     else the latest tag)
+                                   --json
+                            Exit: 0 ok, 1 violation, 2 usage or git error
 
 File commands:
   parse <file>              Print AST of a .prompt file
@@ -49,6 +57,7 @@ Examples:
   promptlang parse docs/examples/classify-ticket.prompt
   promptlang analyze docs/examples/
   promptlang compile docs/examples/ --out ./generated --emit-tsconfig
+  promptlang semver-check docs/examples/ --base main
 `.trim();
 
 export async function main(argv: string[]): Promise<number> {
@@ -73,6 +82,8 @@ export async function main(argv: string[]): Promise<number> {
         return await runList(args.slice(1));
       case "check":
         return await runCheck(args.slice(1));
+      case "semver-check":
+        return await runSemverCheck(args.slice(1));
       case "version":
         return runVersion();
       case undefined:

@@ -24,25 +24,37 @@ function runScripts(job: Job): string[] {
   return job.steps.map((s) => (typeof s?.run === "string" ? s.run : ""));
 }
 
+// Line continuations and runs of spaces are joined, so `gh  release \` + newline +
+// `create` is still seen.
+const GH_RELEASE = /\bgh\s+release\s+(create|upload)\b/;
+
 /**
- * A job running `gh release create` must ship a `.sigstore.json` asset and must
- * itself, or through a job it `needs`, run an attestation step. Scorecard's
- * Signed-Releases counts an unsigned release as 0, and a user could not verify
- * the tarball. Releases made by other actions are not recognised.
+ * A `run:` script calling `gh release create` or `gh release upload` must itself
+ * name a `.sigstore.json` file, and its job, or a job it lists directly in
+ * `needs`, must have an attestation step. An unsigned release counts 0 in
+ * Scorecard's Signed-Releases average, and a user could not verify the tarball.
+ * This reads the script text: releases made by other actions or through
+ * `gh api` are not recognised, and an attestation step's `if:` is not evaluated.
  */
 function unsignedReleases(file: string, jobs: Record<string, Job>): string[] {
   const out: string[] = [];
   for (const [name, job] of Object.entries(jobs)) {
-    const scripts = runScripts(job);
-    if (!scripts.some((r) => /\bgh release create\b/.test(r))) continue;
+    const releasing = runScripts(job)
+      .map((r) => r.replace(/\\\n/g, " "))
+      .filter((r) => GH_RELEASE.test(r));
+    if (releasing.length === 0) continue;
     const needs =
       typeof job.needs === "string" ? [job.needs] : Array.isArray(job.needs) ? job.needs : [];
     const attested = [name, ...needs].some((n) =>
       actionRefs(jobs[n] ?? {}).some((ref) => ATTEST.test(ref))
     );
-    if (!attested || !scripts.some((r) => r.includes(".sigstore.json")))
+    if (!attested)
       out.push(
-        `${file}: job ${name}: creates a GitHub Release without the .sigstore.json bundle of an actions/attest-build-provenance step`
+        `${file}: job ${name}: makes a GitHub Release, but neither it nor a job it needs runs actions/attest-build-provenance`
+      );
+    if (releasing.some((r) => !r.includes(".sigstore.json")))
+      out.push(
+        `${file}: job ${name}: a gh release script does not attach the .sigstore.json attestation bundle`
       );
   }
   return out;

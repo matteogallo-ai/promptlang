@@ -49,8 +49,7 @@ Release history is in [`CHANGELOG.md`](../CHANGELOG.md).
   provider, so a fallback between providers with different model names fails.
 - **AI-powered linter** (`analyze --ai`) — request building and response parsing are
   tested with a mocked client only. No live run is committed, so the quality of its
-  findings is unmeasured. The analyzed prompt text is not delimited as untrusted
-  content in the linter's request.
+  findings is unmeasured.
 
 ---
 

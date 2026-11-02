@@ -45,6 +45,11 @@ release is chosen when it is tagged.
   value (e.g. `py`) used to produce TypeScript silently; it is now an error.
 - `AnthropicClient` / `OpenAIClient` throw `TypeError` on an empty API key.
 
+### Security
+- The AI linter wraps each analyzed section in `<untrusted_prompt>` delimiters,
+  escapes delimiter tags found in the text, and tells the model to treat the
+  delimited text as data. The prompt text used to be inserted bare.
+
 ### Added
 - `InvalidResponseError` for provider 2xx bodies that are not JSON or lack the
   documented fields (not retried; `RoutingClient` still falls back).

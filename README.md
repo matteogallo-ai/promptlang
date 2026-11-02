@@ -21,9 +21,9 @@ in production, you find out from a customer complaint.
 
 PromptLang treats prompts as first-class typed code:
 
-- **Typed** inputs and outputs: the generated TypeScript type-checks under `strict`
-- **Compile to TypeScript or Python** from the same source of truth
-- **Static analysis**: six deterministic rules (missing tests, unbounded
+- **Typed I/O**: typed inputs and outputs; the generated TypeScript type-checks under `strict`
+- **Compile to TypeScript and Python** from the same source of truth
+- **Static analysis (SonarQube-style)**: six deterministic rules (missing tests, unbounded
   templates, prompt-injection risk, token cost, chain complexity, duplicates)
 - **Multi-provider runtime** (Anthropic, OpenAI, Ollama, or your own client)
 - **No third-party runtime dependencies**: Bun + `fetch` + your own API keys

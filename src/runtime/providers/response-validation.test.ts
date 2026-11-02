@@ -16,6 +16,36 @@ function ok(body: string): Response {
   return new Response(body, { status: 200 });
 }
 
+describe("multi-provider runtime", () => {
+  test("Anthropic, OpenAI and Ollama clients parse a well-formed response", async () => {
+    const cases: Array<[PromptClient, unknown]> = [
+      [
+        new AnthropicClient({ apiKey: "k", maxRetries: 0 }),
+        { content: [{ type: "text", text: "ok" }], usage: { input_tokens: 3, output_tokens: 1 } },
+      ],
+      [
+        new OpenAIClient({ apiKey: "k", maxRetries: 0 }),
+        {
+          choices: [{ message: { content: "ok" } }],
+          usage: { prompt_tokens: 3, completion_tokens: 1 },
+        },
+      ],
+      [
+        new OllamaClient({ maxRetries: 0 }),
+        { message: { content: "ok" }, prompt_eval_count: 3, eval_count: 1 },
+      ],
+    ];
+    for (const [client, body] of cases) {
+      fetchSpy.mockResolvedValueOnce(ok(JSON.stringify(body)));
+      expect(await client.complete(REQUEST)).toEqual({
+        content: "ok",
+        usage: { input_tokens: 3, output_tokens: 1 },
+      });
+    }
+    expect(fetchSpy).toHaveBeenCalledTimes(3);
+  });
+});
+
 describe("API key validation", () => {
   for (const [name, make] of [
     ["AnthropicClient", (apiKey: string) => new AnthropicClient({ apiKey })],

@@ -5,13 +5,16 @@ implements it, the test that proves it, and its status. `scripts/check-claims.ts
 (CI job `claims`) enforces this file:
 
 - every `shipped` row's test is run by name and must pass (a skipped test does not count);
-- every ✅ in the README comparison table must name a `shipped` claim below;
-- a `roadmap` or `partial` claim must not be shown as ✅ in the README.
+- every row of the README comparison table must be a claim below, and its
+  PromptLang cell must start with `✅` (shipped), `Partial` or `Roadmap`, matching the status;
+- every bold bullet of the README "Why PromptLang" delivered list must be a `shipped` claim.
 
 Statuses: `shipped` (implemented and tested), `partial` (implemented with a stated
 limitation; never shown as ✅), `roadmap` (not implemented).
 
-The "Test name" column is matched literally against the test's full name.
+The "Test name" column is passed, regex-escaped, to `bun test --test-name-pattern`,
+which matches it as a substring of the test's full name (describe blocks included).
+At least one matching test must pass.
 
 | Claim | Status | Module | Test file | Test name | Notes |
 | ----- | ------ | ------ | --------- | --------- | ----- |
@@ -22,4 +25,6 @@ The "Test name" column is matched literally against the test's full name.
 | Multi-provider fallback | partial | `src/runtime/providers/routing-client.ts` | `src/runtime/providers/routing-client.test.ts` | calls fallback[0] when primary fails | Generated code sends one model name to every provider, so an Anthropic → OpenAI fallback sends a Claude model ID to OpenAI and fails. |
 | Compile to TypeScript **and** Python | shipped | `src/compiler/compiler.ts`, `src/compiler/python/python-compiler.ts` | `src/compiler/python/python-compiler.test.ts` | generated Python parses with ast.parse (classify-ticket) | The TypeScript half is covered by the Typed I/O test. |
 | Static analysis (SonarQube-style) | shipped | `src/analyzer/analyzer.ts` | `src/analyzer/analyzer.test.ts` | detects prompt-injection-risk in classify-ticket (no delimiters) | Six deterministic rules; see `docs/syntax-reference.md` Section 7. |
+| Multi-provider runtime | shipped | `src/runtime/providers/` | `src/runtime/providers/response-validation.test.ts` | Anthropic, OpenAI and Ollama clients parse a well-formed response | Tested against mocked `fetch`; the request shapes are pinned per client in each client's own test file. |
+| No third-party runtime dependencies | shipped | `package.json` | `tests/v1-stability.test.ts` | no third-party runtime dependencies (only first-party @promptlang/* allowed) | Runtime code uses Bun and `fetch` only. |
 | Open source, zero SaaS | shipped | `package.json` | `tests/v1-stability.test.ts` | no third-party runtime dependencies (only first-party @promptlang/* allowed) | MIT licence; the test pins that no third-party service SDK is a runtime dependency. |

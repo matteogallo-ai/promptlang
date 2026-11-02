@@ -4,7 +4,8 @@
  *
  * Usage: bun run scripts/check-claims.ts
  * Exit 1 when a shipped claim's test fails, is skipped or matches nothing, or
- * when the README comparison table disagrees with docs/CLAIMS.md.
+ * when the README comparison table or delivered-feature bullets disagree with
+ * docs/CLAIMS.md.
  */
 import { join } from "node:path";
 
@@ -90,20 +91,67 @@ export function parseComparisonTable(readme: string): ComparisonRow[] {
   return rows;
 }
 
-/** Returns one message per README/CLAIMS disagreement (empty when consistent). */
+/** The leading text a comparison cell must have for each status. */
+const CELL_PREFIX: Record<Status, string> = {
+  shipped: "✅",
+  partial: "Partial",
+  roadmap: "Roadmap",
+};
+
+/**
+ * Returns one message per README/CLAIMS disagreement (empty when consistent).
+ * Every row must be a registered claim and its cell must start with the
+ * status's prefix, so "Yes", "✔️" or "Shipped" cannot slip past a ✅-only check.
+ */
 export function checkConsistency(claims: Claim[], rows: ComparisonRow[]): string[] {
   const byName = new Map(claims.map((c) => [c.claim, c]));
   const errors: string[] = [];
   for (const { feature, cell } of rows) {
-    if (!cell.includes("✅")) continue;
     const claim = byName.get(feature);
     if (!claim) {
-      errors.push(`README shows '${feature}' as ✅ but it is not listed in docs/CLAIMS.md`);
-    } else if (claim.status !== "shipped") {
-      errors.push(`README shows '${feature}' as ✅ but docs/CLAIMS.md marks it ${claim.status}`);
+      errors.push(`README comparison row '${feature}' is not listed in docs/CLAIMS.md`);
+      continue;
+    }
+    const prefix = CELL_PREFIX[claim.status];
+    if (!cell.startsWith(prefix)) {
+      errors.push(
+        `README shows '${feature}' as '${cell}' but docs/CLAIMS.md marks it ${claim.status} (expected the cell to start with '${prefix}')`
+      );
     }
   }
   return errors;
+}
+
+/**
+ * Reads the bold labels of the delivered-features list in "## Why PromptLang":
+ * the bullets before the "Not delivered" paragraph.
+ */
+export function parseFeatureBullets(readme: string): string[] {
+  const lines = readme.split("\n");
+  const start = lines.findIndex((l) => /^##\s+Why PromptLang\b/.test(l));
+  if (start === -1) throw new Error("README.md: '## Why PromptLang' section not found");
+  const labels: string[] = [];
+  for (const line of lines.slice(start + 1)) {
+    if (line.startsWith("## ") || /^Not delivered\b/.test(line)) break;
+    const label = /^-\s+\*\*(.+?)\*\*/.exec(line)?.[1];
+    if (label) labels.push(stripMarkup(label));
+  }
+  return labels;
+}
+
+/** Every delivered-feature bullet must be a shipped claim. */
+export function checkFeatureBullets(claims: Claim[], labels: string[]): string[] {
+  const byName = new Map(claims.map((c) => [c.claim, c]));
+  return labels.flatMap((label) => {
+    const claim = byName.get(label);
+    if (!claim) return [`README feature bullet '${label}' is not listed in docs/CLAIMS.md`];
+    if (claim.status !== "shipped") {
+      return [
+        `README feature bullet '${label}' is listed as delivered but docs/CLAIMS.md marks it ${claim.status}`,
+      ];
+    }
+    return [];
+  });
 }
 
 function escapeRegex(text: string): string {
@@ -137,8 +185,11 @@ async function runClaimTest(repoRoot: string, claim: Claim): Promise<string | nu
 if (import.meta.main) {
   const repoRoot = join(import.meta.dir, "..");
   const claims = parseClaims(await Bun.file(join(repoRoot, "docs/CLAIMS.md")).text());
-  const rows = parseComparisonTable(await Bun.file(join(repoRoot, "README.md")).text());
-  const errors = checkConsistency(claims, rows);
+  const readme = await Bun.file(join(repoRoot, "README.md")).text();
+  const errors = [
+    ...checkConsistency(claims, parseComparisonTable(readme)),
+    ...checkFeatureBullets(claims, parseFeatureBullets(readme)),
+  ];
   for (const claim of claims.filter((c) => c.status !== "roadmap")) {
     const error = await runClaimTest(repoRoot, claim);
     console.log(`${error ? "FAIL" : "ok  "}  [${claim.status}] ${claim.claim}`);

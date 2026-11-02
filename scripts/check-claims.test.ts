@@ -1,5 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { checkConsistency, parseClaims, parseComparisonTable } from "./check-claims";
+import {
+  checkConsistency,
+  checkFeatureBullets,
+  parseClaims,
+  parseComparisonTable,
+  parseFeatureBullets,
+} from "./check-claims";
 
 const CLAIMS = `
 | Claim | Status | Module | Test file | Test name | Notes |
@@ -10,6 +16,15 @@ const CLAIMS = `
 `;
 
 const README = `
+## Why PromptLang
+
+- **Typed I/O**: generated code type-checks
+- plain bullet, not a claim
+
+Not delivered:
+
+- **Native tests**: parsed only
+
 ## Comparison
 
 | Feature | LangChain | **PromptLang** |
@@ -63,14 +78,51 @@ describe("checkConsistency", () => {
   test("fails when a roadmap claim is shown as ✅", () => {
     const readme = README.replace("| Roadmap (in progress) |", "| ✅ CLI |");
     expect(checkConsistency(parseClaims(CLAIMS), parseComparisonTable(readme))).toEqual([
-      "README shows 'Native tests' as ✅ but docs/CLAIMS.md marks it roadmap",
+      "README shows 'Native tests' as '✅ CLI' but docs/CLAIMS.md marks it roadmap (expected the cell to start with 'Roadmap')",
     ]);
   });
 
   test("fails when a ✅ feature is missing from CLAIMS.md", () => {
     const readme = README.replace("| Fallback |", "| Telepathy | ❌ | ✅ |\n| Fallback |");
     expect(checkConsistency(parseClaims(CLAIMS), parseComparisonTable(readme))).toContain(
-      "README shows 'Telepathy' as ✅ but it is not listed in docs/CLAIMS.md"
+      "README comparison row 'Telepathy' is not listed in docs/CLAIMS.md"
     );
+  });
+
+  test("fails when a roadmap claim is shown as delivered without the ✅ glyph", () => {
+    for (const cell of ["✔️", "Yes", "Shipped", "Done"]) {
+      const readme = README.replace("| Roadmap (in progress) |", `| ${cell} |`);
+      expect(checkConsistency(parseClaims(CLAIMS), parseComparisonTable(readme))).toEqual([
+        `README shows 'Native tests' as '${cell}' but docs/CLAIMS.md marks it roadmap (expected the cell to start with 'Roadmap')`,
+      ]);
+    }
+  });
+
+  test("fails when a shipped claim is shown as partial", () => {
+    const readme = README.replace("| Typed I/O | ❌ | ✅ |", "| Typed I/O | ❌ | Partial |");
+    expect(checkConsistency(parseClaims(CLAIMS), parseComparisonTable(readme))).toEqual([
+      "README shows 'Typed I/O' as 'Partial' but docs/CLAIMS.md marks it shipped (expected the cell to start with '✅')",
+    ]);
+  });
+});
+
+describe("feature bullets", () => {
+  test("reads bold labels of the delivered list only", () => {
+    expect(parseFeatureBullets(README)).toEqual(["Typed I/O"]);
+  });
+
+  test("passes when every bullet is a shipped claim", () => {
+    expect(checkFeatureBullets(parseClaims(CLAIMS), parseFeatureBullets(README))).toEqual([]);
+  });
+
+  test("fails on a bullet missing from CLAIMS.md or not shipped", () => {
+    const readme = README.replace(
+      "- plain bullet",
+      "- **Telepathy**: reads minds\n- **Fallback**: switches\n- plain bullet"
+    );
+    expect(checkFeatureBullets(parseClaims(CLAIMS), parseFeatureBullets(readme))).toEqual([
+      "README feature bullet 'Telepathy' is not listed in docs/CLAIMS.md",
+      "README feature bullet 'Fallback' is listed as delivered but docs/CLAIMS.md marks it partial",
+    ]);
   });
 });

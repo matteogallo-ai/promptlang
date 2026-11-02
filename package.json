@@ -40,6 +40,7 @@
     "knip": "knip",
     "check:claims": "bun run scripts/check-claims.ts",
     "check:stale-narrative": "bun run scripts/check-stale-narrative.ts",
+    "check:commits": "bun run scripts/check-commits.ts",
     "cli": "bun run src/cli/cli.ts",
     "bench": "bun run benchmarks/bench.ts"
   },

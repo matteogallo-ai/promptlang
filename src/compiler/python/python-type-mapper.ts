@@ -5,11 +5,18 @@ export function mapPythonType(type: TypeExpression): string {
   switch (type.kind) {
     case "PrimitiveType":
       switch (type.name) {
-        case "string": return "str";
-        case "number": return "float";
-        case "boolean": return "bool";
-        case "date": return "str";
+        case "string":
+          return "str";
+        case "number":
+          return "float";
+        case "boolean":
+          return "bool";
+        case "date":
+          return "str";
       }
+      // Unreachable while PrimitiveType.name stays a closed union; without this the
+      // case would fall through into EnumType and read a missing `values` field.
+      throw new Error(`Unknown primitive type: ${String((type as { name: unknown }).name)}`);
     case "EnumType":
       return `Literal[${type.values.map((v) => JSON.stringify(v)).join(", ")}]`;
     case "StructType":

@@ -1,13 +1,7 @@
 import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import { rm, mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import {
-  hashFile,
-  hashString,
-  buildIntegrity,
-  verifyIntegrity,
-  mergeIntegrity,
-} from "./integrity";
+import { hashFile, hashString, buildIntegrity, verifyIntegrity, mergeIntegrity } from "./integrity";
 
 const ROOT = "/tmp/promptlang-integrity-test";
 
@@ -49,29 +43,35 @@ describe("buildIntegrity / verifyIntegrity", () => {
   test("verifyIntegrity returns [] when files are unchanged", async () => {
     const file = join(ROOT, "u.prompt");
     await Bun.write(file, `@version "1.0.0"\nprompt u() -> string { user: "x" output: string }\n`);
-    const record = await buildIntegrity([file]);
-    const mismatches = await verifyIntegrity(record);
+    const record = await buildIntegrity([file], ROOT);
+    const mismatches = await verifyIntegrity(record, ROOT);
     expect(mismatches).toEqual([]);
   });
 
   test("verifyIntegrity flags a file whose contents changed after recording", async () => {
     const file = join(ROOT, "changed.prompt");
-    await Bun.write(file, `@version "1.0.0"\nprompt orig() -> string { user: "a" output: string }\n`);
-    const record = await buildIntegrity([file]);
+    await Bun.write(
+      file,
+      `@version "1.0.0"\nprompt orig() -> string { user: "a" output: string }\n`
+    );
+    const record = await buildIntegrity([file], ROOT);
     // Mutate the file after building integrity.
-    await Bun.write(file, `@version "1.0.0"\nprompt mutated() -> string { user: "b" output: string }\n`);
-    const mismatches = await verifyIntegrity(record);
+    await Bun.write(
+      file,
+      `@version "1.0.0"\nprompt mutated() -> string { user: "b" output: string }\n`
+    );
+    const mismatches = await verifyIntegrity(record, ROOT);
     expect(mismatches).toHaveLength(1);
-    expect(mismatches[0]!.file).toBe(file);
+    expect(mismatches[0]!.file).toBe("changed.prompt");
     expect(mismatches[0]!.expected).not.toBe(mismatches[0]!.actual);
   });
 
   test("verifyIntegrity flags a file that has been deleted", async () => {
     const file = join(ROOT, "deleted.prompt");
     await Bun.write(file, `@version "1.0.0"\n`);
-    const record = await buildIntegrity([file]);
+    const record = await buildIntegrity([file], ROOT);
     await rm(file);
-    const mismatches = await verifyIntegrity(record);
+    const mismatches = await verifyIntegrity(record, ROOT);
     expect(mismatches).toHaveLength(1);
     expect(mismatches[0]!.actual).toBe("<missing>");
   });

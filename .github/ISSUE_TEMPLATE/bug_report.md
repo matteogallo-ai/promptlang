@@ -21,7 +21,7 @@ A clear and concise description of what the bug is.
 2. Run the following command:
 
 ```bash
-promptlang compile my-file.prompt
+bun run cli compile my-file.prompt --out ./generated
 ```
 
 3. Observe the error.
@@ -36,7 +36,7 @@ What actually happened. Include the full error output.
 
 ## Environment
 
-- PromptLang version: (run `promptlang --version`)
+- PromptLang version: (run `bun run cli version`)
 - Bun version: (run `bun --version`)
 - OS: (e.g. macOS 14.5, Ubuntu 22.04)
 - Node version (if applicable): (run `node --version`)

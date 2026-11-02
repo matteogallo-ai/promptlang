@@ -1,5 +1,5 @@
 /** The content of promptlang_runtime.py, written alongside compiled Python files. */
-export const PYTHON_RUNTIME_SOURCE = `"""
+const PYTHON_RUNTIME_SOURCE = `"""
 PromptLang runtime — Python
 Minimal client interface + mock + provider adapters.
 

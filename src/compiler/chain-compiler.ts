@@ -22,10 +22,7 @@ export function buildCallableRegistry(program: Program): CallableRegistry {
   return registry;
 }
 
-export function generateChain(
-  decl: ChainDeclaration,
-  callableRegistry: CallableRegistry
-): string {
+export function generateChain(decl: ChainDeclaration, callableRegistry: CallableRegistry): string {
   const { name, parameters, returnType, steps, returnExpression } = decl;
   const pascalName = toPascalCase(name);
   const inputType = `${pascalName}Input`;
@@ -110,7 +107,14 @@ function compileExpr(
       return String(expr.value);
 
     case "MemberExpression": {
-      const base = resolveIdent(expr.object, paramNames, stepNames, allStepNames, chainName, context);
+      const base = resolveIdent(
+        expr.object,
+        paramNames,
+        stepNames,
+        allStepNames,
+        chainName,
+        context
+      );
       return `${base}.${expr.property}`;
     }
 
@@ -145,9 +149,7 @@ function resolveIdent(
       `Chain '${chainName}': step '${context}' references '${name}' which is defined later. Steps must be linear.`
     );
   }
-  throw new CompilerError(
-    `Chain '${chainName}': step '${context}' references undefined '${name}'`
-  );
+  throw new CompilerError(`Chain '${chainName}': step '${context}' references undefined '${name}'`);
 }
 
 function compileCallArgs(
@@ -166,7 +168,15 @@ function compileCallArgs(
 
   if (allNamed) {
     const entries = (args as NamedArgument[]).map((a) => {
-      const val = compileExpr(a.value, paramNames, stepNames, allStepNames, chainName, context, callableRegistry);
+      const val = compileExpr(
+        a.value,
+        paramNames,
+        stepNames,
+        allStepNames,
+        chainName,
+        context,
+        callableRegistry
+      );
       return `${a.name}: ${val}`;
     });
     return `{ ${entries.join(", ")} }`;
@@ -180,7 +190,9 @@ function compileCallArgs(
     );
   }
 
-  const positional = args.filter((a): a is Expression => a.kind !== "NamedArgument") as Expression[];
+  const positional = args.filter(
+    (a): a is Expression => a.kind !== "NamedArgument"
+  ) as Expression[];
   if (positional.length > calleeParams.length) {
     throw new CompilerError(
       `Chain '${chainName}': step '${context}' calls '${callee}' with ${positional.length} args but it only accepts ${calleeParams.length}`
@@ -189,7 +201,15 @@ function compileCallArgs(
 
   const entries = positional.map((arg, i) => {
     const paramName = calleeParams[i]!.name;
-    const val = compileExpr(arg, paramNames, stepNames, allStepNames, chainName, context, callableRegistry);
+    const val = compileExpr(
+      arg,
+      paramNames,
+      stepNames,
+      allStepNames,
+      chainName,
+      context,
+      callableRegistry
+    );
     return `${paramName}: ${val}`;
   });
   return `{ ${entries.join(", ")} }`;

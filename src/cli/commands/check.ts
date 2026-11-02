@@ -1,9 +1,5 @@
 import { join } from "node:path";
-import {
-  loadConfig,
-  CONFIG_FILENAME,
-  ConfigValidationError,
-} from "../../config/config";
+import { loadConfig, CONFIG_FILENAME, ConfigValidationError } from "../../config/config";
 import { YamlParseError } from "@promptlang/yaml-parser";
 import { check } from "../../registry/registry";
 import { ResolverError } from "../../registry/resolver";

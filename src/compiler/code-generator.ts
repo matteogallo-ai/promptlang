@@ -183,9 +183,7 @@ function generateValidation(
   switch (resolved.kind) {
     case "EnumType": {
       const valuesVar = toConstName(returnTsType);
-      lines.push(
-        `  if (!${valuesVar}.includes(raw as ${returnTsType})) {`
-      );
+      lines.push(`  if (!${valuesVar}.includes(raw as ${returnTsType})) {`);
       lines.push(`    throw new Error(`);
       lines.push(
         `      \`Invalid output for prompt '${promptName}': expected one of \${${valuesVar}.join(", ")}, got "\${raw}"\``
@@ -237,4 +235,3 @@ function generateValidation(
 
   return lines.join("\n");
 }
-

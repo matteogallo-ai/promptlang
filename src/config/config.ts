@@ -35,7 +35,7 @@ export interface SourceEntry {
   path: string;
 }
 
-export interface DependencyEntry {
+interface DependencyEntry {
   name: string;
   version: string;
   path: string;
@@ -109,14 +109,12 @@ export class ConfigValidationError extends Error {
 // Validation
 // ---------------------------------------------------------------------------
 
-function validate(
-  raw: Record<string, YamlValue>,
-  sourceName: string
-): PromptLangConfig {
+function validate(raw: Record<string, YamlValue>, sourceName: string): PromptLangConfig {
   const name = requireString(raw, "name", sourceName);
   const version = requireString(raw, "version", sourceName);
 
-  const description = raw.description === undefined ? null : optionalString(raw, "description", sourceName);
+  const description =
+    raw.description === undefined ? null : optionalString(raw, "description", sourceName);
 
   const defaults = readDefaults(raw.defaults, sourceName);
   const sources = readSources(raw.sources, sourceName);
@@ -131,7 +129,10 @@ function readDefaults(v: YamlValue | undefined, sourceName: string): PromptLangC
   if (v === undefined || v === null) return { ...CONFIG_DEFAULTS.defaults };
   const obj = asMapping(v, "defaults", sourceName);
   return {
-    model: obj.model === undefined ? CONFIG_DEFAULTS.defaults.model : requireString(obj, "defaults.model", sourceName, "model"),
+    model:
+      obj.model === undefined
+        ? CONFIG_DEFAULTS.defaults.model
+        : requireString(obj, "defaults.model", sourceName, "model"),
     temperature:
       obj.temperature === undefined
         ? CONFIG_DEFAULTS.defaults.temperature
@@ -158,13 +159,19 @@ function readSources(v: YamlValue | undefined, sourceName: string): SourceEntry[
 function readCompile(v: YamlValue | undefined, sourceName: string): PromptLangConfig["compile"] {
   if (v === undefined || v === null) return { ...CONFIG_DEFAULTS.compile };
   const obj = asMapping(v, "compile", sourceName);
-  const rawTarget = obj.target === undefined ? CONFIG_DEFAULTS.compile.target : requireString(obj, "compile.target", sourceName, "target");
+  const rawTarget =
+    obj.target === undefined
+      ? CONFIG_DEFAULTS.compile.target
+      : requireString(obj, "compile.target", sourceName, "target");
   if (rawTarget !== "typescript" && rawTarget !== "python") {
     throw new ConfigValidationError(
       `${sourceName}: 'compile.target' must be 'typescript' or 'python' (got '${rawTarget}')`
     );
   }
-  const out = obj.out === undefined ? CONFIG_DEFAULTS.compile.out : requireString(obj, "compile.out", sourceName, "out");
+  const out =
+    obj.out === undefined
+      ? CONFIG_DEFAULTS.compile.out
+      : requireString(obj, "compile.out", sourceName, "out");
   const emit_tsconfig =
     obj.emit_tsconfig === undefined
       ? CONFIG_DEFAULTS.compile.emit_tsconfig
@@ -302,7 +309,6 @@ function describeType(v: YamlValue): string {
   return typeof v;
 }
 
-export { YamlParseError };
 // Backwards-compat alias — external consumers may still import the
 // pre-extraction name. Deprecated: prefer `YamlParseError` in new code.
 export { YamlParseError as ConfigParseError };

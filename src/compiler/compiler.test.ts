@@ -1,4 +1,5 @@
 import { describe, test, expect, afterAll } from "bun:test";
+import { runTsc, subprocessTest } from "../../tests/support/subprocess";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { tokenize } from "../lexer/lexer";
@@ -7,13 +8,7 @@ import { compile } from "./compiler";
 import { mapType, toPascalCase, toConstName } from "./type-mapper";
 import { compileStringLiteral, extractTemplateVars } from "./template-compiler";
 import { CompilerError } from "./errors";
-import type {
-  Program,
-  PrimitiveType,
-  EnumType,
-  StructType,
-  TypeReference,
-} from "../ast/nodes";
+import type { Program, PrimitiveType, EnumType, StructType, TypeReference } from "../ast/nodes";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -35,7 +30,9 @@ function enumType(values: string[]): EnumType {
   return { kind: "EnumType", values, ...pos() };
 }
 
-function structType(fields: Array<{ name: string; type: PrimitiveType; optional?: boolean }>): StructType {
+function structType(
+  fields: Array<{ name: string; type: PrimitiveType; optional?: boolean }>
+): StructType {
   return {
     kind: "StructType",
     fields: fields.map((f) => ({
@@ -61,7 +58,8 @@ describe("mapType", () => {
   test("string primitive", () => expect(mapType(primitiveType("string"))).toBe("string"));
   test("number primitive", () => expect(mapType(primitiveType("number"))).toBe("number"));
   test("boolean primitive", () => expect(mapType(primitiveType("boolean"))).toBe("boolean"));
-  test("date primitive maps to string", () => expect(mapType(primitiveType("date"))).toBe("string"));
+  test("date primitive maps to string", () =>
+    expect(mapType(primitiveType("date"))).toBe("string"));
 
   test("enum type produces union", () => {
     expect(mapType(enumType(["a", "b", "c"]))).toBe('"a" | "b" | "c"');
@@ -81,8 +79,10 @@ describe("mapType", () => {
   });
 
   test("toPascalCase single word", () => expect(toPascalCase("greet")).toBe("Greet"));
-  test("toPascalCase snake_case", () => expect(toPascalCase("classify_ticket")).toBe("ClassifyTicket"));
-  test("toPascalCase multi segment", () => expect(toPascalCase("summarize_and_translate")).toBe("SummarizeAndTranslate"));
+  test("toPascalCase snake_case", () =>
+    expect(toPascalCase("classify_ticket")).toBe("ClassifyTicket"));
+  test("toPascalCase multi segment", () =>
+    expect(toPascalCase("summarize_and_translate")).toBe("SummarizeAndTranslate"));
   test("toConstName", () => expect(toConstName("Category")).toBe("CATEGORY_VALUES"));
 });
 
@@ -122,9 +122,9 @@ describe("compileStringLiteral", () => {
   });
 
   test("unknown template variable throws CompilerError", () => {
-    expect(() =>
-      compileStringLiteral("Hello {{unknown}}", true, new Set(["name"]))
-    ).toThrow(CompilerError);
+    expect(() => compileStringLiteral("Hello {{unknown}}", true, new Set(["name"]))).toThrow(
+      CompilerError
+    );
   });
 
   test("unknown template variable error message is informative", () => {
@@ -436,11 +436,9 @@ describe("compile — classify-ticket.prompt (integration)", () => {
 // ---------------------------------------------------------------------------
 // Integration: generated TypeScript compiles with tsc
 //
-// HONESTY NOTE: Generated files import from "promptlang/runtime". This
-// module resolves only when a paths mapping is active or the package is
-// installed via npm (v1.0+). The tests below explicitly document both
-// the success path (with explicit paths) and the expected failure path
-// (in isolation without paths).
+// Generated files import from "promptlang/runtime", which resolves only when a
+// paths mapping is active. The tests below pin both the success path (explicit
+// paths) and the failure path (isolation, no paths).
 // ---------------------------------------------------------------------------
 
 const TMP_DIR = "./tmp-test-output";
@@ -502,73 +500,65 @@ afterAll(async () => {
 });
 
 describe("compile — tsc integration (within project, explicit paths mapping)", () => {
-  test("generated code compiles within a project with promptlang paths mapping (classify-ticket)", async () => {
-    const source = await Bun.file("docs/examples/classify-ticket.prompt").text();
-    const ast = parse(tokenize(source));
-    const generated = compile(ast, "classify-ticket.prompt");
+  subprocessTest(
+    "generated code compiles within a project with promptlang paths mapping (classify-ticket)",
+    async () => {
+      const source = await Bun.file("docs/examples/classify-ticket.prompt").text();
+      const ast = parse(tokenize(source));
+      const generated = compile(ast, "classify-ticket.prompt");
 
-    await mkdir(TMP_DIR, { recursive: true });
-    await writeFile(join(TMP_DIR, "classify-ticket.ts"), generated);
-    await writeFile(join(TMP_DIR, "tsconfig.json"), makeExplicitTsconfig(RUNTIME_REL));
+      await mkdir(TMP_DIR, { recursive: true });
+      await writeFile(join(TMP_DIR, "classify-ticket.ts"), generated);
+      await writeFile(join(TMP_DIR, "tsconfig.json"), makeExplicitTsconfig(RUNTIME_REL));
 
-    const proc = Bun.spawn(
-      [process.execPath, "x", "tsc", "--project", join(TMP_DIR, "tsconfig.json"), "--noEmit"],
-      { cwd: process.cwd(), stderr: "pipe" }
-    );
-    const stderr = await new Response(proc.stderr).text();
-    const exitCode = await proc.exited;
+      const { exitCode, stderr } = await runTsc(join(TMP_DIR, "tsconfig.json"));
 
-    expect(stderr).toBe("");
-    expect(exitCode).toBe(0);
-  });
+      expect(stderr).toBe("");
+      expect(exitCode).toBe(0);
+    }
+  );
 
-  test("generated code compiles within a project with promptlang paths mapping (extract-invoice)", async () => {
-    const source = await Bun.file("docs/examples/extract-invoice.prompt").text();
-    const ast = parse(tokenize(source));
-    const generated = compile(ast, "extract-invoice.prompt");
+  subprocessTest(
+    "generated code compiles within a project with promptlang paths mapping (extract-invoice)",
+    async () => {
+      const source = await Bun.file("docs/examples/extract-invoice.prompt").text();
+      const ast = parse(tokenize(source));
+      const generated = compile(ast, "extract-invoice.prompt");
 
-    await mkdir(TMP_DIR, { recursive: true });
-    await writeFile(join(TMP_DIR, "extract-invoice.ts"), generated);
-    await writeFile(join(TMP_DIR, "tsconfig.json"), makeExplicitTsconfig(RUNTIME_REL));
+      await mkdir(TMP_DIR, { recursive: true });
+      await writeFile(join(TMP_DIR, "extract-invoice.ts"), generated);
+      await writeFile(join(TMP_DIR, "tsconfig.json"), makeExplicitTsconfig(RUNTIME_REL));
 
-    const proc = Bun.spawn(
-      [process.execPath, "x", "tsc", "--project", join(TMP_DIR, "tsconfig.json"), "--noEmit"],
-      { cwd: process.cwd(), stderr: "pipe" }
-    );
-    const stderr = await new Response(proc.stderr).text();
-    const exitCode = await proc.exited;
+      const { exitCode, stderr } = await runTsc(join(TMP_DIR, "tsconfig.json"));
 
-    expect(stderr).toBe("");
-    expect(exitCode).toBe(0);
-  });
+      expect(stderr).toBe("");
+      expect(exitCode).toBe(0);
+    }
+  );
 });
 
 describe("compile — tsc integration (isolation, documented limitation)", () => {
-  test("generated code fails cleanly in isolation without paths mapping (documented limitation)", async () => {
-    // This test documents the expected behaviour: outside a project that has
-    // promptlang installed (or a paths mapping configured), tsc cannot resolve
-    // "promptlang/runtime". This is a known alpha limitation, not a bug in the
-    // generated code. Use --emit-tsconfig on the CLI or add a paths entry to your
-    // own tsconfig to work around it until v1.0 npm publication.
-    const source = await Bun.file("docs/examples/classify-ticket.prompt").text();
-    const ast = parse(tokenize(source));
-    const generated = compile(ast, "classify-ticket.prompt");
+  subprocessTest(
+    "generated code fails cleanly in isolation without paths mapping (documented limitation)",
+    async () => {
+      // Without a paths mapping tsc cannot resolve "promptlang/runtime". The
+      // supported workaround is `compile --emit-tsconfig` or a paths entry in the
+      // consumer's own tsconfig.
+      const source = await Bun.file("docs/examples/classify-ticket.prompt").text();
+      const ast = parse(tokenize(source));
+      const generated = compile(ast, "classify-ticket.prompt");
 
-    await mkdir(TMP_DIR, { recursive: true });
-    await writeFile(join(TMP_DIR, "classify-ticket.ts"), generated);
-    await writeFile(join(TMP_DIR, "tsconfig.json"), makeIsolationTsconfig());
+      await mkdir(TMP_DIR, { recursive: true });
+      await writeFile(join(TMP_DIR, "classify-ticket.ts"), generated);
+      await writeFile(join(TMP_DIR, "tsconfig.json"), makeIsolationTsconfig());
 
-    // tsc writes errors to stdout (not stderr).
-    const proc = Bun.spawn(
-      [process.execPath, "x", "tsc", "--project", join(TMP_DIR, "tsconfig.json"), "--noEmit"],
-      { cwd: process.cwd(), stdout: "pipe" }
-    );
-    const stdout = await new Response(proc.stdout).text();
-    const exitCode = await proc.exited;
+      // tsc writes errors to stdout (not stderr).
+      const { exitCode, stdout } = await runTsc(join(TMP_DIR, "tsconfig.json"));
 
-    // Must fail with TS2307 — this is the documented expected behaviour.
-    expect(exitCode).not.toBe(0);
-    expect(stdout).toContain("TS2307");
-    expect(stdout).toContain("promptlang/runtime");
-  });
+      // Must fail with TS2307 — this is the documented expected behaviour.
+      expect(exitCode).not.toBe(0);
+      expect(stdout).toContain("TS2307");
+      expect(stdout).toContain("promptlang/runtime");
+    }
+  );
 });

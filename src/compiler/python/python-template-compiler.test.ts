@@ -16,11 +16,7 @@ describe("compilePythonStringLiteral", () => {
   });
 
   test("template string with multiple vars → all interpolated", () => {
-    const result = compilePythonStringLiteral(
-      "Multi {{a}} and {{b}}",
-      true,
-      new Set(["a", "b"])
-    );
+    const result = compilePythonStringLiteral("Multi {{a}} and {{b}}", true, new Set(["a", "b"]));
     expect(result).toBe(`f"Multi {input['a']} and {input['b']}"`);
   });
 
@@ -50,9 +46,9 @@ describe("compilePythonStringLiteral", () => {
   });
 
   test("unknown template var throws CompilerError", () => {
-    expect(() =>
-      compilePythonStringLiteral("hello {{unknown}}", true, new Set(["name"]))
-    ).toThrow("not a declared parameter");
+    expect(() => compilePythonStringLiteral("hello {{unknown}}", true, new Set(["name"]))).toThrow(
+      "not a declared parameter"
+    );
   });
 
   test("non-template string with backslash is escaped", () => {

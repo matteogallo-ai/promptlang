@@ -77,7 +77,8 @@ export function formatTerminalReport(
   lines.push("");
   const parts: string[] = [];
   if (errors.length > 0) parts.push(`${errors.length} error${errors.length > 1 ? "s" : ""}`);
-  if (warnings.length > 0) parts.push(`${warnings.length} warning${warnings.length > 1 ? "s" : ""}`);
+  if (warnings.length > 0)
+    parts.push(`${warnings.length} warning${warnings.length > 1 ? "s" : ""}`);
   if (infos.length > 0) parts.push(`${infos.length} info`);
   if (aiIssues.length > 0) parts.push(`${aiIssues.length} ai`);
   if (parts.length === 0) parts.push("0 issues");

@@ -50,10 +50,7 @@ export function printAst(node: AstNode): string {
 
 function printProgram(node: Program, out: string[]): void {
   out.push("Program");
-  const all: Array<Metadata | Declaration> = [
-    ...node.metadata,
-    ...node.declarations,
-  ];
+  const all: Array<Metadata | Declaration> = [...node.metadata, ...node.declarations];
   all.forEach((child, i) => {
     const conn = connector(all, i);
     const cont = continuation(all, i);

@@ -12,6 +12,7 @@ export {
   RateLimitError,
   ServerError,
   InvalidRequestError,
+  InvalidResponseError,
   TimeoutError,
   NetworkError,
   ConnectionError,

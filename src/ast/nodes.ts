@@ -108,11 +108,7 @@ export interface TypeDeclaration extends AstNode {
 // TypeExpression
 // ---------------------------------------------------------------------------
 
-export type TypeExpression =
-  | PrimitiveType
-  | EnumType
-  | StructType
-  | TypeReference;
+export type TypeExpression = PrimitiveType | EnumType | StructType | TypeReference;
 
 export interface PrimitiveType extends AstNode {
   kind: "PrimitiveType";
@@ -273,11 +269,7 @@ export interface EvalDeclaration extends AstNode {
 // Literals
 // ---------------------------------------------------------------------------
 
-export type Literal =
-  | StringLiteral
-  | NumberLiteral
-  | BooleanLiteral
-  | Identifier;
+export type Literal = StringLiteral | NumberLiteral | BooleanLiteral | Identifier;
 
 export interface StringLiteral extends AstNode {
   kind: "StringLiteral";

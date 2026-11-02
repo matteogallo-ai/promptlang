@@ -54,16 +54,14 @@ export async function runCompile(args: string[]): Promise<number> {
   }
 
   const outDir =
-    outIdx !== -1 && args[outIdx + 1]
-      ? args[outIdx + 1]!
-      : config?.compile.out ?? "./generated";
+    outIdx !== -1 && args[outIdx + 1] ? args[outIdx + 1]! : (config?.compile.out ?? "./generated");
 
   const explicitTarget = targetIdx !== -1 && args[targetIdx + 1];
   const target: "typescript" | "python" = explicitTarget
     ? args[targetIdx + 1] === "python"
       ? "python"
       : "typescript"
-    : config?.compile.target ?? "typescript";
+    : (config?.compile.target ?? "typescript");
 
   const runtimePath =
     runtimePathIdx !== -1 && args[runtimePathIdx + 1]
@@ -112,17 +110,23 @@ export async function runCompile(args: string[]): Promise<number> {
     try {
       const tokens = tokenize(source);
       const ast = parse(tokens);
+      // A file without declarations would otherwise "compile" to a module exporting
+      // nothing and be reported as success, so the missing prompt only surfaces at
+      // import time. Imports do not count: both compilers emit no code for them.
+      if (ast.declarations.length === 0) {
+        throw new CompilerError("file contains no declarations (empty .prompt file)", 1, 1);
+      }
 
       if (target === "python") {
         const generated = compilePython(ast, file);
-        const outName = basename(file, ".prompt").replace(/-/g, "_") + ".py";
+        const outName = `${basename(file, ".prompt").replace(/-/g, "_")}.py`;
         const outPath = join(outDir, outName);
         await Bun.write(outPath, generated);
         console.log(`  compiled  ${file} → ${outPath}`);
         generatedNames.push(outName);
       } else {
         const generated = compile(ast, file);
-        const outName = basename(file, ".prompt") + ".ts";
+        const outName = `${basename(file, ".prompt")}.ts`;
         const outPath = join(outDir, outName);
         await Bun.write(outPath, generated);
         console.log(`  compiled  ${file} → ${outPath}`);
@@ -146,9 +150,8 @@ export async function runCompile(args: string[]): Promise<number> {
     if (target === "python") {
       // Write __init__.py barrel
       const initContent =
-        generatedNames
-          .map((name) => `from .${name.replace(/\.py$/, "")} import *`)
-          .join("\n") + "\n";
+        generatedNames.map((name) => `from .${name.replace(/\.py$/, "")} import *`).join("\n") +
+        "\n";
       const initPath = join(outDir, "__init__.py");
       await Bun.write(initPath, initContent);
       console.log(`  generated ${initPath} (${generatedNames.length} export(s))`);
@@ -159,9 +162,8 @@ export async function runCompile(args: string[]): Promise<number> {
       console.log(`  generated ${runtimePath_}`);
     } else {
       const indexContent =
-        generatedNames
-          .map((name) => `export * from "./${name.replace(/\.ts$/, "")}";`)
-          .join("\n") + "\n";
+        generatedNames.map((name) => `export * from "./${name.replace(/\.ts$/, "")}";`).join("\n") +
+        "\n";
       const indexPath = join(outDir, "index.ts");
       await Bun.write(indexPath, indexContent);
       console.log(`  generated ${indexPath} (${generatedNames.length} export(s))`);
@@ -173,12 +175,8 @@ export async function runCompile(args: string[]): Promise<number> {
     await Bun.write(tsconfigPath, buildTsconfig(runtimePath));
     console.log(`  emitted   ${tsconfigPath}`);
     console.log(`            (paths "promptlang/runtime" → ${runtimePath})`);
-    console.log(
-      `            Note: --emit-tsconfig is for local/alpha use. Once promptlang`
-    );
-    console.log(
-      `            is published to npm (v1.0), this flag will not be needed.`
-    );
+    console.log(`            Note: the mapping points at this checkout's runtime source,`);
+    console.log(`            because @promptlang/core is not published to npm.`);
   }
 
   return hasErrors ? 1 : 0;
@@ -191,28 +189,26 @@ function computeDefaultRuntimePath(outDir: string): string {
 }
 
 function buildTsconfig(runtimePath: string): string {
-  return (
-    JSON.stringify(
-      {
-        compilerOptions: {
-          target: "ESNext",
-          module: "ESNext",
-          moduleResolution: "bundler",
-          strict: true,
-          noImplicitAny: true,
-          esModuleInterop: true,
-          skipLibCheck: true,
-          baseUrl: ".",
-          paths: {
-            "promptlang/runtime": [runtimePath],
-          },
+  return `${JSON.stringify(
+    {
+      compilerOptions: {
+        target: "ESNext",
+        module: "ESNext",
+        moduleResolution: "bundler",
+        strict: true,
+        noImplicitAny: true,
+        esModuleInterop: true,
+        skipLibCheck: true,
+        baseUrl: ".",
+        paths: {
+          "promptlang/runtime": [runtimePath],
         },
-        include: ["./*.ts"],
       },
-      null,
-      2
-    ) + "\n"
-  );
+      include: ["./*.ts"],
+    },
+    null,
+    2
+  )}\n`;
 }
 
 async function resolveFiles(paths: string[]): Promise<string[]> {

@@ -1,12 +1,7 @@
 import type { PromptClient } from "../client";
 import type { PromptRequest, PromptResponse } from "../types";
-import {
-  ConnectionError,
-  NetworkError,
-  NotFoundError,
-  ServerError,
-  TimeoutError,
-} from "../errors";
+import { ConnectionError, NetworkError, NotFoundError, ServerError, TimeoutError } from "../errors";
+import { invalidField, isRecord, readJsonObject } from "./response";
 import { withRetry } from "./retry";
 
 /** Options for configuring the OllamaClient. */
@@ -27,11 +22,6 @@ export interface OllamaClientOptions {
   retryDelay?: number;
 }
 
-type OllamaResponseBody = {
-  message: { content: string };
-  prompt_eval_count?: number;
-  eval_count?: number;
-};
 type OllamaErrorBody = { error?: string };
 
 /** HTTP client for local Ollama servers (`/api/chat`). No authentication required. */
@@ -118,14 +108,20 @@ export class OllamaClient implements PromptClient {
       throw new ServerError(response.status, undefined, "ollama");
     }
 
-    const data = (await response.json()) as OllamaResponseBody;
+    const data = await readJsonObject(response, "ollama");
+    if (!isRecord(data.message) || typeof data.message.content !== "string") {
+      invalidField("ollama", "message.content");
+    }
+    const content = (data.message as { content: string }).content;
+    const inputTokens = typeof data.prompt_eval_count === "number" ? data.prompt_eval_count : 0;
+    const outputTokens = typeof data.eval_count === "number" ? data.eval_count : 0;
 
     return {
-      content: data.message.content,
+      content,
       usage: {
         // Ollama uses prompt_eval_count / eval_count; we normalize to our interface.
-        input_tokens: data.prompt_eval_count ?? 0,
-        output_tokens: data.eval_count ?? 0,
+        input_tokens: inputTokens,
+        output_tokens: outputTokens,
       },
     };
   }

@@ -122,8 +122,7 @@ describe("config: invalid values", () => {
   });
 
   test("throws when a dependency entry is missing 'name'", () => {
-    const src =
-      `name: p\nversion: "1"\ndependencies:\n  - version: ^1\n    path: ./vendor\n`;
+    const src = `name: p\nversion: "1"\ndependencies:\n  - version: ^1\n    path: ./vendor\n`;
     expect(() => parseConfig(src)).toThrow(ConfigValidationError);
   });
 

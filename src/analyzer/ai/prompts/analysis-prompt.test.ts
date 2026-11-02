@@ -24,8 +24,20 @@ describe("buildAnalysisUserMessage", () => {
   test("includes typed parameters", () => {
     const prompt = makePrompt({
       parameters: [
-        { kind: "Parameter", name: "ticket", type: { kind: "PrimitiveType", name: "string", line: 1, column: 1 }, line: 1, column: 1 },
-        { kind: "Parameter", name: "priority", type: { kind: "PrimitiveType", name: "number", line: 1, column: 1 }, line: 1, column: 1 },
+        {
+          kind: "Parameter",
+          name: "ticket",
+          type: { kind: "PrimitiveType", name: "string", line: 1, column: 1 },
+          line: 1,
+          column: 1,
+        },
+        {
+          kind: "Parameter",
+          name: "priority",
+          type: { kind: "PrimitiveType", name: "number", line: 1, column: 1 },
+          line: 1,
+          column: 1,
+        },
       ],
     });
     const msg = buildAnalysisUserMessage(prompt);
@@ -36,7 +48,19 @@ describe("buildAnalysisUserMessage", () => {
   test("includes the system section content", () => {
     const prompt = makePrompt({
       sections: [
-        { kind: "MessageSection", role: "system", content: { kind: "StringLiteral", value: "You are a classifier.", isTemplate: false, line: 2, column: 1 }, line: 2, column: 1 },
+        {
+          kind: "MessageSection",
+          role: "system",
+          content: {
+            kind: "StringLiteral",
+            value: "You are a classifier.",
+            isTemplate: false,
+            line: 2,
+            column: 1,
+          },
+          line: 2,
+          column: 1,
+        },
       ],
     });
     const msg = buildAnalysisUserMessage(prompt);
@@ -46,7 +70,19 @@ describe("buildAnalysisUserMessage", () => {
   test("includes the user section content", () => {
     const prompt = makePrompt({
       sections: [
-        { kind: "MessageSection", role: "user", content: { kind: "StringLiteral", value: "Classify: {{ticket}}", isTemplate: true, line: 3, column: 1 }, line: 3, column: 1 },
+        {
+          kind: "MessageSection",
+          role: "user",
+          content: {
+            kind: "StringLiteral",
+            value: "Classify: {{ticket}}",
+            isTemplate: true,
+            line: 3,
+            column: 1,
+          },
+          line: 3,
+          column: 1,
+        },
       ],
     });
     const msg = buildAnalysisUserMessage(prompt);
@@ -61,7 +97,19 @@ describe("buildAnalysisUserMessage", () => {
   test("includes assistant section when present", () => {
     const prompt = makePrompt({
       sections: [
-        { kind: "MessageSection", role: "assistant", content: { kind: "StringLiteral", value: "Sure, here is the result:", isTemplate: false, line: 4, column: 1 }, line: 4, column: 1 },
+        {
+          kind: "MessageSection",
+          role: "assistant",
+          content: {
+            kind: "StringLiteral",
+            value: "Sure, here is the result:",
+            isTemplate: false,
+            line: 4,
+            column: 1,
+          },
+          line: 4,
+          column: 1,
+        },
       ],
     });
     const msg = buildAnalysisUserMessage(prompt);
@@ -81,8 +129,22 @@ describe("buildAnalysisUserMessage", () => {
       returnType: {
         kind: "StructType",
         fields: [
-          { kind: "Field", name: "id", optional: false, type: { kind: "PrimitiveType", name: "number", line: 1, column: 1 }, line: 1, column: 1 },
-          { kind: "Field", name: "label", optional: true, type: { kind: "PrimitiveType", name: "string", line: 1, column: 1 }, line: 1, column: 1 },
+          {
+            kind: "Field",
+            name: "id",
+            optional: false,
+            type: { kind: "PrimitiveType", name: "number", line: 1, column: 1 },
+            line: 1,
+            column: 1,
+          },
+          {
+            kind: "Field",
+            name: "label",
+            optional: true,
+            type: { kind: "PrimitiveType", name: "string", line: 1, column: 1 },
+            line: 1,
+            column: 1,
+          },
         ],
         line: 1,
         column: 1,

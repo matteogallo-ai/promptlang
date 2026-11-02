@@ -18,8 +18,7 @@ export const missingTestsRule: Rule = {
 
     for (const prompt of prompts) {
       const hasTest = tests.some(
-        (t) =>
-          t.input.kind === "CallExpression" && t.input.callee === prompt.name
+        (t) => t.input.kind === "CallExpression" && t.input.callee === prompt.name
       );
 
       if (!hasTest) {
@@ -30,8 +29,7 @@ export const missingTestsRule: Rule = {
           line: prompt.line,
           column: prompt.column,
           message: `Prompt '${prompt.name}' has no tests.`,
-          suggestion:
-            "Add at least one test { input: ... expect: ... } block.",
+          suggestion: "Add at least one test { input: ... expect: ... } block.",
         });
       }
     }

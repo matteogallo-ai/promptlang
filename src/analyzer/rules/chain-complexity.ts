@@ -27,8 +27,7 @@ export const chainComplexityRule: Rule = {
           line: chain.line,
           column: chain.column,
           message: `Chain '${chain.name}' has ${chain.steps.length} steps.`,
-          suggestion:
-            "Consider splitting into sub-chains for better maintainability.",
+          suggestion: "Consider splitting into sub-chains for better maintainability.",
         });
       }
     }

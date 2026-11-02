@@ -1,4 +1,4 @@
-import { dirname, isAbsolute, join, normalize, resolve } from "node:path";
+import { dirname, isAbsolute, normalize, resolve } from "node:path";
 import { tokenize } from "../lexer/lexer";
 import { parse } from "../parser/parser";
 import type { SourceEntry } from "../config/config";
@@ -160,12 +160,4 @@ function candidatePaths(
 
 async function fileExists(path: string): Promise<boolean> {
   return Bun.file(path).exists();
-}
-
-/**
- * Joins a source directory and an import path into a canonical absolute path.
- * Exposed for the manifest so entries are stable across platforms.
- */
-export function joinSourcePath(root: string, sourcePath: string, importPath: string): string {
-  return normalize(join(root, sourcePath, importPath));
 }

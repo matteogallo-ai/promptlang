@@ -1,9 +1,15 @@
-import { AuthenticationError, InvalidRequestError, NotFoundError } from "../errors";
+import {
+  AuthenticationError,
+  InvalidRequestError,
+  InvalidResponseError,
+  NotFoundError,
+} from "../errors";
 
 function isNonRetryable(err: Error): boolean {
   return (
     err instanceof AuthenticationError ||
     err instanceof InvalidRequestError ||
+    err instanceof InvalidResponseError ||
     err instanceof NotFoundError
   );
 }
@@ -27,9 +33,7 @@ export async function withRetry<T>(
       lastError = err as Error;
       if (isNonRetryable(lastError)) throw lastError;
       if (attempt < maxRetries && baseDelay > 0) {
-        await new Promise<void>((resolve) =>
-          setTimeout(resolve, baseDelay * 2 ** attempt)
-        );
+        await new Promise<void>((resolve) => setTimeout(resolve, baseDelay * 2 ** attempt));
       }
     }
   }

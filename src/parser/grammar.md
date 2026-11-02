@@ -1,6 +1,6 @@
-# PromptLang v0.3 Grammar Reference (EBNF)
+# PromptLang Grammar Reference (EBNF)
 
-This document is the authoritative EBNF grammar for PromptLang v0.3.
+This document is the authoritative EBNF grammar for PromptLang.
 The parser (`parser.ts`) implements a hand-written recursive descent parser
 that follows these rules exactly. One parse function per non-terminal.
 
@@ -24,7 +24,10 @@ UPPER   terminal token type produced by the lexer
 ## Top-Level
 
 ```ebnf
-Program        ::= Metadata* Declaration*
+Program        ::= Import* Metadata* Declaration*
+
+Import         ::= "import" (STRING | TRIPLE_STRING) "as" IDENT
+                   -- the path may not contain {{...}} interpolation
 
 Metadata       ::= AT_VERSION   StringLit
                  | AT_MODEL     IDENT          -- model names may contain hyphens/dots
@@ -164,6 +167,8 @@ The lexer converts these source words to keyword token types:
 
 | Source text      | TokenType         |
 |------------------|-------------------|
+| `import`         | IMPORT            |
+| `as`             | AS                |
 | `prompt`         | PROMPT            |
 | `type`           | TYPE              |
 | `chain`          | CHAIN             |

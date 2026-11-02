@@ -1,0 +1,12 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/*.ts", "benchmarks/*.ts"],
+      "project": ["src/**/*.ts", "scripts/**/*.ts", "tests/**/*.ts", "benchmarks/**/*.ts"]
+    },
+    "packages/yaml-parser": {
+      "project": ["src/**/*.ts", "tests/**/*.ts"]
+    }
+  }
+}

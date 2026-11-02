@@ -52,19 +52,25 @@ export function buildAnalysisUserMessage(prompt: PromptDeclaration): string {
       : "(none)";
 
   const systemSection =
-    (prompt.sections.find((s) => s.kind === "MessageSection" && s.role === "system") as
-      | { kind: "MessageSection"; role: string; content: { value: string } }
-      | undefined)?.content.value ?? "(none)";
+    (
+      prompt.sections.find((s) => s.kind === "MessageSection" && s.role === "system") as
+        | { kind: "MessageSection"; role: string; content: { value: string } }
+        | undefined
+    )?.content.value ?? "(none)";
 
   const userSection =
-    (prompt.sections.find((s) => s.kind === "MessageSection" && s.role === "user") as
-      | { kind: "MessageSection"; role: string; content: { value: string } }
-      | undefined)?.content.value ?? "(none)";
+    (
+      prompt.sections.find((s) => s.kind === "MessageSection" && s.role === "user") as
+        | { kind: "MessageSection"; role: string; content: { value: string } }
+        | undefined
+    )?.content.value ?? "(none)";
 
   const assistantSection =
-    (prompt.sections.find((s) => s.kind === "MessageSection" && s.role === "assistant") as
-      | { kind: "MessageSection"; role: string; content: { value: string } }
-      | undefined)?.content.value ?? "(none)";
+    (
+      prompt.sections.find((s) => s.kind === "MessageSection" && s.role === "assistant") as
+        | { kind: "MessageSection"; role: string; content: { value: string } }
+        | undefined
+    )?.content.value ?? "(none)";
 
   return `Analyze this prompt:
 

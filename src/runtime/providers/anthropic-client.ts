@@ -8,6 +8,7 @@ import {
   ServerError,
   TimeoutError,
 } from "../errors";
+import { invalidField, isRecord, readJsonObject, requireApiKey } from "./response";
 import { withRetry } from "./retry";
 
 /** Options for configuring the AnthropicClient. */
@@ -27,10 +28,6 @@ export interface AnthropicClientOptions {
 }
 
 type AnthropicContentBlock = { type: string; text: string };
-type AnthropicResponseBody = {
-  content: AnthropicContentBlock[];
-  usage: { input_tokens: number; output_tokens: number };
-};
 type AnthropicErrorBody = { error?: { message?: string } };
 
 /** HTTP client for the Anthropic Messages API (`/v1/messages`). */
@@ -43,7 +40,7 @@ export class AnthropicClient implements PromptClient {
   private readonly apiVersion: string;
 
   constructor(options: AnthropicClientOptions) {
-    this.apiKey = options.apiKey;
+    this.apiKey = requireApiKey(options.apiKey, "AnthropicClient", "ANTHROPIC_API_KEY");
     this.baseURL = options.baseURL ?? "https://api.anthropic.com/v1";
     this.timeout = options.timeout ?? 60_000;
     this.maxRetries = options.maxRetries ?? 3;
@@ -122,17 +119,29 @@ export class AnthropicClient implements PromptClient {
       }
     }
 
-    const data = (await response.json()) as AnthropicResponseBody;
-    const text = data.content
-      .filter((block) => block.type === "text")
+    const data = await readJsonObject(response, "anthropic");
+    if (!Array.isArray(data.content)) invalidField("anthropic", "content");
+    const usage = data.usage;
+    if (
+      !isRecord(usage) ||
+      typeof usage.input_tokens !== "number" ||
+      typeof usage.output_tokens !== "number"
+    ) {
+      invalidField("anthropic", "usage");
+    }
+    const text = (data.content as unknown[])
+      .filter(
+        (block): block is AnthropicContentBlock =>
+          isRecord(block) && block.type === "text" && typeof block.text === "string"
+      )
       .map((block) => block.text)
       .join("");
 
     return {
       content: text,
       usage: {
-        input_tokens: data.usage.input_tokens,
-        output_tokens: data.usage.output_tokens,
+        input_tokens: usage.input_tokens,
+        output_tokens: usage.output_tokens,
       },
     };
   }

@@ -45,9 +45,33 @@ describe("parseAiResponse", () => {
   test("parses valid JSON with multiple issues", () => {
     const raw = JSON.stringify({
       issues: [
-        { category: "VAGUE_INSTRUCTIONS", prompt_name: "p", location: "system", excerpt: "x", message: "m1", suggestion: "s1", confidence: "high" },
-        { category: "MISSING_FORMAT_SPEC", prompt_name: "p", location: "user", excerpt: "y", message: "m2", suggestion: "s2", confidence: "medium" },
-        { category: "TOKEN_INEFFICIENCY", prompt_name: "p", location: "user", excerpt: "z", message: "m3", suggestion: "s3", confidence: "low" },
+        {
+          category: "VAGUE_INSTRUCTIONS",
+          prompt_name: "p",
+          location: "system",
+          excerpt: "x",
+          message: "m1",
+          suggestion: "s1",
+          confidence: "high",
+        },
+        {
+          category: "MISSING_FORMAT_SPEC",
+          prompt_name: "p",
+          location: "user",
+          excerpt: "y",
+          message: "m2",
+          suggestion: "s2",
+          confidence: "medium",
+        },
+        {
+          category: "TOKEN_INEFFICIENCY",
+          prompt_name: "p",
+          location: "user",
+          excerpt: "z",
+          message: "m3",
+          suggestion: "s3",
+          confidence: "low",
+        },
       ],
     });
     const result = parseAiResponse(raw, PROMPT, FILE);
@@ -58,13 +82,13 @@ describe("parseAiResponse", () => {
   });
 
   test("strips markdown fences before parsing", () => {
-    const raw = "```json\n{\"issues\": []}\n```";
+    const raw = '```json\n{"issues": []}\n```';
     const result = parseAiResponse(raw, PROMPT, FILE);
     expect(result).toHaveLength(0);
   });
 
   test("strips case-insensitive markdown fences", () => {
-    const raw = "```JSON\n{\"issues\": []}\n```";
+    const raw = '```JSON\n{"issues": []}\n```';
     const result = parseAiResponse(raw, PROMPT, FILE);
     expect(result).toHaveLength(0);
   });
@@ -87,7 +111,15 @@ describe("parseAiResponse", () => {
   test("category with underscores is converted to kebab-case in rule", () => {
     const raw = JSON.stringify({
       issues: [
-        { category: "POTENTIAL_HALLUCINATION_RISK", prompt_name: "p", location: "user", excerpt: "x", message: "m", suggestion: "s", confidence: "high" },
+        {
+          category: "POTENTIAL_HALLUCINATION_RISK",
+          prompt_name: "p",
+          location: "user",
+          excerpt: "x",
+          message: "m",
+          suggestion: "s",
+          confidence: "high",
+        },
       ],
     });
     const result = parseAiResponse(raw, PROMPT, FILE);
@@ -98,7 +130,15 @@ describe("parseAiResponse", () => {
     const suggestion = "Add: Respond with valid JSON only, no explanation.";
     const raw = JSON.stringify({
       issues: [
-        { category: "MISSING_FORMAT_SPEC", prompt_name: "p", location: "output", excerpt: "x", message: "m", suggestion, confidence: "medium" },
+        {
+          category: "MISSING_FORMAT_SPEC",
+          prompt_name: "p",
+          location: "output",
+          excerpt: "x",
+          message: "m",
+          suggestion,
+          confidence: "medium",
+        },
       ],
     });
     const result = parseAiResponse(raw, PROMPT, FILE);
@@ -107,28 +147,68 @@ describe("parseAiResponse", () => {
 
   test("confidence high maps to severity warning", () => {
     const raw = JSON.stringify({
-      issues: [{ category: "VAGUE_INSTRUCTIONS", prompt_name: "p", location: "system", excerpt: "x", message: "m", suggestion: "s", confidence: "high" }],
+      issues: [
+        {
+          category: "VAGUE_INSTRUCTIONS",
+          prompt_name: "p",
+          location: "system",
+          excerpt: "x",
+          message: "m",
+          suggestion: "s",
+          confidence: "high",
+        },
+      ],
     });
     expect(parseAiResponse(raw, PROMPT, FILE)[0].severity).toBe("warning");
   });
 
   test("confidence medium maps to severity warning", () => {
     const raw = JSON.stringify({
-      issues: [{ category: "VAGUE_INSTRUCTIONS", prompt_name: "p", location: "system", excerpt: "x", message: "m", suggestion: "s", confidence: "medium" }],
+      issues: [
+        {
+          category: "VAGUE_INSTRUCTIONS",
+          prompt_name: "p",
+          location: "system",
+          excerpt: "x",
+          message: "m",
+          suggestion: "s",
+          confidence: "medium",
+        },
+      ],
     });
     expect(parseAiResponse(raw, PROMPT, FILE)[0].severity).toBe("warning");
   });
 
   test("confidence low maps to severity info", () => {
     const raw = JSON.stringify({
-      issues: [{ category: "VAGUE_INSTRUCTIONS", prompt_name: "p", location: "system", excerpt: "x", message: "m", suggestion: "s", confidence: "low" }],
+      issues: [
+        {
+          category: "VAGUE_INSTRUCTIONS",
+          prompt_name: "p",
+          location: "system",
+          excerpt: "x",
+          message: "m",
+          suggestion: "s",
+          confidence: "low",
+        },
+      ],
     });
     expect(parseAiResponse(raw, PROMPT, FILE)[0].severity).toBe("info");
   });
 
   test("file and line are taken from the PromptDeclaration", () => {
     const raw = JSON.stringify({
-      issues: [{ category: "VAGUE_INSTRUCTIONS", prompt_name: "p", location: "system", excerpt: "x", message: "m", suggestion: "s", confidence: "high" }],
+      issues: [
+        {
+          category: "VAGUE_INSTRUCTIONS",
+          prompt_name: "p",
+          location: "system",
+          excerpt: "x",
+          message: "m",
+          suggestion: "s",
+          confidence: "high",
+        },
+      ],
     });
     const result = parseAiResponse(raw, PROMPT, FILE);
     expect(result[0].file).toBe(FILE);

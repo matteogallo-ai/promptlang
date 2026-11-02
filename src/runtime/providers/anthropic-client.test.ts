@@ -1,4 +1,4 @@
-import { describe, test, expect, spyOn, beforeEach, afterEach } from "bun:test";
+import { describe, test, expect } from "bun:test";
 import { AnthropicClient } from "./anthropic-client";
 import {
   AuthenticationError,
@@ -9,6 +9,7 @@ import {
   NetworkError,
 } from "../errors";
 import type { PromptRequest } from "../types";
+import { fetchSpy, useFetchSpy } from "../../../tests/support/fetch-spy";
 
 const BASE_REQUEST: PromptRequest = {
   model: "claude-opus-4-6",
@@ -32,18 +33,7 @@ function errResponse(status: number, message = "An error occurred"): Response {
 // Spy setup
 // ---------------------------------------------------------------------------
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let fetchSpy: any;
-
-beforeEach(() => {
-  fetchSpy = spyOn(globalThis, "fetch").mockRejectedValue(
-    new Error("fetch called without a mock — call fetchSpy.mockResolvedValueOnce in the test")
-  );
-});
-
-afterEach(() => {
-  fetchSpy.mockRestore();
-});
+useFetchSpy();
 
 // ---------------------------------------------------------------------------
 // Headers and URL
@@ -259,9 +249,7 @@ describe("AnthropicClient — errors and retries", () => {
   });
 
   test("retries on 500 and succeeds on subsequent attempt", async () => {
-    fetchSpy
-      .mockResolvedValueOnce(errResponse(500))
-      .mockResolvedValueOnce(okResponse());
+    fetchSpy.mockResolvedValueOnce(errResponse(500)).mockResolvedValueOnce(okResponse());
     const client = new AnthropicClient({ apiKey: "key", maxRetries: 3, retryDelay: 0 });
     const result = await client.complete(BASE_REQUEST);
     expect(result.content).toBe("Hi there!");

@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Remediation after the 2026-11-02 external audit. The version number for this
+release is chosen when it is tagged.
+
+### Claimed but not true (corrected)
+- README marked **Native tests** and **SemVer for prompts** ✅; neither is
+  implemented. Both are now Roadmap (in progress).
+- README marked **Multi-provider fallback** ✅; generated code sends the same model
+  name to every provider, so Anthropic → OpenAI fallback fails. Now Partial.
+- README marked the **AI-powered linter** ✅ and "unique"; it is only tested with a
+  mocked client. Now Partial.
+- The test badge said "626 passing": it counted `@promptlang/yaml-parser`'s 23
+  tests twice (603 tests ran). Removed.
+- `src/index.ts` exported only `VERSION = "0.1.0-alpha.0"` in v1.2.0.
+- `docs/syntax-reference.md`, `docs/architecture.md`, `docs/migration-guide.md`,
+  `docs/roadmap.md`, `docs/benchmarks.md`, `SECURITY.md` and `CONTRIBUTING.md`
+  described syntax, commands, rules, config keys and pipeline stages that do not
+  exist (e.g. `parallel` steps, cross-file chain calls, `promptlang test`,
+  `defineRule`). All rewritten against the code.
+
+### Changed
+- **BREAKING:** package renamed `promptlang` → `@promptlang/core`; the CLI binary
+  is still `promptlang`.
+- `src/index.ts` exports `tokenize`, `parse`, `resolveGraph`, `resolveImport`,
+  `compile`, `compilePython`, `analyze`, the error classes and AST types; `VERSION`
+  is read from `package.json`.
+- `.promptlang/integrity.json` keys are project-relative POSIX paths; legacy
+  absolute keys are migrated on read.
+- `compile` rejects `.prompt` files with no declarations (exit 1).
+- `AnthropicClient` / `OpenAIClient` throw `TypeError` on an empty API key.
+
+### Added
+- `InvalidResponseError` for provider 2xx bodies that are not JSON or lack the
+  documented fields (not retried; `RoutingClient` still falls back).
+- `docs/CLAIMS.md`, `scripts/check-claims.ts`, `scripts/check-stale-narrative.ts`,
+  `benchmarks/bench.ts`; Biome and knip configuration; CI jobs for each.
+
+### Fixed
+- Tests that spawn `tsc` had bun's 5 s default timeout and flaked on cold runners.
+- Python type mapper fell through from primitive to enum on an unknown primitive.
+
+### Removed
+- Dead exports reported by knip, orphan `.gitkeep` files, empty `src/linter/` and
+  `src/compiler/typescript/` directories, the placeholder `build` script.
+
+### Tags
+- `v0.5.0-alpha.0` exists in the local repository but was never pushed to
+  `origin`. History is not rewritten; push it with `git push origin v0.5.0-alpha.0`.
+
 ## [1.2.0] — 2026-08-19
 
 **npm publish release.**
@@ -284,6 +332,24 @@ dependencies. Zero regressions across 11 versions.**
 - `src/compiler/compiler.ts` — wires in `buildCallableRegistry` and `generateChain` from `chain-compiler.ts`; chains now appear under a dedicated `// ---- Chain ----` section header instead of being mixed into `// ---- Prompt definitions ----`
 - `docs/examples/summarize-and-translate.prompt` — removed test blocks using comparison operators (`> n`, `<= n`) and regex matchers that require the v0.6 test-eval engine (not yet implemented); replaced with minimal literal-assertion tests that the current parser accepts
 - `package.json` — version bumped to `0.5.0-alpha.0`
+
+## [0.4.0-alpha.0] — 2026-08-11
+
+Entry reconstructed on 2026-11-02 from the tagged commit `d4c6f3e`; it was missing
+from this file.
+
+### Added
+- `src/runtime/`: `PromptClient` interface, `PromptRequest` / `PromptResponse`
+  types, `MockClient`.
+- `src/compiler/`: `CompilerError`, type mapper, template compiler
+  (`{{var}}` → `${input.var}`), code generator for types, prompts and chains,
+  compiler orchestrator.
+- `promptlang compile <file|dir|glob> [--out <dir>]`, generating an `index.ts` barrel.
+- 83 tests (runtime, compiler, CLI compile, `tsc` integration); 309 in total.
+
+### Changed
+- `tsconfig.json` `paths` so `promptlang/runtime` resolves inside the repository;
+  `package.json` `exports` for `./runtime`; version `0.4.0-alpha.0`.
 
 ## [0.3.1-alpha.0] — 2026-08-11
 

@@ -81,10 +81,7 @@ function tokenizeLines(source: string): Line[] {
     const content = rest.replace(/\s+$/, "");
     if (content === "") continue;
     if (indent % 2 !== 0) {
-      throw new YamlParseError(
-        `Indentation must be a multiple of 2 spaces (got ${indent})`,
-        i + 1
-      );
+      throw new YamlParseError(`Indentation must be a multiple of 2 spaces (got ${indent})`, i + 1);
     }
     lines.push({ indent, content, lineNum: i + 1 });
   }
@@ -404,22 +401,13 @@ function parseDoubleQuoted(body: string, lineNum: number): string {
  */
 function rejectUnsupported(s: string, lineNum: number): void {
   if (s.startsWith("&") || s.startsWith("*")) {
-    throw new YamlParseError(
-      "YAML anchors and aliases (& / *) are not supported",
-      lineNum
-    );
+    throw new YamlParseError("YAML anchors and aliases (& / *) are not supported", lineNum);
   }
   if (s.startsWith("!!") || s.startsWith("!")) {
-    throw new YamlParseError(
-      "YAML explicit type tags (! and !!) are not supported",
-      lineNum
-    );
+    throw new YamlParseError("YAML explicit type tags (! and !!) are not supported", lineNum);
   }
   if (s === "|" || s === ">" || s.startsWith("|") || s.startsWith(">")) {
-    throw new YamlParseError(
-      "YAML block scalars (| and >) are not supported",
-      lineNum
-    );
+    throw new YamlParseError("YAML block scalars (| and >) are not supported", lineNum);
   }
   if (s.startsWith("{") || s.startsWith("[")) {
     throw new YamlParseError(

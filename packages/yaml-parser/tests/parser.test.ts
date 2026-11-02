@@ -44,10 +44,7 @@ describe("yaml-parser: mappings and sequences", () => {
 
   test("parses a sequence-of-mappings item with multiple keys", () => {
     const src =
-      "dependencies:\n" +
-      "  - name: pkg-a\n" +
-      "    version: ^1.2.0\n" +
-      "    path: ./vendor/a\n";
+      "dependencies:\n" + "  - name: pkg-a\n" + "    version: ^1.2.0\n" + "    path: ./vendor/a\n";
     const result = asObj(parseYaml(src));
     const deps = asArr(result.dependencies!);
     expect(deps).toHaveLength(1);
@@ -91,10 +88,7 @@ describe("yaml-parser: scalars", () => {
 
   test("ignores full-line and inline comments", () => {
     const src =
-      "# leading comment\n" +
-      "name: p # inline comment\n" +
-      "# another line\n" +
-      "count: 3\n";
+      "# leading comment\n" + "name: p # inline comment\n" + "# another line\n" + "count: 3\n";
     const result = asObj(parseYaml(src));
     expect(result.name).toBe("p");
     expect(result.count).toBe(3);

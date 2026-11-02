@@ -154,7 +154,9 @@ describe("Parser — TypeDeclaration (TypeReference)", () => {
 
 describe("Parser — EnumType", () => {
   test("parses enum with multiple members", () => {
-    const decl = firstDecl<TypeDeclaration>(`type Category = enum { bug, feature_request, question, other }`);
+    const decl = firstDecl<TypeDeclaration>(
+      `type Category = enum { bug, feature_request, question, other }`
+    );
     expect(decl.definition.kind).toBe("EnumType");
     const e = decl.definition as EnumType;
     expect(e.values).toEqual(["bug", "feature_request", "question", "other"]);
@@ -759,7 +761,9 @@ describe("Parser — Errors", () => {
   });
 
   test("throws ParserError on missing closing ')' in parameter list", () => {
-    expect(() => p(`prompt foo(ticket: string { system: "S" output: string }`)).toThrow(ParserError);
+    expect(() => p(`prompt foo(ticket: string { system: "S" output: string }`)).toThrow(
+      ParserError
+    );
   });
 
   test("throws ParserError on empty prompt body", () => {
@@ -767,7 +771,9 @@ describe("Parser — Errors", () => {
   });
 
   test("throws ParserError when prompt body has invalid section keyword", () => {
-    expect(() => p(`prompt foo() -> string { invalid: "text" output: string }`)).toThrow(ParserError);
+    expect(() => p(`prompt foo() -> string { invalid: "text" output: string }`)).toThrow(
+      ParserError
+    );
   });
 
   test("throws ParserError on chain with no steps", () => {
@@ -1118,11 +1124,10 @@ test "translates to french" {
 // ---------------------------------------------------------------------------
 
 describe("import declarations", () => {
-  const MIN_BODY =
-    `@version "1.0.0"\nprompt foo(x: string) -> string { user: "{{x}}" output: string }\n`;
+  const MIN_BODY = `@version "1.0.0"\nprompt foo(x: string) -> string { user: "{{x}}" output: string }\n`;
 
   test("parses a single import at the top of the file", () => {
-    const src = `import "shared/classify.prompt" as Classify\n` + MIN_BODY;
+    const src = `import "shared/classify.prompt" as Classify\n${MIN_BODY}`;
     const ast = p(src);
     expect(ast.imports).toHaveLength(1);
     expect(ast.imports[0]!.path).toBe("shared/classify.prompt");
@@ -1156,7 +1161,7 @@ describe("import declarations", () => {
   });
 
   test("errors when import has no 'as' alias", () => {
-    const src = `import "shared/x.prompt"\n` + MIN_BODY;
+    const src = `import "shared/x.prompt"\n${MIN_BODY}`;
     expect(() => p(src)).toThrow(ParserError);
     try {
       p(src);
@@ -1166,7 +1171,7 @@ describe("import declarations", () => {
   });
 
   test("errors when import path is missing", () => {
-    const src = `import as X\n` + MIN_BODY;
+    const src = `import as X\n${MIN_BODY}`;
     expect(() => p(src)).toThrow(ParserError);
   });
 
@@ -1193,4 +1198,3 @@ describe("import declarations", () => {
     expect(ast.imports).toEqual([]);
   });
 });
-

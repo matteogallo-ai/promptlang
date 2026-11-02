@@ -1,19 +1,30 @@
 import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { runTsc, subprocessTest } from "../../tests/support/subprocess";
 import { main } from "./cli";
 
 // Helpers that suppress output and capture it.
 function captureLog(): { output: () => string; restore: () => void } {
   const lines: string[] = [];
   const orig = console.log;
-  console.log = (...args: any[]) => lines.push(args.join(" "));
-  return { output: () => lines.join("\n"), restore: () => { console.log = orig; } };
+  console.log = (...args: unknown[]) => lines.push(args.join(" "));
+  return {
+    output: () => lines.join("\n"),
+    restore: () => {
+      console.log = orig;
+    },
+  };
 }
 
 function captureError(): { output: () => string; restore: () => void } {
   const lines: string[] = [];
   const orig = console.error;
-  console.error = (...args: any[]) => lines.push(args.join(" "));
-  return { output: () => lines.join("\n"), restore: () => { console.error = orig; } };
+  console.error = (...args: unknown[]) => lines.push(args.join(" "));
+  return {
+    output: () => lines.join("\n"),
+    restore: () => {
+      console.error = orig;
+    },
+  };
 }
 
 function silenceAll(): () => void {
@@ -21,7 +32,10 @@ function silenceAll(): () => void {
   const origErr = console.error;
   console.log = () => {};
   console.error = () => {};
-  return () => { console.log = origLog; console.error = origErr; };
+  return () => {
+    console.log = origLog;
+    console.error = origErr;
+  };
 }
 
 // Temp file paths for error-case tests.
@@ -29,8 +43,8 @@ const BAD_SYNTAX_FILE = "/tmp/promptlang-test-bad-syntax.prompt";
 const BAD_LEXER_FILE = "/tmp/promptlang-test-bad-lexer.prompt";
 
 beforeAll(async () => {
-  await Bun.write(BAD_SYNTAX_FILE, "@version \"1.0.0\"\nprompt bad(x: string) -> { MISSING BRACE");
-  await Bun.write(BAD_LEXER_FILE, "@version \"1.0.0\"\n\"unterminated string\nmore content");
+  await Bun.write(BAD_SYNTAX_FILE, '@version "1.0.0"\nprompt bad(x: string) -> { MISSING BRACE');
+  await Bun.write(BAD_LEXER_FILE, '@version "1.0.0"\n"unterminated string\nmore content');
 });
 
 afterAll(async () => {
@@ -189,7 +203,9 @@ describe("analyze", () => {
   test("analyzes two parseable files and prints report", async () => {
     const { output, restore } = captureLog();
     const code = await main([
-      "bun", "cli", "analyze",
+      "bun",
+      "cli",
+      "analyze",
       "docs/examples/classify-ticket.prompt",
       "docs/examples/extract-invoice.prompt",
     ]);
@@ -210,13 +226,18 @@ describe("analyze", () => {
   test("--json flag produces valid JSON", async () => {
     const { output, restore } = captureLog();
     await main([
-      "bun", "cli", "analyze", "--json",
+      "bun",
+      "cli",
+      "analyze",
+      "--json",
       "docs/examples/classify-ticket.prompt",
       "docs/examples/extract-invoice.prompt",
     ]);
     restore();
     let parsed: unknown;
-    expect(() => { parsed = JSON.parse(output()); }).not.toThrow();
+    expect(() => {
+      parsed = JSON.parse(output());
+    }).not.toThrow();
     expect((parsed as { files_analyzed: number }).files_analyzed).toBeGreaterThan(0);
   });
 
@@ -231,7 +252,10 @@ describe("analyze", () => {
     const restore = silenceAll();
     // classify-ticket has injection warnings, so --strict causes exit 1.
     const code = await main([
-      "bun", "cli", "analyze", "--strict",
+      "bun",
+      "cli",
+      "analyze",
+      "--strict",
       "docs/examples/classify-ticket.prompt",
     ]);
     restore();
@@ -248,7 +272,10 @@ describe("analyze", () => {
     console.log = () => {};
     try {
       const code = await main([
-        "bun", "cli", "analyze", "--ai",
+        "bun",
+        "cli",
+        "analyze",
+        "--ai",
         "docs/examples/classify-ticket.prompt",
       ]);
       expect(code).toBe(0);
@@ -266,7 +293,11 @@ describe("analyze", () => {
     const { output, restore } = captureLog();
     try {
       await main([
-        "bun", "cli", "analyze", "--ai", "--json",
+        "bun",
+        "cli",
+        "analyze",
+        "--ai",
+        "--json",
         "docs/examples/classify-ticket.prompt",
       ]);
       restore();
@@ -281,7 +312,10 @@ describe("analyze", () => {
   test("analyze without --ai does not invoke AI linter", async () => {
     const { output, restore } = captureLog();
     const code = await main([
-      "bun", "cli", "analyze", "--json",
+      "bun",
+      "cli",
+      "analyze",
+      "--json",
       "docs/examples/classify-ticket.prompt",
     ]);
     restore();
@@ -302,9 +336,12 @@ describe("compile", () => {
   test("compiles a valid .prompt file and exits 0", async () => {
     const restore = silenceAll();
     const code = await main([
-      "bun", "cli", "compile",
+      "bun",
+      "cli",
+      "compile",
       "docs/examples/classify-ticket.prompt",
-      "--out", OUT_DIR,
+      "--out",
+      OUT_DIR,
     ]);
     restore();
     expect(code).toBe(0);
@@ -312,11 +349,7 @@ describe("compile", () => {
 
   test("generated .ts file exists on disk", async () => {
     const restore = silenceAll();
-    await main([
-      "bun", "cli", "compile",
-      "docs/examples/classify-ticket.prompt",
-      "--out", OUT_DIR,
-    ]);
+    await main(["bun", "cli", "compile", "docs/examples/classify-ticket.prompt", "--out", OUT_DIR]);
     restore();
     const file = Bun.file(`${OUT_DIR}/classify-ticket.ts`);
     expect(await file.exists()).toBe(true);
@@ -325,10 +358,13 @@ describe("compile", () => {
   test("generates index.ts re-exporting compiled files", async () => {
     const restore = silenceAll();
     await main([
-      "bun", "cli", "compile",
+      "bun",
+      "cli",
+      "compile",
       "docs/examples/classify-ticket.prompt",
       "docs/examples/extract-invoice.prompt",
-      "--out", OUT_DIR,
+      "--out",
+      OUT_DIR,
     ]);
     restore();
     const index = await Bun.file(`${OUT_DIR}/index.ts`).text();
@@ -339,10 +375,13 @@ describe("compile", () => {
   test("compiles a directory of .prompt files and exits 0", async () => {
     const restore = silenceAll();
     const code = await main([
-      "bun", "cli", "compile",
+      "bun",
+      "cli",
+      "compile",
       "docs/examples/classify-ticket.prompt",
       "docs/examples/extract-invoice.prompt",
-      "--out", OUT_DIR,
+      "--out",
+      OUT_DIR,
     ]);
     restore();
     expect(code).toBe(0);
@@ -357,11 +396,7 @@ describe("compile", () => {
 
   test("nonexistent file exits 1", async () => {
     const restore = silenceAll();
-    const code = await main([
-      "bun", "cli", "compile",
-      "no-such-file.prompt",
-      "--out", OUT_DIR,
-    ]);
+    const code = await main(["bun", "cli", "compile", "no-such-file.prompt", "--out", OUT_DIR]);
     restore();
     expect(code).toBe(1);
   });
@@ -384,9 +419,12 @@ describe("compile --emit-tsconfig", () => {
   test("--emit-tsconfig generates tsconfig.json in --out", async () => {
     const restore = silenceAll();
     await main([
-      "bun", "cli", "compile",
+      "bun",
+      "cli",
+      "compile",
       "docs/examples/classify-ticket.prompt",
-      "--out", EMIT_OUT,
+      "--out",
+      EMIT_OUT,
       "--emit-tsconfig",
     ]);
     restore();
@@ -397,9 +435,12 @@ describe("compile --emit-tsconfig", () => {
   test("emitted tsconfig is valid JSON", async () => {
     const restore = silenceAll();
     await main([
-      "bun", "cli", "compile",
+      "bun",
+      "cli",
+      "compile",
       "docs/examples/classify-ticket.prompt",
-      "--out", EMIT_OUT,
+      "--out",
+      EMIT_OUT,
       "--emit-tsconfig",
     ]);
     restore();
@@ -410,9 +451,12 @@ describe("compile --emit-tsconfig", () => {
   test("emitted tsconfig contains moduleResolution bundler and strict", async () => {
     const restore = silenceAll();
     await main([
-      "bun", "cli", "compile",
+      "bun",
+      "cli",
+      "compile",
       "docs/examples/classify-ticket.prompt",
-      "--out", EMIT_OUT,
+      "--out",
+      EMIT_OUT,
       "--emit-tsconfig",
     ]);
     restore();
@@ -424,9 +468,12 @@ describe("compile --emit-tsconfig", () => {
   test("emitted tsconfig contains paths mapping for promptlang/runtime", async () => {
     const restore = silenceAll();
     await main([
-      "bun", "cli", "compile",
+      "bun",
+      "cli",
+      "compile",
       "docs/examples/classify-ticket.prompt",
-      "--out", EMIT_OUT,
+      "--out",
+      EMIT_OUT,
       "--emit-tsconfig",
     ]);
     restore();
@@ -440,11 +487,7 @@ describe("compile --emit-tsconfig", () => {
   test("without --emit-tsconfig, no tsconfig.json is emitted (default unchanged)", async () => {
     const outDir = "/tmp/promptlang-no-emit-test";
     const restore = silenceAll();
-    await main([
-      "bun", "cli", "compile",
-      "docs/examples/classify-ticket.prompt",
-      "--out", outDir,
-    ]);
+    await main(["bun", "cli", "compile", "docs/examples/classify-ticket.prompt", "--out", outDir]);
     restore();
     const file = Bun.file(`${outDir}/tsconfig.json`);
     expect(await file.exists()).toBe(false);
@@ -453,11 +496,15 @@ describe("compile --emit-tsconfig", () => {
   test("--runtime-path overrides the default path in emitted tsconfig", async () => {
     const restore = silenceAll();
     await main([
-      "bun", "cli", "compile",
+      "bun",
+      "cli",
+      "compile",
       "docs/examples/classify-ticket.prompt",
-      "--out", EMIT_OUT,
+      "--out",
+      EMIT_OUT,
       "--emit-tsconfig",
-      "--runtime-path", "node_modules/promptlang/runtime/index.js",
+      "--runtime-path",
+      "node_modules/promptlang/runtime/index.js",
     ]);
     restore();
     const content = JSON.parse(await Bun.file(`${EMIT_OUT}/tsconfig.json`).text());
@@ -472,22 +519,21 @@ describe("compile --emit-tsconfig", () => {
     expect(output()).toContain("--emit-tsconfig");
   });
 
-  test("emitted tsconfig + generated .ts compiles with tsc", async () => {
+  subprocessTest("emitted tsconfig + generated .ts compiles with tsc", async () => {
     const outDir = "/tmp/promptlang-emit-tsc-verify";
     const restore = silenceAll();
     await main([
-      "bun", "cli", "compile",
+      "bun",
+      "cli",
+      "compile",
       "docs/examples/classify-ticket.prompt",
-      "--out", outDir,
+      "--out",
+      outDir,
       "--emit-tsconfig",
     ]);
     restore();
 
-    const proc = Bun.spawn(
-      [process.execPath, "x", "tsc", "--project", `${outDir}/tsconfig.json`, "--noEmit"],
-      { cwd: process.cwd(), stderr: "pipe" }
-    );
-    const exitCode = await proc.exited;
+    const { exitCode } = await runTsc(`${outDir}/tsconfig.json`);
     expect(exitCode).toBe(0);
   });
 });
@@ -666,11 +712,17 @@ describe("check command", () => {
       "name: p\nversion: 1.0.0\nsources:\n  - path: ./prompts\n"
     );
     const file = join(dir, "prompts", "a.prompt");
-    await Bun.write(file, `@version "1.0.0"\nprompt a(x: string) -> string { user: "{{x}}" output: string }\n`);
+    await Bun.write(
+      file,
+      `@version "1.0.0"\nprompt a(x: string) -> string { user: "{{x}}" output: string }\n`
+    );
     const restore = silenceAll();
     await withCwd(dir, () => main(["bun", "cli", "install"]));
     // Mutate the file after install.
-    await Bun.write(file, `@version "1.0.0"\nprompt tampered(x: string) -> string { user: "{{x}}" output: string }\n`);
+    await Bun.write(
+      file,
+      `@version "1.0.0"\nprompt tampered(x: string) -> string { user: "{{x}}" output: string }\n`
+    );
     const code = await withCwd(dir, () => main(["bun", "cli", "check"]));
     restore();
     expect(code).toBe(1);
@@ -730,3 +782,54 @@ compile:
   });
 });
 
+describe("compile — empty .prompt files", () => {
+  const DIR = "/tmp/promptlang-empty-prompt-test";
+
+  async function compileFile(name: string, source: string) {
+    await rm(DIR, { recursive: true, force: true });
+    await mkdir(DIR, { recursive: true });
+    await Bun.write(join(DIR, name), source);
+    const log = captureLog();
+    const err = captureError();
+    const code = await main(["bun", "cli", "compile", join(DIR, name), "--out", join(DIR, "out")]);
+    const stderr = err.output();
+    err.restore();
+    log.restore();
+    return { code, stderr };
+  }
+
+  test("an empty file is a compile error, not a silent empty module", async () => {
+    const { code, stderr } = await compileFile("empty.prompt", "");
+    expect(code).toBe(1);
+    expect(stderr).toContain("empty.prompt");
+    expect(stderr).toContain("no declarations");
+    expect(await Bun.file(join(DIR, "out", "empty.ts")).exists()).toBe(false);
+  });
+
+  test("a file with only whitespace, comments and metadata is also an error", async () => {
+    const { code, stderr } = await compileFile(
+      "meta-only.prompt",
+      `  \n// nothing here yet\n@version "1.0.0"\n`
+    );
+    expect(code).toBe(1);
+    expect(stderr).toContain("no declarations");
+  });
+
+  test("a file with only imports is an error: compilers emit nothing for imports", async () => {
+    await Bun.write(join(DIR, "shared.prompt"), "type A = enum { x }\n");
+    const { code, stderr } = await compileFile(
+      "imports-only.prompt",
+      `import "shared.prompt" as S\n`
+    );
+    expect(code).toBe(1);
+    expect(stderr).toContain("no declarations");
+  });
+
+  test("a file that only declares types is not empty", async () => {
+    const { code } = await compileFile(
+      "types.prompt",
+      `@version "1.0.0"\ntype Category = enum { a, b }\n`
+    );
+    expect(code).toBe(0);
+  });
+});

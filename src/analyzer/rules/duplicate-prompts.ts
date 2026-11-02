@@ -22,8 +22,7 @@ export const duplicatePromptsRule: Rule = {
         (other) =>
           other.file !== context.file &&
           other.ast.declarations.some(
-            (d): d is PromptDeclaration =>
-              d.kind === "PromptDeclaration" && d.name === prompt.name
+            (d): d is PromptDeclaration => d.kind === "PromptDeclaration" && d.name === prompt.name
           )
       );
 
@@ -31,20 +30,18 @@ export const duplicatePromptsRule: Rule = {
 
       // Only report from the lexicographically first file to avoid duplicates.
       const allWithPrompt = [context.file, ...otherFiles.map((f) => f.file)];
-      const firstFile = allWithPrompt.reduce((a, b) => (a < b ? a : b));
+      const firstFile = allWithPrompt.slice().sort()[0];
       if (firstFile !== context.file) continue;
 
       const locations = allFiles
         .filter((f) =>
           f.ast.declarations.some(
-            (d): d is PromptDeclaration =>
-              d.kind === "PromptDeclaration" && d.name === prompt.name
+            (d): d is PromptDeclaration => d.kind === "PromptDeclaration" && d.name === prompt.name
           )
         )
         .map((f) => {
           const decl = f.ast.declarations.find(
-            (d): d is PromptDeclaration =>
-              d.kind === "PromptDeclaration" && d.name === prompt.name
+            (d): d is PromptDeclaration => d.kind === "PromptDeclaration" && d.name === prompt.name
           ) as PromptDeclaration;
           return `${f.file}:${decl.line}`;
         })

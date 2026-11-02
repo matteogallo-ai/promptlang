@@ -85,13 +85,25 @@ export class ConnectionError extends PromptClientError {
 }
 
 /**
- * Thrown on 404 responses that indicate a missing resource (e.g. a model not yet
- * downloaded in Ollama). Never retried.
+ * Thrown on 404 responses that indicate a missing resource (e.g. a model that
+ * Ollama has not downloaded). Never retried.
  */
 export class NotFoundError extends PromptClientError {
   constructor(message = "Resource not found.", provider?: string) {
     super(message, provider);
     this.name = "NotFoundError";
+  }
+}
+
+/**
+ * Thrown when a provider answers 2xx with a body that does not match the
+ * documented schema (not JSON, missing fields). Never retried: the same request
+ * will get the same body; RoutingClient still falls back to the next provider.
+ */
+export class InvalidResponseError extends PromptClientError {
+  constructor(message: string, provider?: string) {
+    super(message, provider);
+    this.name = "InvalidResponseError";
   }
 }
 

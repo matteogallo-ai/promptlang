@@ -1,5 +1,5 @@
 {
-  "name": "promptlang",
+  "name": "@promptlang/core",
   "version": "1.2.0",
   "description": "The typed language for production-grade LLM prompts",
   "workspaces": [
@@ -34,18 +34,26 @@
   },
   "scripts": {
     "test": "bun test",
-    "typecheck": "bunx tsc --noEmit",
+    "typecheck": "bunx tsc --noEmit && bunx tsc --noEmit -p packages/yaml-parser",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "knip": "knip",
+    "check:claims": "bun run scripts/check-claims.ts",
+    "check:stale-narrative": "bun run scripts/check-stale-narrative.ts",
+    "check:commits": "bun run scripts/check-commits.ts",
     "cli": "bun run src/cli/cli.ts",
-    "build": "echo 'Build not yet implemented'"
+    "bench": "bun run benchmarks/bench.ts"
   },
   "dependencies": {
     "@promptlang/yaml-parser": "workspace:*"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.6.4",
     "@types/bun": "latest",
+    "knip": "6.44.1",
     "typescript": "^5.6.0"
   },
   "engines": {
-    "bun": ">=1.1.0"
+    "bun": ">=1.2.20"
   }
 }

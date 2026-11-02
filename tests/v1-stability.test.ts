@@ -13,15 +13,15 @@ describe("v1.0 stability: package metadata", () => {
     expect(pkg.version).toMatch(/^1\.\d+\.\d+(-.+)?$/);
   });
 
-  test("package.json name is 'promptlang'", () => {
-    expect(pkg.name).toBe("promptlang");
+  // The unscoped `promptlang` name on npm belongs to a third party, so the package is
+  // scoped; the CLI binary keeps the `promptlang` name (asserted below).
+  test("package.json name is '@promptlang/core'", () => {
+    expect(pkg.name).toBe("@promptlang/core");
   });
 
   test("bin entry exposes the CLI", () => {
     expect(pkg.bin).toBeDefined();
-    expect((pkg.bin as Record<string, string>).promptlang).toBe(
-      "./src/cli/cli.ts"
-    );
+    expect((pkg.bin as Record<string, string>).promptlang).toBe("./src/cli/cli.ts");
   });
 
   test("runtime is exported at ./runtime for compiled stubs to import", () => {

@@ -38,19 +38,9 @@ A `.prompt` file is transformed in stages:
        │
        ▼
 ┌─────────────┐
-│   Parser    │  tokens → Concrete Syntax Tree (CST)
+│   Parser    │  tokens → Abstract Syntax Tree (AST)
 └──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│  AST Builder│  CST → Abstract Syntax Tree (AST)
-└──────┬──────┘
-       │
-       ▼
-┌──────────────────┐
-│ Semantic Analysis│  type checking, scope resolution,
-│                  │  DAG cycle detection, version compat
-└──────┬───────────┘
+       │            (registry: import resolution, integrity hashes)
        │
        ├──────────────────┐
        ▼                  ▼
@@ -62,44 +52,44 @@ A `.prompt` file is transformed in stages:
   .ts stub file     .py stub file
 ```
 
-Each stage is a pure function: given an input, it either returns a successful result
-or a structured list of diagnostics (errors + warnings). There is no global mutable
-state between stages.
+Each stage is a function of its input with no shared mutable state. A stage that
+cannot continue throws a typed error carrying line and column (`LexerError`,
+`ParserError`, `CompilerError`). There is no separate semantic-analysis pass: the
+chain compiler rejects undefined identifiers and forward references, and nothing
+checks types between chain steps, versions, or cycles in chains. The static
+analyzer (`analyze`) runs on the AST independently of compilation.
 
 ---
 
-## Component status (v1.0)
+## Component status
 
-| Component | Status | Since |
-| --------- | :----: | ----- |
-| Lexer                        | ✅ | v0.2  |
-| Parser + AST                 | ✅ | v0.3  |
-| Static analyzer (6 rules)    | ✅ | v0.3.1 |
-| TypeScript compiler          | ✅ | v0.4  |
-| Chain compilation (DAG)      | ✅ | v0.5  |
-| `--emit-tsconfig` bridge     | ✅ | v0.5.1 |
-| Multi-provider runtime       | ✅ | v0.6  |
-| AI-powered linter            | ✅ | v0.7  |
-| Python compiler              | ✅ | v0.8  |
-| Project config + registry    | ✅ | v0.9  |
-| CLI (parse/tokens/analyze/compile/init/install/list/check/version) | ✅ | v0.3.1 → v0.9 |
-| Streaming responses          | 🚧 | planned 1.x |
-| npm package                  | 🚧 | planned 1.x |
-| Remote package registry      | 🚧 | planned 1.x |
-| VS Code extension + LSP      | 🚧 | planned 1.x |
+| Component | Status |
+| --------- | ------ |
+| Lexer, parser, AST | delivered |
+| Static analyzer (6 rules) | delivered |
+| TypeScript and Python compilers, chain compilation | delivered |
+| `--emit-tsconfig` bridge | delivered |
+| Runtime clients (Anthropic, OpenAI, Ollama, Routing) | delivered; cross-provider fallback partial |
+| AI-powered linter | partial (mocked tests only) |
+| Project config + local registry | delivered |
+| CLI (parse/tokens/analyze/compile/init/install/list/check/version) | delivered |
+| `test` / `eval` execution, SemVer checks | not implemented |
+| npm package, streaming, remote registry, IDE support | not implemented |
+
+See [`CLAIMS.md`](CLAIMS.md) for the test behind each delivered item.
 
 ---
 
 ## Modules
 
-### `src/lexer/` ✅ implemented (v0.2)
+### `src/lexer/`
 
 Converts raw source text into a flat token stream. Each token carries its kind, raw
 text, and source position (line + column). The lexer handles:
 
 - Keywords: `prompt`, `chain`, `test`, `eval`, `type`, `enum`, `struct`
 - Directives: `@version`, `@model`, `@temperature`
-- Literals: strings (single, double, triple-quoted), numbers, booleans
+- Literals: double-quoted and triple-quoted strings, numbers, booleans
 - Template interpolations: `{{...}}` inside string literals
 - Comments: `//` line comments, `/* */` block comments (stripped from output)
 - Whitespace: preserved in positions, discarded from token stream
@@ -107,7 +97,7 @@ text, and source position (line + column). The lexer handles:
 The lexer is implemented as a hand-written state machine. No regex-based tokenizer is
 used — this gives precise error recovery and clean position tracking.
 
-### `src/parser/` ✅ implemented (v0.3)
+### `src/parser/`
 
 Hand-written recursive descent parser. Consumes the filtered token stream (NEWLINE,
 COMMENT_LINE, and COMMENT_BLOCK tokens are discarded) and produces a typed AST directly.
@@ -131,16 +121,16 @@ EvalDecl      = "eval" StringLit "{" dataset prompt metric threshold "}"
 Throws `ParserError` with line, column, expected type, and found type on any grammar
 violation. Named arguments (`key: value`) are supported in call expressions.
 
-### `src/ast/` ✅ implemented (v0.3)
+### `src/ast/`
 
 AST node definitions. Each node is a plain TypeScript interface with a `kind`
 discriminant, typed children, and `line`/`column` source positions. The AST discards
 token-level noise (whitespace, comments) to keep analysis clean.
 
 An `printAst()` utility in `src/ast/printer.ts` renders the tree as a human-readable
-box-drawing string for debugging and the future `promptlang parse` CLI command.
+box-drawing string; `promptlang parse` prints it.
 
-### `src/compiler/` (TypeScript backend) ✅ implemented (v0.4)
+### `src/compiler/` (TypeScript backend)
 
 Code generator that walks the AST and emits TypeScript source. Design goals:
 
@@ -150,7 +140,7 @@ Code generator that walks the AST and emits TypeScript source. Design goals:
 - No runtime dependency on PromptLang internals beyond the thin `promptlang/runtime`
   package (model calls, output parsing).
 
-### `src/compiler/python/` ✅ implemented (v0.8)
+### `src/compiler/python/`
 
 Python backend, mirroring the TypeScript compiler. Activated with `--target python`.
 
@@ -175,7 +165,7 @@ Python backend, mirroring the TypeScript compiler. Activated with `--target pyth
 
 **Naming conventions:** functions and variables use `snake_case`; input types use `PascalCase + Input`; meta constants use `SCREAMING_SNAKE_CASE + _META`; enum value lists use `_NAME_VALUES`.
 
-### `src/analyzer/` ✅ implemented (v0.3+)
+### `src/analyzer/`
 
 Static analysis pass that runs against the parsed AST. Two tiers:
 
@@ -184,11 +174,11 @@ Static analysis pass that runs against the parsed AST. Two tiers:
 | Rule | What it checks |
 |------|---------------|
 | `missing-tests` | Prompts with zero test blocks |
-| `unbounded-template` | Template variables in non-user sections (cost risk) |
+| `unbounded-template` | `{{var}}` where `var` is not a declared parameter |
 | `prompt-injection-risk` | Undelimited `{{var}}` in user section |
 | `token-cost-estimate` | Prompts with likely token cost > threshold |
 | `chain-complexity` | Chains with too many steps |
-| `duplicate-prompts` | Identical prompt bodies across files |
+| `duplicate-prompts` | The same prompt name declared in several files |
 
 **AI rules** (`src/analyzer/ai/`) — opt-in via `--ai` flag. Invokes Claude Haiku to detect semantic issues:
 
@@ -213,19 +203,19 @@ Reserved for a future pluggable rule registry. Rule authoring today lives in
 placeholder namespace will host user-defined rules once we ship a public rule
 API in a 1.x release.
 
-### `src/config/` ✅ implemented (v0.9)
+### `src/config/`
 
 Owns the project-level `promptlang.yaml` configuration.
 
-- `yaml-parser.ts` — a hand-written minimal YAML parser (mappings, sequences,
-  scalars, comments) with **zero external dependencies**. See
-  [`docs/yaml-support.md`](yaml-support.md) for the exact supported subset.
+- YAML parsing is delegated to `@promptlang/yaml-parser` (`packages/yaml-parser/`),
+  a minimal zero-dependency parser. See [`docs/yaml-support.md`](yaml-support.md)
+  for the exact supported subset.
 - `config.ts` — layers a validation + defaults pass on top of the parser and
   produces the fully typed `PromptLangConfig` interface. Required fields
   (`name`, `version`) throw `ConfigValidationError`; unknown values for
   `compile.target` are rejected explicitly.
 
-### `src/registry/` ✅ implemented (v0.9)
+### `src/registry/`
 
 Manages the `.promptlang/` on-disk registry. Three collaborating modules:
 
@@ -247,14 +237,14 @@ Manages the `.promptlang/` on-disk registry. Three collaborating modules:
 ```
 .promptlang/
 ├── manifest.json     # { version: 1, files: [...], imports: [{from, to, alias}] }
-├── integrity.json    # { "<absolute-path>": "<sha256-hex>", ... }
-└── cache/            # reserved for v1.0+ (remote registry cache)
+├── integrity.json    # { "<project-relative POSIX path>": "<sha256-hex>", ... }
+└── cache/            # created empty; unused
 ```
 
 The manifest is intentionally a plain, sorted JSON file so it diffs cleanly
 in code review and can be committed to source control.
 
-### `src/runtime/` ✅ implemented (v0.6)
+### `src/runtime/`
 
 The runtime package that compiled stubs import at runtime. It is the only part
 of PromptLang that makes network calls.
@@ -279,6 +269,7 @@ All runtime errors extend `PromptClientError → Error`. Sub-classes:
 | `NetworkError` | Yes | Low-level fetch failure |
 | `ConnectionError` | Yes | ECONNREFUSED (Ollama) |
 | `NotFoundError` | Never | 404 (Ollama model missing) |
+| `InvalidResponseError` | Never | 2xx body that is not JSON or lacks the documented fields |
 | `AllProvidersFailedError` | — | All RoutingClient providers failed |
 
 **Provider clients** (`providers/`):
@@ -295,15 +286,27 @@ All provider clients use a shared `withRetry` utility (exponential backoff, conf
 **Design invariants:**
 - Tests never make real HTTP calls; all provider tests spy on `globalThis.fetch`.
 - Zero external dependencies — uses the `fetch` global provided by Bun.
-- Streaming responses are not implemented; planned as a 1.x feature
-  (`PromptClient.stream()` companion to `.complete()`).
+- Streaming responses are not implemented.
 
-### `src/cli/` ✅ implemented (v0.3.1 → v0.9)
+### `src/cli/`
 
 Command-line interface. Subcommands:
 
-| Command                                    | Since | Description                        |
-| ------------------------------------------ | ----- | ---------------------------------- |
+| Command | Description |
+| ------- | ----------- |
+| `promptlang parse <file>` | Print the AST as a box-drawing tree |
+| `promptlang tokens <file>` | Print the token stream |
+| `promptlang analyze <path> [--json] [--strict] [--ai]` | Static rules, optionally the AI linter |
+| `promptlang compile <path> [--out dir] [--target typescript\|python] [--emit-tsconfig]` | Compile; any `--target` other than `python` yields TypeScript |
+| `promptlang init` | Scaffold `promptlang.yaml` |
+| `promptlang install` | Resolve imports and write the registry |
+| `promptlang list [--json]` | List all prompts in the project |
+| `promptlang check` | Verify integrity + import resolution |
+| `promptlang version` | Print version, repository and licence |
+
+There is no `test`, `eval`, `lint` or `viz` command.
+
+------------------------------------------ | ----- | ---------------------------------- |
 | `promptlang parse <file>`                  | v0.2  | Print AST as JSON                  |
 | `promptlang compile <file> --target ts`    | v0.3  | Compile to TypeScript              |
 | `promptlang compile <file> --target py`    | v0.8  | Compile to Python                  |
@@ -352,10 +355,12 @@ idioms (async/await patterns, type hint syntax, package conventions).
 
 ### Model-agnostic prompt declarations
 
-Provider and model configuration lives in `promptlang.config.yaml`, not in the
-`.prompt` file (the `@model` directive in the file is a default, overridable by
-config). This means the same prompt file can be tested against GPT-4o and
-Claude simultaneously, and switching providers doesn't require editing prompt logic.
+The provider is chosen at runtime: generated functions take a `PromptClient`, so
+the same compiled prompt can run against Anthropic, OpenAI, Ollama or a mock. The
+model name, however, comes from the file's `@model` directive and is sent to
+whichever client is passed; `promptlang.yaml`'s `defaults.model` is not read by the
+compiler. Switching to a provider with different model names therefore means
+editing `@model` today.
 It also makes the language portable for teams that want to vendor-neutral their stack.
 
 ### MIT license
@@ -415,8 +420,7 @@ whereas PromptLang prompts are compiled to typed functions verified before execu
 
 LangSmith is an observability and evaluation platform (SaaS). It captures traces,
 datasets, and human feedback for LLM applications. PromptLang overlaps with
-LangSmith's eval feature but operates earlier in the development loop: evals run
-locally in CI without requiring a hosted service. PromptLang does not compete with
+LangSmith's eval feature in intent only: `eval` blocks are parsed but not executed. PromptLang does not compete with
 LangSmith's tracing or human feedback features.
 
 ### W&B Weave
@@ -424,15 +428,12 @@ LangSmith's tracing or human feedback features.
 Weave is a tracing and evaluation product from Weights & Biases, similar in scope
 to LangSmith. It provides excellent dataset management and eval visualization but
 requires a W&B account and does not offer a typed prompt authoring format.
-PromptLang's eval output format is designed to be exportable to Weave and LangSmith
-for teams that use those platforms for longitudinal tracking.
+PromptLang has no eval output format.
 
 ---
 
-## Future: Incremental Compilation and LSP
+## Incremental compilation and LSP (not implemented)
 
-The architecture is designed to support incremental compilation (only re-compile
-files whose AST has changed) and a Language Server Protocol (LSP) implementation
-for IDE support. Both require the lexer and parser to be re-entrant and for the
-semantic analysis pass to operate on individual file ASTs with a shared symbol table.
-These are post-v1.0 concerns but the current design does not foreclose them.
+Neither exists. The lexer and parser keep no global state and work file by file,
+which an incremental compiler or a language server would need; there is no shared
+symbol table across files.

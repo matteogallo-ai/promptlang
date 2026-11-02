@@ -1,0 +1,35 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.6.4/schema.json",
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "files": {
+    // Markdown and .prompt sources are hand-formatted prose; Biome only owns code and JSON.
+    "includes": ["**/*.ts", "**/*.json", "**/*.jsonc", "!**/node_modules", "!bun.lock"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": { "quoteStyle": "double", "trailingCommas": "es5", "semicolons": "always" }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "style": {
+        // The lexer and parser index arrays right after explicit bounds checks; the
+        // assertions are the narrowing. Rewriting 160+ sites would be a behaviour-risk
+        // refactor, not a lint fix.
+        "noNonNullAssertion": "off"
+      },
+      "suspicious": {
+        // The code generators emit TypeScript template literals, so "${...}" inside a
+        // plain string is the intended output, not a mistake.
+        "noTemplateCurlyInString": "off"
+      }
+    }
+  },
+  "assist": { "enabled": false }
+}

@@ -8,6 +8,7 @@ import {
   ServerError,
   TimeoutError,
 } from "../errors";
+import { invalidField, isRecord, readJsonObject, requireApiKey } from "./response";
 import { withRetry } from "./retry";
 
 /** Options for configuring the OpenAIClient. */
@@ -26,10 +27,6 @@ export interface OpenAIClientOptions {
   organization?: string;
 }
 
-type OpenAIResponseBody = {
-  choices: Array<{ message: { content: string } }>;
-  usage: { prompt_tokens: number; completion_tokens: number };
-};
 type OpenAIErrorBody = { error?: { message?: string } };
 
 /** HTTP client for the OpenAI Chat Completions API (`/v1/chat/completions`). */
@@ -42,7 +39,7 @@ export class OpenAIClient implements PromptClient {
   private readonly organization?: string;
 
   constructor(options: OpenAIClientOptions) {
-    this.apiKey = options.apiKey;
+    this.apiKey = requireApiKey(options.apiKey, "OpenAIClient", "OPENAI_API_KEY");
     this.baseURL = options.baseURL ?? "https://api.openai.com/v1";
     this.timeout = options.timeout ?? 60_000;
     this.maxRetries = options.maxRetries ?? 3;
@@ -117,15 +114,31 @@ export class OpenAIClient implements PromptClient {
       }
     }
 
-    const data = (await response.json()) as OpenAIResponseBody;
-    const content = data.choices[0]?.message.content ?? "";
+    const data = await readJsonObject(response, "openai");
+    const choice = Array.isArray(data.choices) ? data.choices[0] : undefined;
+    if (!isRecord(choice) || !isRecord(choice.message))
+      invalidField("openai", "choices[0].message");
+    const message = (choice as { message: Record<string, unknown> }).message;
+    // `content` is null when the model answers with a refusal or tool call only.
+    if (typeof message.content !== "string" && message.content !== null) {
+      invalidField("openai", "choices[0].message.content");
+    }
+    const content = (message.content as string | null) ?? "";
+    const usage = data.usage;
+    if (
+      !isRecord(usage) ||
+      typeof usage.prompt_tokens !== "number" ||
+      typeof usage.completion_tokens !== "number"
+    ) {
+      invalidField("openai", "usage");
+    }
 
     return {
       content,
       usage: {
         // OpenAI uses prompt_tokens / completion_tokens; we normalize to our interface.
-        input_tokens: data.usage.prompt_tokens,
-        output_tokens: data.usage.completion_tokens,
+        input_tokens: usage.prompt_tokens,
+        output_tokens: usage.completion_tokens,
       },
     };
   }

@@ -9,7 +9,7 @@ import {
   ServerError,
   TimeoutError,
 } from "../errors";
-import { readJsonObject } from "./response";
+import { parseRetryAfter, readJsonObject } from "./response";
 import { withRetry } from "./retry";
 
 /** What a provider sends: the client adds the method, timeout and retries. */
@@ -70,7 +70,11 @@ export abstract class BaseHttpClient implements PromptClient {
       case 401:
         return new AuthenticationError(message, this.provider);
       case 429:
-        return new RateLimitError(message, this.provider);
+        return new RateLimitError(
+          message,
+          this.provider,
+          parseRetryAfter(response.headers.get("retry-after"))
+        );
       case 400:
       case 404:
         return new InvalidRequestError(message, this.provider);

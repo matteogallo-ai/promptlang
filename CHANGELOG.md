@@ -71,6 +71,9 @@ release is chosen when it is tagged.
 - `promptlang test <paths> [--json] [--live [--yes]]`: runs `test` blocks against the
   generated TypeScript, replaying `mock:` responses by default; `--live` calls
   Anthropic after printing an approximate cost estimate and getting approval.
+- HTTP clients read `Retry-After` on a 429 (seconds or HTTP-date) into
+  `RateLimitError.retryAfter`, and retries wait that long instead of the backoff;
+  above 60 s the error is thrown without waiting.
 - Python runtime: empty keys are refused, HTTP errors and malformed responses raise
   typed `PromptClientError` subclasses (the names TypeScript uses), and the Anthropic
   client sends version 2026-10-21 without `temperature`.

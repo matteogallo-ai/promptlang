@@ -262,6 +262,20 @@ describe("AnthropicClient — errors and retries", () => {
     expect(fetchSpy.mock.calls.length).toBe(2);
   });
 
+  test("a 429 carries the Retry-After header as RateLimitError.retryAfter", async () => {
+    fetchSpy.mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: { message: "slow down" } }), {
+        status: 429,
+        headers: { "retry-after": "7" },
+      })
+    );
+    const err = await new AnthropicClient({ apiKey: "key", maxRetries: 0 })
+      .complete(BASE_REQUEST)
+      .catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(RateLimitError);
+    expect((err as RateLimitError).retryAfter).toBe(7);
+  });
+
   test("throws InvalidRequestError on 400", async () => {
     fetchSpy.mockResolvedValueOnce(errResponse(400, "Bad request"));
     const client = new AnthropicClient({ apiKey: "key", maxRetries: 0 });

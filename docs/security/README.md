@@ -18,8 +18,7 @@ digest. The file is the command's output, reformatted by Biome; the token is pas
 through the environment and appears nowhere in it.
 
 `.github/workflows/scorecard.yml` publishes the score on each push to `main` and
-weekly; the README badge reads it. Until that workflow has run once on `main`, the
-badge shows no score.
+weekly; the README badge reads it.
 
 ## `scorecard-after.json`: the score check by check
 
@@ -32,17 +31,17 @@ records one run so that the explanations below can be checked against it.
 | Check | Score | Why |
 | ----- | ----- | --- |
 | Binary-Artifacts | 10 | No binary file is tracked. |
-| Branch-Protection | 3 | `main` has a ruleset: pull request, required checks, no force-push, no deletion. Scorecard's higher tiers ask for approving reviews and code-owner review, which a single maintainer cannot give to their own pull requests. |
+| Branch-Protection | 3 | `main` has a ruleset: pull request, required checks, no force-push, no deletion. Scorecard's tiers are cumulative and the next one asks for approving reviews, which a single maintainer cannot give to their own pull requests; required checks are only counted in the tier after that, so requiring more of them leaves this at 3. |
 | CI-Tests | 10 | Every merged pull request ran CI. |
 | CII-Best-Practices | 0 | The project is not registered on bestpractices.dev. |
-| Code-Review | 0 | Low by nature on a solo repository: Scorecard counts changesets approved by someone other than their author, and there is no second maintainer. Each change is reviewed by an independent agent and by the maintainer, which Scorecard cannot see and does not count. |
-| Contributors | 0 | Low by nature on a solo repository: Scorecard counts contributors from at least three distinct organisations. One author scores 0. |
-| Dangerous-Workflow | 10 | No `pull_request_target`, no untrusted input in `run:`; `tests/workflows.test.ts` keeps it so. |
+| Code-Review | 0 | Low by nature on a solo repository: Scorecard counts changesets with an approving GitHub review from someone other than their author, and there is no second maintainer. |
+| Contributors | 0 | Low by nature on a solo repository: Scorecard counts the distinct companies and organisations (GitHub profile company, public org memberships) of contributors with at least 5 commits, and gives 10 at three. The only author has 4 commits, under that threshold; past it, their one company scores about 3, and more needs contributors from other organisations. |
+| Dangerous-Workflow | 10 | No `pull_request_target`, and no `github.event.*` or `github.head_ref` expression inside a `run:` script; `tests/workflows.test.ts` keeps both so. |
 | Dependency-Update-Tool | 10 | `.github/dependabot.yml`. |
 | Fuzzing | 0 | No fuzzing or property-based tests detected. |
 | License | 10 | `LICENSE` is the MIT text; GitHub reports its SPDX id as `MIT`. |
 | Maintained | 0 | The repository was created on 2026-08-11; Scorecard scores 0 for its first 90 days, whatever the activity. |
-| Packaging | -1 | Scorecard has detected no successful run of a publishing workflow: `release.yml` has never published. |
+| Packaging | -1 | Scorecard has detected no successful run of a publishing workflow: `release.yml` has never run successfully. |
 | Pinned-Dependencies | 10 | Every action is pinned by commit SHA; `tests/workflows.test.ts` keeps it so. |
 | SAST | 8 | CodeQL runs on every pull request; the commits merged before it existed are still in the window Scorecard reads. |
 | Security-Policy | 10 | `SECURITY.md`. |
@@ -55,9 +54,12 @@ records one run so that the explanations below can be checked against it.
 The current `main` ruleset with six more required checks: `semver-check`,
 `osv-scanner`, `package (node 20)`, `package (node lts/*)`, `analyze
 (javascript-typescript)`, `analyze (actions)`, and a `code_scanning` rule that
-blocks a merge on a CodeQL alert of high severity or above. `tests/ruleset.test.ts`
+blocks a merge on a CodeQL security alert of high severity or above, or on any
+CodeQL alert of severity error. `tests/ruleset.test.ts`
 fails if a required check is not a check that pull requests run, so a renamed job
-cannot leave a check that never reports and blocks every merge. The maintainer
+cannot leave a check that never reports and blocks every merge. It also fails on
+what would let a required check skip a pull request: a `pull_request` filter
+(`paths`, `branches`, `types`…) or a job-level `if:`. The maintainer
 applies it:
 
 ```bash

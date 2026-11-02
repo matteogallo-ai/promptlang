@@ -81,7 +81,12 @@ export interface EvalRecord {
   corpus: { version: string; sha256: string; cases: number };
   repeats: number;
   estimate_usd: number;
+  /** Usage the API reported, priced. */
   cost_usd: number;
+  /** What the budget charged: cost_usd plus failed calls at their worst case, which may have been billed. */
+  charged_usd: number;
+  /** False when the run was interrupted: the cases not run are absent from `results`. */
+  complete: boolean;
   price_usd_per_mtok: { input: number; output: number };
   latency_ms: { n: number; p50: number | null; p95: number | null };
   calls: Array<{
@@ -90,6 +95,8 @@ export interface EvalRecord {
     latency_ms: number;
     input_tokens: number;
     output_tokens: number;
+    /** The error's class when the call failed. */
+    error?: string;
   }>;
   /** The categories reported per case and repeat; null when the call failed. */
   results: Array<{ repeat: number; case: string; predicted: string[] | null }>;
@@ -130,13 +137,18 @@ export function estimate(corpus: Corpus, repeats: number = REPEATS): number {
   return estimateLinterCost([...corpus.contexts.values()], AI_LINTER_MODEL).estimatedUsd * repeats;
 }
 
-/** Lints every case `repeats` times through `client`, timing and metering each call. */
+/**
+ * Lints every case `repeats` times through `client`, timing and metering each
+ * call, failed ones included. When `stop` is aborted no new call starts, the
+ * calls in flight finish, and the record says it is incomplete.
+ */
 export async function evaluate(
-  client: PromptClient,
+  client: BudgetedClient,
   corpus: Corpus,
   now: Date,
   anthropicVersion: string,
-  repeats: number = REPEATS
+  repeats: number = REPEATS,
+  stop?: AbortSignal
 ): Promise<EvalRecord> {
   const price = pricePerMTok(AI_LINTER_MODEL);
   if (!price) throw new Error(`no price recorded for ${AI_LINTER_MODEL}`);
@@ -147,20 +159,32 @@ export async function evaluate(
   );
   let next = 0;
   const worker = async () => {
-    while (next < jobs.length) {
+    while (next < jobs.length && !stop?.aborted) {
       const { id, repeat } = jobs[next++]!;
       const metered: PromptClient = {
         async complete(req) {
           const t0 = performance.now();
-          const res = await client.complete(req);
-          calls.push({
-            case: id,
-            repeat,
-            latency_ms: Math.round(performance.now() - t0),
-            input_tokens: res.usage?.input_tokens ?? 0,
-            output_tokens: res.usage?.output_tokens ?? 0,
-          });
-          return res;
+          const timed = { case: id, repeat };
+          try {
+            const res = await client.complete(req);
+            calls.push({
+              ...timed,
+              latency_ms: Math.round(performance.now() - t0),
+              input_tokens: res.usage?.input_tokens ?? 0,
+              output_tokens: res.usage?.output_tokens ?? 0,
+            });
+            return res;
+          } catch (error) {
+            // Recorded, then rethrown: AiLinter turns it into an ai:request-failure issue.
+            calls.push({
+              ...timed,
+              latency_ms: Math.round(performance.now() - t0),
+              input_tokens: 0,
+              output_tokens: 0,
+              error: error instanceof Error ? error.name : typeof error,
+            });
+            throw error;
+          }
         },
       };
       const issues = await new AiLinter({ client: metered, model: AI_LINTER_MODEL }).analyze([
@@ -179,7 +203,8 @@ export async function evaluate(
   const key = (x: { repeat: number; case: string }) => order.get(`${x.repeat}/${x.case}`)!;
   results.sort((a, b) => key(a) - key(b));
   calls.sort((a, b) => key(a) - key(b));
-  const latencies = calls.map((c) => c.latency_ms);
+  // Latency objectives are about answers: a refused or failed call is counted as an error instead.
+  const latencies = calls.filter((c) => !c.error).map((c) => c.latency_ms);
   const record = { results, repeats };
   return {
     date: now.toISOString(),
@@ -194,6 +219,8 @@ export async function evaluate(
     estimate_usd: estimate(corpus, repeats),
     cost_usd:
       calls.reduce((s, c) => s + c.input_tokens * price[0] + c.output_tokens * price[1], 0) / 1e6,
+    charged_usd: client.spentUsd,
+    complete: results.length === jobs.length,
     price_usd_per_mtok: { input: price[0], output: price[1] },
     latency_ms: {
       n: latencies.length,
@@ -234,11 +261,20 @@ if (import.meta.main) {
     maxRetries: 0,
     apiVersion: DEFAULT_ANTHROPIC_VERSION,
   });
+  // Ctrl-C stops new calls; the calls in flight finish and the record is still written,
+  // since money was spent. A second Ctrl-C exits at once.
+  const stop = new AbortController();
+  process.once("SIGINT", () => {
+    console.error("Interrupted: finishing the calls in flight, then writing the record.");
+    stop.abort();
+  });
   const record = await evaluate(
     new BudgetedClient(inner, usd),
     corpus,
     now,
-    DEFAULT_ANTHROPIC_VERSION
+    DEFAULT_ANTHROPIC_VERSION,
+    REPEATS,
+    stop.signal
   );
   const name = `linter-eval-${now.toISOString().replace(/[:.]/g, "-")}.json`;
   const text = `${JSON.stringify(record, null, 2)}\n`;

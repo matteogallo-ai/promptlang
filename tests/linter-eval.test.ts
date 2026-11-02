@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import type { PromptClient } from "../src/runtime/client";
+import { ServerError } from "../src/runtime/errors";
 import { BudgetedClient } from "../src/testing/budget";
 import { checksumMismatches, listedChecksums } from "../scripts/checksums";
 import { buildCorpus } from "../scripts/linter-eval-corpus";
@@ -126,6 +127,44 @@ describe("linter eval run", () => {
     expect(test1.per_category.MISSING_FORMAT_SPEC!.recall).toMatchObject({ k: 0, n: 7 });
     expect(record.metrics[1]).toEqual({ ...record.metrics[0]!, repeat: 2 });
     expect(record.cost_usd).toBeCloseTo((240 * (1000 * 0.1 + 100 * 0.5)) / 1e6, 10);
+  });
+});
+
+describe("linter eval run, failures and interruption", () => {
+  test("a failed call is recorded with its error, charged at its worst case, and leaves no verdict", async () => {
+    const corpus = await loadCorpus();
+    let n = 0;
+    const flaky: PromptClient = {
+      async complete() {
+        if (n++ === 0) throw new ServerError(529, "overloaded", "anthropic");
+        return { content: '{"issues":[]}', usage: { input_tokens: 10, output_tokens: 10 } };
+      },
+    };
+    const capped = new BudgetedClient(flaky, estimate(corpus, 1));
+    const record = await evaluate(capped, corpus, new Date(0), "2026-10-21", 1);
+    const failed = record.calls.filter((c) => c.error);
+    expect(failed).toEqual([expect.objectContaining({ error: "ServerError", input_tokens: 0 })]);
+    expect(record.latency_ms.n).toBe(119);
+    expect(record.results.filter((r) => r.predicted === null)).toHaveLength(1);
+    expect(record.charged_usd).toBeGreaterThan(record.cost_usd);
+    expect(record.complete).toBe(true);
+  });
+
+  test("an abort stops new calls; the calls in flight finish and the record says it is incomplete", async () => {
+    const corpus = await loadCorpus();
+    const stop = new AbortController();
+    let sent = 0;
+    const client: PromptClient = {
+      async complete() {
+        if (++sent === 5) stop.abort();
+        return { content: '{"issues":[]}', usage: { input_tokens: 10, output_tokens: 10 } };
+      },
+    };
+    const capped = new BudgetedClient(client, estimate(corpus, 1));
+    const record = await evaluate(capped, corpus, new Date(0), "2026-10-21", 1, stop.signal);
+    expect(sent).toBeLessThan(10);
+    expect(record.results).toHaveLength(sent);
+    expect(record.complete).toBe(false);
   });
 });
 

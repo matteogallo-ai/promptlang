@@ -2,11 +2,10 @@
 
 **The typed language for production-grade LLM prompts.**
 
-Write, version, test, and deploy your LLM prompts as first-class code.
-Compile to TypeScript or Python. Bring your own API key. Zero dependencies.
+Write your LLM prompts as typed, first-class code and compile them to
+TypeScript or Python. Bring your own API key. No third-party runtime dependencies.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-626%20passing-brightgreen.svg)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue.svg)](tsconfig.json)
 [![Bun](https://img.shields.io/badge/runtime-Bun-black.svg)](https://bun.sh)
 [![CI](https://github.com/matteogallo-ai/promptlang/actions/workflows/ci.yml/badge.svg)](https://github.com/matteogallo-ai/promptlang/actions)
@@ -22,16 +21,23 @@ in production, you find out from a customer complaint.
 
 PromptLang treats prompts as first-class typed code:
 
-- **Type-safe** inputs and outputs, verified at compile-time
-- **Native tests and evals** in the same file as the prompt
-- **Semantic versioning** with breaking-change tracking
-- **AI-powered linter** that invokes Claude to catch semantic issues static
-  analysis cannot see (vague instructions, prompt injection risks, token
-  inefficiencies) — nothing else in the ecosystem does this
-- **Compile to TypeScript OR Python** from the same source of truth
+- **Typed** inputs and outputs: the generated TypeScript type-checks under `strict`
+- **Compile to TypeScript or Python** from the same source of truth
+- **Static analysis**: six deterministic rules (missing tests, unbounded
+  templates, prompt-injection risk, token cost, chain complexity, duplicates)
 - **Multi-provider runtime** (Anthropic, OpenAI, Ollama, or your own client)
-  with automatic fallback via `RoutingClient`
-- **Zero external dependencies** — Bun + `fetch` + your own API keys
+- **No third-party runtime dependencies**: Bun + `fetch` + your own API keys
+
+Not delivered yet, and labelled as such everywhere in this repository (see
+[`docs/CLAIMS.md`](docs/CLAIMS.md)):
+
+- **Native tests**: `test` blocks are parsed but not executed
+- **SemVer for prompts**: `@version` is not validated and imports carry no
+  version constraint
+- **Cross-provider fallback**: `RoutingClient` switches providers, but the
+  generated code sends one model name to all of them
+- **AI-powered linter**: the plumbing is tested with a mocked client only; there
+  is no committed live run, so its findings are not a measured quality
 
 ---
 
@@ -53,6 +59,7 @@ prompt classify_ticket(ticket: string) -> Category {
   output: Category
 }
 
+// Parsed and kept in the AST; not executed yet (see Roadmap).
 test "classifies bug reports correctly" {
   input: classify_ticket("The submit button crashes the app on iOS 17")
   expect: bug
@@ -84,13 +91,17 @@ const category = await classify_ticket({ ticket: "..." }, client);
 
 ## Comparison
 
+Each PromptLang cell is checked against [`docs/CLAIMS.md`](docs/CLAIMS.md) by the
+`claims` CI job. The other columns reflect the maintainer's reading of those
+tools' public documentation and are not tested here.
+
 | Feature                          | LangChain | LangSmith | W&B Weave | **PromptLang** |
 | -------------------------------- | :-------: | :-------: | :-------: | :------------: |
 | Typed I/O                        |    ❌     |    ❌     |    ❌     |       ✅       |
-| Native tests                     |    ❌     |   SaaS    |   SaaS    |     ✅ CLI     |
-| SemVer for prompts               |    ❌     |    ❌     |    ❌     |       ✅       |
-| **AI-powered linter**            |    ❌     |    ❌     |    ❌     |  ✅ **unique** |
-| Multi-provider fallback          |  Partial  |    ❌     |    ❌     |       ✅       |
+| Native tests                     |    ❌     |   SaaS    |   SaaS    | Roadmap (in progress) |
+| SemVer for prompts               |    ❌     |    ❌     |    ❌     | Roadmap (in progress) |
+| AI-powered linter                |    ❌     |    ❌     |    ❌     | Partial (mocked tests only) |
+| Multi-provider fallback          |  Partial  |    ❌     |    ❌     | Partial (same model name only) |
 | Compile to TypeScript **and** Python | ❌     |    ❌     |    ❌     |       ✅       |
 | Static analysis (SonarQube-style)|    ❌     |    ❌     |    ❌     |       ✅       |
 | Open source, zero SaaS           |    ✅     |    ❌     |    ❌     |       ✅       |
@@ -99,7 +110,7 @@ const category = await classify_ticket({ ticket: "..." }, client);
 
 ## Installation
 
-Currently in alpha distribution — clone the repo:
+`@promptlang/core` is not on npm. Clone the repository:
 
 ```bash
 git clone https://github.com/matteogallo-ai/promptlang.git
@@ -107,15 +118,16 @@ cd promptlang && bun install
 bun run cli --help
 ```
 
-An npm package will be published in a 1.x point release. For now, use the
-CLI via `bun run cli <command>`.
+Then run the CLI with `bun run cli <command>`.
 
 ---
 
 ## AI-Powered Linting
 
-PromptLang can invoke a real LLM to semantically analyze your prompts at build time.
-Nothing else in the ecosystem does this.
+PromptLang can send each prompt to an LLM for a semantic review at build time.
+Status: **partial**. The request/response plumbing is covered by tests that use a
+mocked client; no live run has been committed, so nothing here measures how good
+the findings are.
 
 Static analysis catches structural issues (missing tests, unbounded templates, prompt
 injection risks). The AI linter catches semantic issues that static tools cannot see:
@@ -139,8 +151,10 @@ confidence-scored issues alongside the static analysis output.
 
 ### Cost
 
-The AI linter uses Claude Haiku 4.5 by default (~$0.001 per prompt analyzed).
-Running the linter on 10 prompts costs approximately $0.01. Costs are yours —
+Each analyzed prompt is one request to Claude Haiku 4.5 (by default) with
+`max_tokens: 1024`. At list prices ($1 / $5 per million input / output tokens) the
+three example files (four prompts, ~2 200 input tokens) cost at most about $0.03.
+This is an estimate from request sizes, not a measurement. Costs are yours —
 bring your own API key.
 
 ---
@@ -201,16 +215,16 @@ compile:
   emit_tsconfig: true
 ```
 
-Then use imports across files:
+Files can declare imports at the top:
 
 ```
 import "shared/classify.prompt" as Classify
-
-chain full_workflow(input: string) -> string {
-  step category = Classify.classify_ticket(input)
-  ...
-}
 ```
+
+`install` resolves these imports into the project's dependency graph and
+`check` verifies their hashes. Calling an imported prompt from a chain
+(`Classify.classify_ticket(...)`) does not parse yet; chains can only call
+prompts declared in the same file.
 
 Bootstrap a new project:
 
@@ -276,7 +290,12 @@ const client = new OllamaClient({
 const category = await classify_ticket({ ticket: "..." }, client);
 ```
 
-### Routing (automatic fallback)
+### Routing (fallback across providers)
+
+> **Limitation.** The generated code puts the `@model` value in every request, so
+> the fallback below sends a Claude model ID to OpenAI, which rejects it. Fallback
+> works today only between clients that accept the same model name (for example
+> two Anthropic clients with different keys or base URLs).
 
 ```typescript
 import { AnthropicClient, OpenAIClient, RoutingClient } from "promptlang/runtime";
@@ -295,10 +314,11 @@ const category = await classify_ticket({ ticket: "..." }, client);
 
 ## Working out of the repository
 
-The generated TypeScript uses `import { … } from "promptlang/runtime"`. This
-import resolves within this repository via the `package.json` `exports` field.
-In an **external project** it will produce `TS2307: Cannot find module 'promptlang/runtime'`
-until the npm package is published.
+The generated TypeScript uses `import { … } from "promptlang/runtime"`. Inside
+this repository that import resolves through the `paths` mapping in
+`tsconfig.json`. In an **external project** it fails with
+`TS2307: Cannot find module 'promptlang/runtime'`, because the package is not
+published.
 
 **Workaround** — pass `--emit-tsconfig` to `compile`. It writes a `tsconfig.json`
 with a `paths` mapping that points directly at the local runtime source:
@@ -318,7 +338,9 @@ bunx tsc --project ./generated/tsconfig.json --noEmit
 | [docs/architecture.md](docs/architecture.md)          | Technical design, pipeline, design decisions       |
 | [docs/migration-guide.md](docs/migration-guide.md)    | Migration guide 0.x → 1.0                          |
 | [docs/yaml-support.md](docs/yaml-support.md)          | YAML subset supported by `promptlang.yaml`         |
-| [docs/benchmarks.md](docs/benchmarks.md)              | Measured performance numbers on the reference machine |
+| [docs/benchmarks.md](docs/benchmarks.md)              | Timings produced by `bun run bench`                |
+| [docs/CLAIMS.md](docs/CLAIMS.md)                      | Every advertised capability → module → test → status |
+| [docs/ENGINEERING_STANDARDS.md](docs/ENGINEERING_STANDARDS.md) | Rules every change in this repository follows |
 | [docs/roadmap.md](docs/roadmap.md)                    | Public milestone roadmap                           |
 | [docs/examples/](docs/examples/)                      | Annotated `.prompt` examples                       |
 
@@ -326,8 +348,8 @@ bunx tsc --project ./generated/tsconfig.json --noEmit
 
 ## Packages
 
-PromptLang is developed as a Bun workspace. The main `promptlang`
-package lives in `src/`. First-party companion packages live under
+PromptLang is developed as a Bun workspace. The main package,
+`@promptlang/core` (not yet published; the CLI binary is `promptlang`), lives in `src/`. First-party companion packages live under
 `packages/` and are published under the `@promptlang/` scope on npm.
 
 | Package | Location | Version | Description |
@@ -339,17 +361,53 @@ SemVer track.
 
 ---
 
-## Roadmap post-1.0
+## Roadmap
 
-- npm package publication (`npm install promptlang`)
-- Remote package registry (currently local-only)
+In progress:
+
+- **SemVer for prompts** — validate `@version`, version constraints on imports,
+  and a `semver-check` command that detects breaking interface changes
+- **Native tests** — execute `test` blocks with the mock client by default
+- **Cross-provider fallback** — per-provider model mapping in `RoutingClient`
+- **npm publication** of `@promptlang/core`
+
+Not scheduled:
+
+- Remote package registry (the registry is local-only)
 - Streaming responses in the runtime
 - More provider clients (Google Gemini, Mistral, Cohere)
 - IDE extensions (VS Code syntax highlighting, LSP)
 - MCP server integration
 
-See [`docs/roadmap.md`](docs/roadmap.md) for the full plan and the story of
-what was built in the 11 alpha releases.
+See [`docs/roadmap.md`](docs/roadmap.md) for the full list.
+
+---
+
+## How this was built
+
+PromptLang was written mostly by a coding agent (Claude Code) working from the
+maintainer's specifications, one milestone per release; the git history up to
+v1.2.0 shows one large commit per milestone.
+
+On 2026-11-02 an independent external audit compared the README with the code. It found
+that the two headline features — "SemVer for prompts" and "Native tests" — were
+marked ✅ but not implemented; that `src/index.ts` exported only a hard-coded
+`VERSION = "0.1.0-alpha.0"` in v1.2.0; that the test badge double-counted the
+workspace package's tests; that cross-provider fallback could not work; and that
+the package could not be published under its name. A follow-up review of the
+docs found that `parallel` steps and calls to imported prompts, both documented,
+do not parse.
+
+What changed in response:
+
+- every README capability is now listed in [`docs/CLAIMS.md`](docs/CLAIMS.md)
+  with its test, and CI (`claims`) fails if the README shows an unshipped one as ✅;
+- CI (`stale-narrative`) rejects forward-looking release talk and untracked TODOs in code and docs;
+- Biome and knip run in CI; dead code they reported was removed;
+- the package is `@promptlang/core` and its entry point exports the compiler API;
+- the rules followed for every change are in
+  [`docs/ENGINEERING_STANDARDS.md`](docs/ENGINEERING_STANDARDS.md): agent output is
+  reviewed by a second agent with fresh context, then audited by the maintainer.
 
 ---
 

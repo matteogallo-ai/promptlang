@@ -1,9 +1,15 @@
-import { AuthenticationError, InvalidRequestError, NotFoundError } from "../errors";
+import {
+  AuthenticationError,
+  InvalidRequestError,
+  InvalidResponseError,
+  NotFoundError,
+} from "../errors";
 
 function isNonRetryable(err: Error): boolean {
   return (
     err instanceof AuthenticationError ||
     err instanceof InvalidRequestError ||
+    err instanceof InvalidResponseError ||
     err instanceof NotFoundError
   );
 }

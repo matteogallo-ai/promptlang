@@ -95,6 +95,18 @@ export class NotFoundError extends PromptClientError {
   }
 }
 
+/**
+ * Thrown when a provider answers 2xx with a body that does not match the
+ * documented schema (not JSON, missing fields). Never retried: the same request
+ * will get the same body; RoutingClient still falls back to the next provider.
+ */
+export class InvalidResponseError extends PromptClientError {
+  constructor(message: string, provider?: string) {
+    super(message, provider);
+    this.name = "InvalidResponseError";
+  }
+}
+
 /** Thrown by RoutingClient when every configured provider fails. */
 export class AllProvidersFailedError extends PromptClientError {
   /** Errors thrown by each provider, in the order they were tried. */

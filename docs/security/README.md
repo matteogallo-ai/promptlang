@@ -17,5 +17,6 @@ The image is Scorecard v5.6.0. `gcr.io/openssf/scorecard:stable` refused the pul
 digest. The file is the command's output, reformatted by Biome; the token is passed
 through the environment and appears nowhere in it.
 
-The current score is published by `.github/workflows/scorecard.yml` and shown by the
-README badge.
+`.github/workflows/scorecard.yml` publishes the score on each push to `main` and
+weekly; the README badge reads it. Until that workflow has run once on `main`, the
+badge shows no score.

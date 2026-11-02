@@ -12,7 +12,7 @@ function wf(body: string, perms = "permissions:\n  contents: read\n"): string {
 
 describe("GitHub Actions workflows", () => {
   test("every workflow pins actions by SHA, reads by default and justifies each write", async () => {
-    const files = (await readdir(DIR)).filter((f) => f.endsWith(".yml"));
+    const files = (await readdir(DIR)).filter((f) => /\.ya?ml$/.test(f));
     expect(files.length).toBeGreaterThan(0);
     const violations: string[] = [];
     for (const f of files)
@@ -31,18 +31,63 @@ describe("GitHub Actions workflows", () => {
     const text = wf(
       `    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/checkout@11d5960\n      - uses: actions/checkout@${SHA}\n`
     );
-    expect(workflowViolations("bad.yml", text)).toHaveLength(3);
+    expect(workflowViolations("bad.yml", text)).toEqual([
+      "bad.yml: actions/checkout@v4 is not pinned to a full commit SHA",
+      "bad.yml: actions/checkout@11d5960 is not pinned to a full commit SHA",
+      `bad.yml: actions/checkout@${SHA} has no version comment (# vX.Y.Z)`,
+    ]);
+  });
+
+  test("sees flow-style steps and permissions, not only block style", () => {
+    expect(
+      workflowViolations("flow.yml", wf("    steps: [{ uses: actions/checkout@v4 }]\n"))
+    ).toEqual(["flow.yml: actions/checkout@v4 is not pinned to a full commit SHA"]);
+    expect(
+      workflowViolations("flow.yml", wf("    permissions: { id-token: write }\n    steps: []\n"))
+    ).toEqual(["flow.yml: job j: id-token: write has no comment line right above it saying why"]);
+  });
+
+  test("ignores run scripts and comments, accepts quoted pins and digest-pinned images", () => {
+    const text = wf(
+      `    steps:\n      # write-all is never used here\n      - uses: "actions/checkout@${SHA}" # v4.4.0\n      - uses: docker://alpine@sha256:${"a".repeat(64)}\n      - run: |\n          mode: write\n          echo "uses: actions/checkout@v4"\n`
+    );
+    expect(workflowViolations("ok.yml", text)).toEqual([]);
+  });
+
+  test("a comment in one job does not justify the same write in another job", () => {
+    const text = wf(
+      "    permissions: { id-token: write }\n    steps: []\n  k:\n    runs-on: ubuntu-latest\n    permissions:\n      # Why.\n      id-token: write\n    steps: []\n"
+    );
+    expect(workflowViolations("jobs.yml", text)).toEqual([
+      "jobs.yml: job j: id-token: write has no comment line right above it saying why",
+    ]);
+  });
+
+  test("each write needs its own comment, and a job-level write-all is rejected", () => {
+    const two = wf(
+      "    permissions:\n      # Why.\n      id-token: write\n      security-events: write\n    steps: []\n"
+    );
+    expect(workflowViolations("two.yml", two)).toEqual([
+      "two.yml: job j: security-events: write has no comment line right above it saying why",
+    ]);
+    expect(
+      workflowViolations("all.yml", wf("    permissions: write-all\n    steps: []\n"))
+    ).toEqual(["all.yml: job j: permissions write-all"]);
   });
 
   test("rejects a broad workflow token, an unexplained write and pull_request_target", () => {
     expect(workflowViolations("a.yml", wf("    steps: []\n", "permissions: write-all\n"))).toEqual([
-      "a.yml:4: write-all permission",
-      'a.yml: workflow-level permissions must be { contents: read }, got "write-all"',
+      'a.yml: workflow-level permissions must be { contents: read } or {}, got "write-all"',
     ]);
     expect(
       workflowViolations("b.yml", wf("    permissions:\n      id-token: write\n    steps: []\n"))
-    ).toEqual(["b.yml:10: write permission without a comment saying why"]);
+    ).toEqual(["b.yml: job j: id-token: write has no comment line right above it saying why"]);
     const target = wf("    steps: []\n").replace("on:\n  push:\n", "on:\n  pull_request_target:\n");
     expect(workflowViolations("c.yml", target)).toEqual(["c.yml: uses pull_request_target"]);
+    const list = wf("    steps: []\n").replace(
+      "on:\n  push:\n",
+      "on: [push, pull_request_target]\n"
+    );
+    expect(workflowViolations("d.yml", list)).toEqual(["d.yml: uses pull_request_target"]);
   });
 });

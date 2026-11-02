@@ -7,11 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-- **AI-powered linter** is `shipped` in `docs/CLAIMS.md`: the first live run is
-  committed under `runs/live/` (5/5 calls returned, $0.0038). It is one sample,
-  not a measure of the findings' quality.
-
 ## [2.0.0] - 2026-11-02
 
 Remediation after the 2026-11-02 external audit, and the first release of
@@ -35,8 +30,10 @@ ways, each of which SemVer reserves for a major version:
 - README marked **Multi-provider fallback** ✅; generated code sends the same model
   name to every provider, so Anthropic → OpenAI fallback failed. Now true:
   `RoutingClient` maps the model per provider (see Added).
-- README marked the **AI-powered linter** ✅ and "unique"; it is only tested with a
-  mocked client. Now Partial.
+- README marked the **AI-powered linter** ✅ and "unique"; it was only tested with a
+  mocked client and had never run against the API. Now `shipped` in
+  `docs/CLAIMS.md` on one committed live run (`runs/live/`: 5/5 calls returned,
+  $0.0038). It is one sample, not a measure of the findings' quality.
 - The test badge said "626 passing": it counted `@promptlang/yaml-parser`'s 23
   tests twice (603 tests ran). Removed.
 - `src/index.ts` exported only `VERSION = "0.1.0-alpha.0"` in v1.2.0.

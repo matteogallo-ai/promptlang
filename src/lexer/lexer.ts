@@ -1,5 +1,5 @@
 import { LexerError } from "./errors";
-import { Token, TokenType } from "./token";
+import { type Token, TokenType } from "./token";
 
 /**
  * Maps keyword strings to their corresponding TokenType.

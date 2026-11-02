@@ -14,7 +14,7 @@ export function formatError(
 ): string {
   const lines = source.split("\n");
   const errorLine = lines[error.line - 1] ?? "";
-  const marker = " ".repeat(Math.max(0, error.column - 1)) + "^";
+  const marker = `${" ".repeat(Math.max(0, error.column - 1))}^`;
   return [
     `${filePath}:${error.line}:${error.column}`,
     error.message,

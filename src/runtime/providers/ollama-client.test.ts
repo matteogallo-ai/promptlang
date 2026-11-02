@@ -26,7 +26,7 @@ function errResponse(status: number, error = "An error occurred"): Response {
 // Spy setup
 // ---------------------------------------------------------------------------
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: Bun types fetch with a static preconnect member, so typed mock implementations do not satisfy it; this spy only feeds canned Responses.
 let fetchSpy: any;
 
 beforeEach(() => {
@@ -63,7 +63,7 @@ describe("OllamaClient — headers and URL", () => {
     await new OllamaClient().complete(BASE_REQUEST);
     const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
     const headers = init.headers as Record<string, string>;
-    expect(headers["Authorization"]).toBeUndefined();
+    expect(headers.Authorization).toBeUndefined();
     expect(headers["x-api-key"]).toBeUndefined();
   });
 });

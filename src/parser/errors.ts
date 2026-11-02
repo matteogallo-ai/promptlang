@@ -1,4 +1,4 @@
-import { TokenType } from "../lexer/token";
+import type { TokenType } from "../lexer/token";
 
 /** Thrown when the parser encounters a token sequence that violates the grammar. */
 export class ParserError extends Error {

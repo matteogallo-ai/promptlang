@@ -30,7 +30,7 @@ export const duplicatePromptsRule: Rule = {
 
       // Only report from the lexicographically first file to avoid duplicates.
       const allWithPrompt = [context.file, ...otherFiles.map((f) => f.file)];
-      const firstFile = allWithPrompt.reduce((a, b) => (a < b ? a : b));
+      const firstFile = allWithPrompt.slice().sort()[0];
       if (firstFile !== context.file) continue;
 
       const locations = allFiles

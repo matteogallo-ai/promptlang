@@ -5,7 +5,7 @@ import { main } from "./cli";
 function captureLog(): { output: () => string; restore: () => void } {
   const lines: string[] = [];
   const orig = console.log;
-  console.log = (...args: any[]) => lines.push(args.join(" "));
+  console.log = (...args: unknown[]) => lines.push(args.join(" "));
   return {
     output: () => lines.join("\n"),
     restore: () => {
@@ -17,7 +17,7 @@ function captureLog(): { output: () => string; restore: () => void } {
 function captureError(): { output: () => string; restore: () => void } {
   const lines: string[] = [];
   const orig = console.error;
-  console.error = (...args: any[]) => lines.push(args.join(" "));
+  console.error = (...args: unknown[]) => lines.push(args.join(" "));
   return {
     output: () => lines.join("\n"),
     restore: () => {

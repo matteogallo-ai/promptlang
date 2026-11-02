@@ -113,14 +113,14 @@ export async function runCompile(args: string[]): Promise<number> {
 
       if (target === "python") {
         const generated = compilePython(ast, file);
-        const outName = basename(file, ".prompt").replace(/-/g, "_") + ".py";
+        const outName = `${basename(file, ".prompt").replace(/-/g, "_")}.py`;
         const outPath = join(outDir, outName);
         await Bun.write(outPath, generated);
         console.log(`  compiled  ${file} → ${outPath}`);
         generatedNames.push(outName);
       } else {
         const generated = compile(ast, file);
-        const outName = basename(file, ".prompt") + ".ts";
+        const outName = `${basename(file, ".prompt")}.ts`;
         const outPath = join(outDir, outName);
         await Bun.write(outPath, generated);
         console.log(`  compiled  ${file} → ${outPath}`);
@@ -183,28 +183,26 @@ function computeDefaultRuntimePath(outDir: string): string {
 }
 
 function buildTsconfig(runtimePath: string): string {
-  return (
-    JSON.stringify(
-      {
-        compilerOptions: {
-          target: "ESNext",
-          module: "ESNext",
-          moduleResolution: "bundler",
-          strict: true,
-          noImplicitAny: true,
-          esModuleInterop: true,
-          skipLibCheck: true,
-          baseUrl: ".",
-          paths: {
-            "promptlang/runtime": [runtimePath],
-          },
+  return `${JSON.stringify(
+    {
+      compilerOptions: {
+        target: "ESNext",
+        module: "ESNext",
+        moduleResolution: "bundler",
+        strict: true,
+        noImplicitAny: true,
+        esModuleInterop: true,
+        skipLibCheck: true,
+        baseUrl: ".",
+        paths: {
+          "promptlang/runtime": [runtimePath],
         },
-        include: ["./*.ts"],
       },
-      null,
-      2
-    ) + "\n"
-  );
+      include: ["./*.ts"],
+    },
+    null,
+    2
+  )}\n`;
 }
 
 async function resolveFiles(paths: string[]): Promise<string[]> {

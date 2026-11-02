@@ -100,7 +100,7 @@ export function generatePythonPromptDeclaration(
   const inputTypeName = `${pascalName}Input`;
   const returnPyType = mapPythonType(returnType);
   const paramNames = new Set(parameters.map((p) => p.name));
-  const metaConstName = name.toUpperCase() + "_META";
+  const metaConstName = `${name.toUpperCase()}_META`;
 
   const parts: string[] = [];
 

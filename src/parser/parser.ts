@@ -1,5 +1,5 @@
-import { Token, TokenType } from "../lexer/token";
-import {
+import { type Token, TokenType } from "../lexer/token";
+import type {
   Program,
   ImportDeclaration,
   Metadata,
@@ -306,7 +306,7 @@ export class Parser {
           const after = this.peekAhead(1);
           if (after.type === TokenType.NUMBER || after.type === TokenType.IDENT) {
             this.advance(); // DOT
-            name += "." + this.advance().value;
+            name += `.${this.advance().value}`;
           } else {
             break;
           }

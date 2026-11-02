@@ -19,10 +19,10 @@ export function compileStringLiteral(
 
   if (isTemplate) {
     const withInterpolations = escaped.replace(/\{\{(\w+)\}\}/g, "${input.$1}");
-    return "`" + withInterpolations + "`";
+    return `\`${withInterpolations}\``;
   }
 
-  return "`" + escaped + "`";
+  return `\`${escaped}\``;
 }
 
 export function extractTemplateVars(value: string): string[] {

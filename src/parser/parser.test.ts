@@ -1127,7 +1127,7 @@ describe("import declarations", () => {
   const MIN_BODY = `@version "1.0.0"\nprompt foo(x: string) -> string { user: "{{x}}" output: string }\n`;
 
   test("parses a single import at the top of the file", () => {
-    const src = `import "shared/classify.prompt" as Classify\n` + MIN_BODY;
+    const src = `import "shared/classify.prompt" as Classify\n${MIN_BODY}`;
     const ast = p(src);
     expect(ast.imports).toHaveLength(1);
     expect(ast.imports[0]!.path).toBe("shared/classify.prompt");
@@ -1161,7 +1161,7 @@ describe("import declarations", () => {
   });
 
   test("errors when import has no 'as' alias", () => {
-    const src = `import "shared/x.prompt"\n` + MIN_BODY;
+    const src = `import "shared/x.prompt"\n${MIN_BODY}`;
     expect(() => p(src)).toThrow(ParserError);
     try {
       p(src);
@@ -1171,7 +1171,7 @@ describe("import declarations", () => {
   });
 
   test("errors when import path is missing", () => {
-    const src = `import as X\n` + MIN_BODY;
+    const src = `import as X\n${MIN_BODY}`;
     expect(() => p(src)).toThrow(ParserError);
   });
 

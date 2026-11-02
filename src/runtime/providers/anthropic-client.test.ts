@@ -32,7 +32,7 @@ function errResponse(status: number, message = "An error occurred"): Response {
 // Spy setup
 // ---------------------------------------------------------------------------
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: Bun types fetch with a static preconnect member, so typed mock implementations do not satisfy it; this spy only feeds canned Responses.
 let fetchSpy: any;
 
 beforeEach(() => {

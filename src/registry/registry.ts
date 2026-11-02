@@ -72,8 +72,8 @@ export async function install(
 
   const registryPath = join(projectRoot, REGISTRY_DIR);
   await mkdir(join(registryPath, "cache"), { recursive: true });
-  await Bun.write(join(registryPath, MANIFEST_FILE), JSON.stringify(manifest, null, 2) + "\n");
-  await Bun.write(join(registryPath, INTEGRITY_FILE), JSON.stringify(integrity, null, 2) + "\n");
+  await Bun.write(join(registryPath, MANIFEST_FILE), `${JSON.stringify(manifest, null, 2)}\n`);
+  await Bun.write(join(registryPath, INTEGRITY_FILE), `${JSON.stringify(integrity, null, 2)}\n`);
 
   return { manifest, integrity, registryPath };
 }

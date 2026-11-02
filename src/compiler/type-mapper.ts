@@ -29,5 +29,5 @@ export function toPascalCase(name: string): string {
 }
 
 export function toConstName(name: string): string {
-  return name.toUpperCase() + "_VALUES";
+  return `${name.toUpperCase()}_VALUES`;
 }

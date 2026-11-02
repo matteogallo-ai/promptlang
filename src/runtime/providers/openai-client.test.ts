@@ -32,7 +32,7 @@ function errResponse(status: number, message = "An error occurred"): Response {
 // Spy setup
 // ---------------------------------------------------------------------------
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: Bun types fetch with a static preconnect member, so typed mock implementations do not satisfy it; this spy only feeds canned Responses.
 let fetchSpy: any;
 
 beforeEach(() => {
@@ -54,7 +54,7 @@ describe("OpenAIClient — headers and URL", () => {
     fetchSpy.mockResolvedValueOnce(okResponse());
     await new OpenAIClient({ apiKey: "sk-test-key" }).complete(BASE_REQUEST);
     const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
-    expect((init.headers as Record<string, string>)["Authorization"]).toBe("Bearer sk-test-key");
+    expect((init.headers as Record<string, string>).Authorization).toBe("Bearer sk-test-key");
   });
 
   test("sends content-type: application/json header", async () => {

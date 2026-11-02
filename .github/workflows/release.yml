@@ -95,17 +95,8 @@ jobs:
         with:
           subject-path: ${{ steps.pack.outputs.tarball }}
 
-      - name: Publish @promptlang/core
-        # A prerelease (2.1.0-rc.1) goes to the "next" dist-tag, never to "latest".
-        run: |
-          VERSION="$(node -p "require('./package.json').version")"
-          case "$VERSION" in *-*) TAG="--tag next" ;; *) TAG="" ;; esac
-          npm publish "$TARBALL" --provenance --access public $TAG $DRY_RUN
-        env:
-          TARBALL: ${{ steps.pack.outputs.tarball }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      # The Sigstore bundle keeps a .sigstore.json name, the suffix Scorecard's
+      # Still before npm publish, so a failure here leaves nothing published. The
+      # Sigstore bundle keeps a .sigstore.json name, the suffix Scorecard's
       # Signed-Releases check reads as a signature.
       - name: Keep the tarball and its signed attestation for the release job
         if: github.event_name == 'push'
@@ -122,6 +113,16 @@ jobs:
           name: release-assets
           path: ${{ runner.temp }}/release/
           if-no-files-found: error
+
+      - name: Publish @promptlang/core
+        # A prerelease (2.1.0-rc.1) goes to the "next" dist-tag, never to "latest".
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          case "$VERSION" in *-*) TAG="--tag next" ;; *) TAG="" ;; esac
+          npm publish "$TARBALL" --provenance --access public $TAG $DRY_RUN
+        env:
+          TARBALL: ${{ steps.pack.outputs.tarball }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish @promptlang/yaml-parser
         if: steps.yaml_parser.outputs.publish == 'true'
@@ -141,18 +142,21 @@ jobs:
       # Creates the GitHub Release for the tag and uploads its assets.
       contents: write
     steps:
+      # gh reads GH_TOKEN; the write token is not left in .git/config.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-assets
           path: release-assets
-      # No release without its signed provenance: an unsigned release asset would
-      # count against Signed-Releases, and users could not verify the tarball.
+      # No release without its signed provenance: an unsigned release would count 0
+      # in Signed-Releases' average, and users could not verify the tarball.
       - name: Create the GitHub Release with the tarball and its attestation
         run: |
-          ls release-assets/*.tgz release-assets/*.tgz.sigstore.json
           case "$GITHUB_REF_NAME" in *-*) PRE="--prerelease" ;; *) PRE="" ;; esac
-          gh release create "$GITHUB_REF_NAME" release-assets/* --verify-tag $PRE \
+          gh release create "$GITHUB_REF_NAME" release-assets/*.tgz \
+            release-assets/*.tgz.sigstore.json --verify-tag $PRE \
             --title "PromptLang ${GITHUB_REF_NAME#v}" \
             --notes-file "docs/release-notes/$GITHUB_REF_NAME.md"
         env:

@@ -18,7 +18,12 @@ describe("ai-linter-live-run", () => {
         return { content: '{"issues": []}', usage: { input_tokens: 1000, output_tokens: 100 } };
       },
     };
-    const r = await run(client, await loadContexts(), new Date("2026-11-02T00:00:00Z"));
+    const r = await run(
+      client,
+      await loadContexts(),
+      new Date("2026-11-02T00:00:00Z"),
+      "2023-06-01"
+    );
     expect(r).toMatchObject({
       model: "claude-haiku-4-5",
       usage: { input_tokens: 4000, output_tokens: 400 },
@@ -27,5 +32,11 @@ describe("ai-linter-live-run", () => {
     // $1 / $5 per MTok: 4000 × 1 + 400 × 5 = 6000 micro-dollars.
     expect(r.cost_usd).toBeCloseTo(0.006, 10);
     expect(r.issues.map((i) => i.rule)).toEqual(["ai:request-failure"]);
+    expect(r.outcome).toBe("provider-errors");
+    expect(r.anthropic_version).toBe("2023-06-01");
+    expect(r.files).toContainEqual({
+      file: "docs/examples/classify-ticket.prompt",
+      version: "2.0.0",
+    });
   });
 });

@@ -1,13 +1,15 @@
 #!/usr/bin/env bun
 /**
  * One live run of the AI linter on docs/examples plus an adversarial fixture,
- * recorded as docs/ai-linter-run/live-run.json (model, tokens, cost, issues).
+ * recorded under runs/live/ (date, model, prompt versions, tokens, cost, outcome),
+ * as docs/ENGINEERING_STANDARDS.md requires for LLM features.
  *
  *   bun run scripts/ai-linter-live-run.ts          # print the estimate, call nothing
  *   bun run scripts/ai-linter-live-run.ts --yes    # run once (needs ANTHROPIC_API_KEY)
  *
- * The worst-case estimate (every call uses its full max_tokens) must be at or
- * under BUDGET_USD, the spend approved for this run, or nothing is called.
+ * The estimate (every call at its full max_tokens, input ≈ characters ÷ 3, no
+ * retries: the client is built with maxRetries 0) must be at or under
+ * BUDGET_USD, the spend approved for this run, or nothing is called.
  */
 import { resolve } from "node:path";
 import { AiLinter } from "../src/analyzer/ai/ai-linter";
@@ -24,6 +26,8 @@ import { pricePerMTok } from "../src/testing/cost";
 
 export const BUDGET_USD = 0.05;
 const MODEL = "claude-haiku-4-5";
+/** Passed to the client explicitly so the record states the version actually sent. */
+const ANTHROPIC_VERSION = "2023-06-01";
 /** AiLinter sends max_tokens 1024 per prompt. */
 const MAX_OUTPUT_TOKENS = 1024;
 const ROOT = resolve(import.meta.dir, "..");
@@ -77,13 +81,15 @@ export interface RunRecord {
   date: string;
   model: string;
   anthropic_version: string;
-  files: string[];
+  files: Array<{ file: string; version: string | null }>;
   estimate_max_usd: number;
   calls: Array<{ input_tokens: number; output_tokens: number }>;
   usage: { input_tokens: number; output_tokens: number };
   cost_usd: number;
   price_usd_per_mtok: { input: number; output: number };
   issues: Array<{ file: string; rule: string; severity: string; message: string }>;
+  /** "ok", or "provider-errors" when at least one call failed (see ai:request-failure issues). */
+  outcome: "ok" | "provider-errors";
   note: string;
 }
 
@@ -91,7 +97,8 @@ export interface RunRecord {
 export async function run(
   client: PromptClient,
   contexts: AnalysisContext[],
-  now: Date
+  now: Date,
+  anthropicVersion: string
 ): Promise<RunRecord> {
   const calls: RunRecord["calls"] = [];
   const metered: PromptClient = {
@@ -116,8 +123,11 @@ export async function run(
   return {
     date: now.toISOString(),
     model: MODEL,
-    anthropic_version: "2023-06-01",
-    files: FILES,
+    anthropic_version: anthropicVersion,
+    files: contexts.map((c) => {
+      const v = c.ast.metadata.find((m) => m.kind === "VersionMetadata");
+      return { file: c.file, version: v?.kind === "VersionMetadata" ? v.value : null };
+    }),
     estimate_max_usd: estimate(contexts).maxUsd,
     calls,
     usage,
@@ -129,7 +139,10 @@ export async function run(
       severity: i.severity,
       message: i.message,
     })),
-    note: "One run on five prompts. It shows what the linter returned once; it is not a measure of its precision or recall.",
+    outcome: issues.some((i) => i.rule === "ai:request-failure") ? "provider-errors" : "ok",
+    note:
+      "One run on five prompts: what the linter returned once, not a measure of its precision or recall. " +
+      "cost_usd counts the usage the API reported; a failed call reports none.",
   };
 }
 
@@ -137,7 +150,7 @@ if (import.meta.main) {
   const contexts = await loadContexts();
   const e = estimate(contexts);
   console.log(
-    `${e.calls} call(s) to ${MODEL}, ~${e.inputTokens} input tokens, worst case $${e.maxUsd.toFixed(4)} (budget $${BUDGET_USD})`
+    `${e.calls} call(s) to ${MODEL}, ~${e.inputTokens} input tokens, estimate $${e.maxUsd.toFixed(4)} at full max_tokens, no retries (budget $${BUDGET_USD})`
   );
   if (e.maxUsd > BUDGET_USD) {
     console.error("Estimate exceeds the approved budget; nothing was called.");
@@ -152,8 +165,11 @@ if (import.meta.main) {
     console.error("ANTHROPIC_API_KEY is not set; nothing was called.");
     process.exit(2);
   }
-  const record = await run(new AnthropicClient({ apiKey }), contexts, new Date());
-  const out = resolve(ROOT, "docs/ai-linter-run/live-run.json");
+  const now = new Date();
+  const client = new AnthropicClient({ apiKey, maxRetries: 0, apiVersion: ANTHROPIC_VERSION });
+  const record = await run(client, contexts, now, ANTHROPIC_VERSION);
+  // Failed runs are committed too, so the file name carries the date, not the outcome.
+  const out = resolve(ROOT, `runs/live/ai-linter-${now.toISOString().slice(0, 10)}.json`);
   await Bun.write(out, `${JSON.stringify(record, null, 2)}\n`);
   console.log(
     `Spent $${record.cost_usd.toFixed(5)} (${record.usage.input_tokens} in / ${record.usage.output_tokens} out). Wrote ${out}`

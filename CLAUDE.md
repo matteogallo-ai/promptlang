@@ -5,8 +5,9 @@
 PromptLang is a typed DSL for LLM prompts. A `.prompt` file declares types, prompts,
 chains, tests and evals; the compiler turns it into typed TypeScript or Python
 functions that call a provider through a `PromptClient`. The package is
-`@promptlang/core` (not published to npm; CLI binary `promptlang`), built with Bun and
-TypeScript, with no third-party runtime dependencies. `docs/CLAIMS.md` is the source
+`@promptlang/core` (CLI binary `promptlang`; published from `v*` tags by
+`.github/workflows/release.yml`), built with Bun and TypeScript, with no third-party
+runtime dependencies. `docs/CLAIMS.md` is the source
 of truth for what is shipped, partial or roadmap — read it before touching docs.
 
 ## Architecture
@@ -41,7 +42,8 @@ src/runtime/         client.ts (MockClient), errors.ts, providers/
 src/config/          promptlang.yaml loading
 src/cli/             cli.ts + commands/
 packages/yaml-parser @promptlang/yaml-parser (published separately)
-scripts/             check-claims.ts, check-stale-narrative.ts, check-commits.ts, demo.ts
+scripts/             check-claims.ts, check-stale-narrative.ts, check-commits.ts, demo.ts,
+                     build.ts, consumer-test.ts, ai-linter-live-run.ts
 benchmarks/bench.ts  generates docs/benchmarks.md
 tests/               cross-module tests; tests/support/ test helpers
 docs/                reference docs, CLAIMS.md, ENGINEERING_STANDARDS.md, examples/
@@ -63,6 +65,8 @@ bun run check:stale-narrative        # "coming in vX", sprint IDs, TODO without 
 bun run check:commits main..HEAD     # Conventional Commits on a range
 bun run bench --write                # regenerate docs/benchmarks.md
 bun run demo                         # SemVer scenario in a temporary Git repo
+bun run build                        # dist/: ESM + .d.ts (also run by npm pack)
+bun run test:consumer                # npm pack → install → use from Node (needs npm, node)
 bun run cli <command>                # parse | tokens | analyze | compile | init | install | list | check | semver-check | test | version
 ```
 

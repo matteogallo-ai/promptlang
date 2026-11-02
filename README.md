@@ -31,16 +31,16 @@ PromptLang treats prompts as first-class typed code:
   range, and `promptlang semver-check` fails when a prompt's interface changed more
   than its version says
 - **Multi-provider runtime** (Anthropic, OpenAI, Ollama, or your own client)
+- **Multi-provider fallback**: `RoutingClient` tries providers in order, translating
+  the model name per provider (`modelMap`), and never falls back on a bad key
+- **AI-powered linter**: `analyze --ai` sends each prompt to Claude for a semantic
+  review; one live run is committed, its quality is not measured
 - **No third-party runtime dependencies**: Bun + `fetch` + your own API keys
 
 Not delivered, and labelled as such everywhere in this repository (see
 [`docs/CLAIMS.md`](docs/CLAIMS.md)):
 
 - **`eval` blocks**: parsed, not executed
-- **Cross-provider fallback**: `RoutingClient` switches providers, but the
-  generated code sends one model name to all of them
-- **AI-powered linter**: the plumbing is tested with a mocked client only; there
-  is no committed live run, so its findings are not a measured quality
 
 ---
 
@@ -81,21 +81,21 @@ test "classifies feature requests correctly" {
 }
 ```
 
-Test it, then compile it:
+Test it, then compile it (the `promptlang` CLI runs on Bun ≥ 1.2.20):
 
 ```bash
-bun run cli test classify-ticket.prompt
+npx promptlang test classify-ticket.prompt
 ```
 
 ```bash
-bun run cli compile classify-ticket.prompt --out ./generated --emit-tsconfig
+npx promptlang compile classify-ticket.prompt --out ./generated
 ```
 
 Use it:
 
 ```typescript
 import { classify_ticket } from "./generated/classify-ticket";
-import { AnthropicClient } from "promptlang/runtime";
+import { AnthropicClient } from "@promptlang/core/runtime";
 
 const client = new AnthropicClient({ apiKey: process.env.ANTHROPIC_API_KEY! });
 const category = await classify_ticket({ ticket: "..." }, client);
@@ -114,8 +114,8 @@ tools' public documentation and are not tested here.
 | Typed I/O                        |    ❌     |    ❌     |    ❌     |       ✅       |
 | Native tests                     |    ❌     |   SaaS    |   SaaS    | ✅ (mock or live; no evals) |
 | SemVer for prompts               |    ❌     |    ❌     |    ❌     |       ✅       |
-| AI-powered linter                |    ❌     |    ❌     |    ❌     | Partial (mocked tests only) |
-| Multi-provider fallback          |  Partial  |    ❌     |    ❌     | Partial (same model name only) |
+| AI-powered linter                |    ❌     |    ❌     |    ❌     | ✅ (one live run; quality not measured) |
+| Multi-provider fallback          |  Partial  |    ❌     |    ❌     | ✅ (per-provider model map) |
 | Compile to TypeScript **and** Python | ❌     |    ❌     |    ❌     |       ✅       |
 | Static analysis (SonarQube-style)|    ❌     |    ❌     |    ❌     |       ✅       |
 | Open source, zero SaaS           |    ✅     |    ❌     |    ❌     |       ✅       |
@@ -124,15 +124,25 @@ tools' public documentation and are not tested here.
 
 ## Installation
 
-`@promptlang/core` is not on npm. Clone the repository:
+```bash
+npm install @promptlang/core
+```
+
+The library (`@promptlang/core`: tokenize, parse, compile, analyze) and the runtime
+(`@promptlang/core/runtime`: the provider clients the generated code calls) are ESM
+for Node ≥ 20 and Bun. The `promptlang` CLI needs Bun ≥ 1.2.20. CI installs the
+packed tarball into an empty project, imports both entry points from Node, runs
+this quick example with the installed CLI and type-checks the generated code against
+the installed declarations (`scripts/consumer-test.ts`). No version of
+`@promptlang/core` is on npm before 2.0.0.
+
+To work on PromptLang itself:
 
 ```bash
 git clone https://github.com/matteogallo-ai/promptlang.git
 cd promptlang && bun install
 bun run cli --help
 ```
-
-Then run the CLI with `bun run cli <command>`.
 
 ---
 
@@ -164,9 +174,10 @@ test "extracts the total" {
   makes none) and asks before calling;
   `--yes` approves without asking. Models without a recorded price are refused.
 - `--json` for tools; exit 0 when every test passes, 1 on a failure, 2 on usage errors,
-  3 when a provider error (any `PromptClientError`: timeout, network, authentication,
-  rate limit, server overload, malformed response, rejected request) left a test
-  without a verdict.
+  3 when a call failed and left a test without a verdict. The report says which
+  kind: a **configuration error** (authentication, a rejected request, an unknown
+  model: fix the file or the key) or a **provider failure** (timeout, network, rate
+  limit, server overload, malformed response: retry later).
 - A test whose `input` calls a prompt or chain that the file does not declare is a
   compile error, in `compile` and in `test`. `eval` blocks are parsed, and `compile`
   and `test` warn that they are not executed.
@@ -193,9 +204,10 @@ fails cleanly, and the tests still pass ([`docs/examples/demo/`](docs/examples/d
 ## AI-Powered Linting
 
 PromptLang can send each prompt to an LLM for a semantic review at build time.
-Status: **partial**. The request/response plumbing is covered by tests that use a
-mocked client; no live run has been committed, so nothing here measures how good
-the findings are.
+The request/response plumbing is covered by tests that use a mocked client. One
+live run is committed ([`runs/live/ai-linter-2026-11-02T16-19-27-163Z.json`](runs/live/ai-linter-2026-11-02T16-19-27-163Z.json)): five prompts, five calls
+that all returned, 17 findings. It shows what the linter returned once; it does
+not measure how good the findings are.
 
 Static analysis catches structural issues (missing tests, unbounded templates, prompt
 injection risks). The AI linter catches semantic issues that static tools cannot see:
@@ -219,11 +231,16 @@ confidence-scored issues alongside the static analysis output.
 
 ### Cost
 
-Each analyzed prompt is one request to Claude Haiku 4.5 (by default) with
-`max_tokens: 1024`. At list prices ($1 / $5 per million input / output tokens) the
-three example files (four prompts, ~2 200 input tokens) cost at most about $0.03.
-This is an estimate from request sizes, not a measurement. Costs are yours —
-bring your own API key.
+`--ai` prints a cost estimate for your files and asks before any call; `--yes`
+approves without asking.
+
+Each analyzed prompt is one request to Claude Haiku 5.5 (by default) with
+`max_tokens: 4096`, which leaves room for its adaptive thinking. At list prices
+($0.10 / $0.50 per million input / output tokens, prompts up to 100K tokens) the
+three example files (four prompts) cost about $0.01 if every call used its full
+`max_tokens`. This is an estimate from request sizes, not a measurement. The
+committed live run (five prompts) used 5,557 input and 6,517 output tokens:
+$0.0038. Costs are yours — bring your own API key.
 
 ---
 
@@ -261,6 +278,12 @@ asyncio.run(main())
 ```
 
 Requires Python 3.11+ (generated files import `typing.NotRequired`) and `httpx` for real API calls (`pip install httpx`).
+`promptlang_runtime.py` checks what the TypeScript runtime checks on a response: an
+empty key is refused, HTTP errors raise `AuthenticationError`, `RateLimitError`,
+`InvalidRequestError` or `ServerError`, and a malformed response raises
+`InvalidResponseError` (all subclasses of `PromptClientError`). It sends Anthropic API
+version 2026-10-21, without `temperature`. Unlike the TypeScript runtime, it does not
+retry, and a timeout or a connection failure raises `httpx`'s own exception.
 The `MockClient` works with no dependencies for local testing.
 
 ---
@@ -310,13 +333,13 @@ for the exact YAML subset supported.
 
 ## Available runtime providers
 
-The compiled TypeScript imports `PromptClient` from `promptlang/runtime`. Three
+The compiled TypeScript imports `PromptClient` from `@promptlang/core/runtime`. Three
 provider clients ship with PromptLang — pick the one that matches your stack.
 
 ### Anthropic
 
 ```typescript
-import { AnthropicClient } from "promptlang/runtime";
+import { AnthropicClient } from "@promptlang/core/runtime";
 import { classify_ticket } from "./generated/classify-ticket";
 
 const client = new AnthropicClient({
@@ -332,7 +355,7 @@ const category = await classify_ticket(
 ### OpenAI
 
 ```typescript
-import { OpenAIClient } from "promptlang/runtime";
+import { OpenAIClient } from "@promptlang/core/runtime";
 import { classify_ticket } from "./generated/classify-ticket";
 
 const client = new OpenAIClient({
@@ -346,7 +369,7 @@ const category = await classify_ticket({ ticket: "..." }, client);
 ### Ollama (local)
 
 ```typescript
-import { OllamaClient } from "promptlang/runtime";
+import { OllamaClient } from "@promptlang/core/runtime";
 import { classify_ticket } from "./generated/classify-ticket";
 
 // No API key required — Ollama runs locally.
@@ -359,18 +382,23 @@ const category = await classify_ticket({ ticket: "..." }, client);
 
 ### Routing (fallback across providers)
 
-> **Limitation.** The generated code puts the `@model` value in every request, so
-> the fallback below sends a Claude model ID to OpenAI, which rejects it. Fallback
-> works today only between clients that accept the same model name (for example
-> two Anthropic clients with different keys or base URLs).
+The generated code puts the file's `@model` in every request. Give each provider
+that uses other names a `modelMap` from that model to its own; a provider whose map
+has no entry for the requested model is skipped rather than sent a name it cannot
+serve. An `AuthenticationError` stops the routing at once.
 
 ```typescript
-import { AnthropicClient, OpenAIClient, RoutingClient } from "promptlang/runtime";
+import { AnthropicClient, OpenAIClient, RoutingClient } from "@promptlang/core/runtime";
 import { classify_ticket } from "./generated/classify-ticket";
 
 const client = new RoutingClient({
   primary: new AnthropicClient({ apiKey: process.env.ANTHROPIC_API_KEY! }),
-  fallbacks: [new OpenAIClient({ apiKey: process.env.OPENAI_API_KEY! })],
+  fallbacks: [
+    {
+      client: new OpenAIClient({ apiKey: process.env.OPENAI_API_KEY! }),
+      modelMap: { "claude-opus-5-5": "gpt-5" },
+    },
+  ],
   onFallback: (err, i) => console.warn(`Fallback #${i}:`, err.message),
 });
 
@@ -379,16 +407,12 @@ const category = await classify_ticket({ ticket: "..." }, client);
 
 ---
 
-## Working out of the repository
+## Compiling against a checkout
 
-The generated TypeScript uses `import { … } from "promptlang/runtime"`. Inside
-this repository that import resolves through the `paths` mapping in
-`tsconfig.json`. In an **external project** it fails with
-`TS2307: Cannot find module 'promptlang/runtime'`, because the package is not
-published.
-
-**Workaround** — pass `--emit-tsconfig` to `compile`. It writes a `tsconfig.json`
-with a `paths` mapping that points directly at the local runtime source:
+The generated TypeScript imports `@promptlang/core/runtime`. With the package
+installed that resolves through its `exports`. To compile against a local checkout
+instead, pass `--emit-tsconfig`: it writes a `tsconfig.json` whose `paths` mapping
+points at the checkout's runtime source.
 
 ```bash
 bun run cli compile src/prompts/ --out ./generated --emit-tsconfig
@@ -409,6 +433,8 @@ bunx tsc --project ./generated/tsconfig.json --noEmit
 | [docs/CLAIMS.md](docs/CLAIMS.md)                      | Every advertised capability → module → test → status |
 | [docs/ENGINEERING_STANDARDS.md](docs/ENGINEERING_STANDARDS.md) | Rules every change in this repository follows |
 | [docs/roadmap.md](docs/roadmap.md)                    | Public milestone roadmap                           |
+| [docs/RELEASING.md](docs/RELEASING.md)                | How a tag becomes an npm release, and its setup    |
+| [docs/release-notes/](docs/release-notes/)            | Notes for each release                             |
 | [docs/examples/](docs/examples/)                      | Annotated `.prompt` examples                       |
 
 ---
@@ -416,12 +442,12 @@ bunx tsc --project ./generated/tsconfig.json --noEmit
 ## Packages
 
 PromptLang is developed as a Bun workspace. The main package,
-`@promptlang/core` (not published to npm; the CLI binary is `promptlang`), lives in `src/`. First-party companion packages live under
+`@promptlang/core` (the CLI binary is `promptlang`), lives in `src/`. First-party companion packages live under
 `packages/` and are published under the `@promptlang/` scope on npm.
 
 | Package | Location | Version | Description |
 | --- | --- | --- | --- |
-| [`@promptlang/yaml-parser`](https://www.npmjs.com/package/@promptlang/yaml-parser) | `packages/yaml-parser/` | 1.0.0 (published on npm in v1.2.0) | Zero-dependency minimal YAML parser. Extracted from PromptLang core in v1.1.0 so sibling projects (like [Praxis](https://github.com/matteogallo-ai/praxis)) can reuse it via `bun add @promptlang/yaml-parser`. |
+| [`@promptlang/yaml-parser`](https://www.npmjs.com/package/@promptlang/yaml-parser) | `packages/yaml-parser/` | 1.0.0 (on npm since PromptLang v1.2.0) | Zero-dependency minimal YAML parser. Extracted from PromptLang core in v1.1.0 so sibling projects (like [Praxis](https://github.com/matteogallo-ai/praxis)) can reuse it via `bun add @promptlang/yaml-parser`. |
 
 Each package has its own `README.md`, `CHANGELOG.md`, and independent
 SemVer track.
@@ -432,7 +458,6 @@ SemVer track.
 
 In progress:
 
-- **Cross-provider fallback** — per-provider model mapping in `RoutingClient`
 - **npm publication** of `@promptlang/core`
 
 Not scheduled:

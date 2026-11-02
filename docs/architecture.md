@@ -69,7 +69,7 @@ analyzer (`analyze`) runs on the AST independently of compilation.
 | Static analyzer (6 rules) | delivered |
 | TypeScript and Python compilers, chain compilation | delivered |
 | `--emit-tsconfig` bridge | delivered |
-| Runtime clients (Anthropic, OpenAI, Ollama, Routing) | delivered; cross-provider fallback partial |
+| Runtime clients (Anthropic, OpenAI, Ollama, Routing) | delivered |
 | AI-powered linter | partial (mocked tests only) |
 | Project config + local registry | delivered |
 | CLI (parse/tokens/analyze/compile/init/install/list/check/semver-check/test/version) | delivered |
@@ -139,7 +139,7 @@ Code generator that walks the AST and emits TypeScript source. Design goals:
 - The generated code is **human-readable** — it should look like code a competent
   developer would write, not a macro expansion.
 - Generated functions use `async/await` and return typed values.
-- No runtime dependency on PromptLang internals beyond the thin `promptlang/runtime`
+- No runtime dependency on PromptLang internals beyond the thin `@promptlang/core/runtime`
   package (model calls, output parsing).
 
 ### `src/compiler/python/`
@@ -182,7 +182,7 @@ Static analysis pass that runs against the parsed AST. Two tiers:
 | `chain-complexity` | Chains with too many steps |
 | `duplicate-prompts` | The same prompt name declared in several files |
 
-**AI rules** (`src/analyzer/ai/`) — opt-in via `--ai` flag. Invokes Claude Haiku to detect semantic issues:
+**AI rules** (`src/analyzer/ai/`) — opt-in via `--ai` flag. Invokes Claude (default `claude-haiku-5-5`) to detect semantic issues:
 
 Six semantic categories detected:
 - `VAGUE_INSTRUCTIONS` — non-actionable phrases without concrete criteria
@@ -279,7 +279,7 @@ All runtime errors extend `PromptClientError → Error`. Sub-classes:
 - `AnthropicClient` — POST `/v1/messages`; separates system messages into the top-level `system` field; max_tokens defaults to 1024.
 - `OpenAIClient` — POST `/v1/chat/completions`; messages forwarded unchanged; normalizes `prompt_tokens`/`completion_tokens` to `input_tokens`/`output_tokens`.
 - `OllamaClient` — POST `/api/chat`; no auth; maps `options.temperature` / `options.num_predict`; `stream: false`; pedagogical errors for ECONNREFUSED and 404.
-- `RoutingClient` — tries `primary`, then each `fallback` in order; `AuthenticationError` short-circuits without trying fallbacks; aggregates all errors in `AllProvidersFailedError`.
+- `RoutingClient` — tries `primary`, then each `fallback` in order, each with an optional `modelMap` from the requested model to its own; `AuthenticationError` short-circuits without trying fallbacks; aggregates all errors in `AllProvidersFailedError`.
 
 All provider clients use a shared `withRetry` utility (exponential backoff, configurable `maxRetries` and `retryDelay`).
 

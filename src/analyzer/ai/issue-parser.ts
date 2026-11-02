@@ -12,7 +12,7 @@ interface RawAiIssue {
 }
 
 /**
- * Parses the raw JSON string returned by Claude Haiku into typed Issue objects.
+ * Parses the raw JSON string returned by the AI linter model into typed Issue objects.
  * Strips markdown fences if present. Returns a parse-failure issue on malformed JSON.
  */
 export function parseAiResponse(raw: string, prompt: PromptDeclaration, file: string): Issue[] {

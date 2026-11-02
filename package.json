@@ -1,6 +1,6 @@
 {
   "name": "@promptlang/core",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "description": "The typed language for production-grade LLM prompts",
   "workspaces": [
     "packages/*"
@@ -9,7 +9,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/matteogallo-ai/promptlang.git"
+    "url": "git+https://github.com/matteogallo-ai/promptlang.git"
   },
   "homepage": "https://github.com/matteogallo-ai/promptlang",
   "bugs": "https://github.com/matteogallo-ai/promptlang/issues",
@@ -24,14 +24,28 @@
     "typescript"
   ],
   "type": "module",
-  "main": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./runtime": "./src/runtime/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime/index.d.ts",
+      "import": "./dist/runtime/index.js"
+    },
+    "./package.json": "./package.json"
   },
   "bin": {
-    "promptlang": "./src/cli/cli.ts"
+    "promptlang": "dist/cli/cli.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
   "scripts": {
     "test": "bun test",
     "typecheck": "bunx tsc --noEmit && bunx tsc --noEmit -p packages/yaml-parser",
@@ -43,18 +57,23 @@
     "check:commits": "bun run scripts/check-commits.ts",
     "cli": "bun run src/cli/cli.ts",
     "bench": "bun run benchmarks/bench.ts",
-    "demo": "bun run scripts/demo.ts"
-  },
-  "dependencies": {
-    "@promptlang/yaml-parser": "workspace:*"
+    "demo": "bun run scripts/demo.ts",
+    "build": "bun run scripts/build.ts",
+    "prepack": "bun run scripts/build.ts",
+    "test:consumer": "bun run scripts/consumer-test.ts"
   },
   "devDependencies": {
+    "@promptlang/yaml-parser": "workspace:*",
     "@biomejs/biome": "2.6.4",
     "@types/bun": "latest",
     "knip": "6.44.1",
     "typescript": "^5.6.0"
   },
   "engines": {
+    "node": ">=20",
     "bun": ">=1.2.20"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

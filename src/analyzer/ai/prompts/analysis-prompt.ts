@@ -1,6 +1,6 @@
 import type { PromptDeclaration, TypeExpression } from "../../../ast/nodes";
 
-/** System prompt sent to Claude Haiku for semantic analysis. */
+/** System prompt sent to the AI linter model for semantic analysis. */
 export const AI_LINTER_SYSTEM_PROMPT = `You are a static analyzer for LLM prompts. You analyze prompts defined in a DSL called PromptLang.
 
 Your job: detect semantic issues that static analysis cannot catch. You DO NOT verify syntax (that's already done).
@@ -56,7 +56,7 @@ function untrusted(sectionName: string, text: string): string {
   return `<untrusted_prompt section="${sectionName}">\n${escaped}\n</untrusted_prompt>`;
 }
 
-/** Builds the user message sent to Claude Haiku for a single prompt declaration. */
+/** Builds the user message sent to the AI linter model for a single prompt declaration. */
 export function buildAnalysisUserMessage(prompt: PromptDeclaration): string {
   const params =
     prompt.parameters.length > 0

@@ -193,7 +193,7 @@ describe("compile — header", () => {
   test("runtime import is present", () => {
     const ast = parseSource(`prompt hello() -> string { user: "hi" output: string }`);
     const out = compile(ast, "x.prompt");
-    expect(out).toContain(`from "promptlang/runtime"`);
+    expect(out).toContain(`from "@promptlang/core/runtime"`);
   });
 
   test("import uses 'import type'", () => {
@@ -436,7 +436,7 @@ describe("compile — classify-ticket.prompt (integration)", () => {
 // ---------------------------------------------------------------------------
 // Integration: generated TypeScript compiles with tsc
 //
-// Generated files import from "promptlang/runtime", which resolves only when a
+// Generated files import from "@promptlang/core/runtime", which resolves only when a
 // paths mapping is active. The tests below pin both the success path (explicit
 // paths) and the failure path (isolation, no paths).
 // ---------------------------------------------------------------------------
@@ -463,7 +463,7 @@ function makeExplicitTsconfig(runtimeRelPath: string): string {
         noUnusedParameters: false,
         skipLibCheck: true,
         baseUrl: ".",
-        paths: { "promptlang/runtime": [runtimeRelPath] },
+        paths: { "@promptlang/core/runtime": [runtimeRelPath] },
       },
       include: ["*.ts"],
     },
@@ -541,7 +541,7 @@ describe("compile — tsc integration (isolation, documented limitation)", () =>
   subprocessTest(
     "generated code fails cleanly in isolation without paths mapping (documented limitation)",
     async () => {
-      // Without a paths mapping tsc cannot resolve "promptlang/runtime". The
+      // Without a paths mapping tsc cannot resolve "@promptlang/core/runtime". The
       // supported workaround is `compile --emit-tsconfig` or a paths entry in the
       // consumer's own tsconfig.
       const source = await Bun.file("docs/examples/classify-ticket.prompt").text();
@@ -558,7 +558,7 @@ describe("compile — tsc integration (isolation, documented limitation)", () =>
       // Must fail with TS2307 — this is the documented expected behaviour.
       expect(exitCode).not.toBe(0);
       expect(stdout).toContain("TS2307");
-      expect(stdout).toContain("promptlang/runtime");
+      expect(stdout).toContain("@promptlang/core/runtime");
     }
   );
 });

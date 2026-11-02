@@ -115,7 +115,10 @@ describe("runTests in live mode", () => {
     expect(r).toMatchObject({
       passed: false,
       failures: [],
-      providerError: "TimeoutError: Request timed out after 30000ms.",
+      providerError: {
+        kind: "provider",
+        message: "TimeoutError: Request timed out after 30000ms.",
+      },
     });
   });
 });

@@ -5,11 +5,17 @@ import { tokenize } from "../../lexer/lexer";
 import { ParserError } from "../../parser/errors";
 import { parse } from "../../parser/parser";
 import type { PromptClient } from "../../runtime/client";
-import { AnthropicClient } from "../../runtime/providers/anthropic-client";
 import { type CostEstimate, estimateLiveCost, UnpricedModelError } from "../../testing/cost";
-import { type RunMode, runTests, type TestResult } from "../../testing/runner";
+import {
+  type ProviderFailure,
+  type RunMode,
+  runTests,
+  type TestResult,
+} from "../../testing/runner";
 import { resolveFiles } from "../files";
-import { warnAboutEvals } from "../warnings";
+import { confirmInTerminal, createLiveClient } from "../live";
+import { UsageError } from "../usage-error";
+import { warnAboutEvals, warnAboutTemperature } from "../warnings";
 
 const EXIT_OK = 0;
 const EXIT_FAILED = 1;
@@ -24,26 +30,10 @@ export interface TestCommandDeps {
   confirm: (question: string) => boolean;
 }
 
-/** The --live client. No retries: the approved estimate counts each call once. */
-export function createLiveClient(
-  env: Record<string, string | undefined> = process.env
-): PromptClient {
-  const apiKey = env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new UsageError("--live needs ANTHROPIC_API_KEY in the environment");
-  return new AnthropicClient({ apiKey, maxRetries: 0 });
-}
-
 const defaultDeps: TestCommandDeps = {
-  createClient: () => createLiveClient(),
-  confirm: (question) => {
-    // Without a terminal there is nobody to answer; --yes is the explicit approval.
-    if (!process.stdin.isTTY)
-      throw new UsageError("--live without a terminal needs --yes to approve the cost");
-    return (prompt(question) ?? "").trim().toLowerCase() === "y";
-  },
+  createClient: () => createLiveClient("--live"),
+  confirm: (question) => confirmInTerminal("--live", question),
 };
-
-class UsageError extends Error {}
 
 interface FileOutcome {
   file: string;
@@ -75,6 +65,12 @@ function printEstimate(estimates: Array<{ file: string; estimate: CostEstimate }
   return total;
 }
 
+function describeFailure(f: ProviderFailure): string {
+  return f.kind === "configuration"
+    ? `configuration error, no verdict (fix the file or the key): ${f.message}`
+    : `provider failure, no verdict (retry later): ${f.message}`;
+}
+
 function printHuman(outcomes: FileOutcome[]): void {
   for (const o of outcomes) {
     if (o.error) {
@@ -84,17 +80,23 @@ function printHuman(outcomes: FileOutcome[]): void {
     for (const r of o.results) {
       const label = r.providerError ? "ERROR" : r.passed ? "pass " : "FAIL ";
       console.log(`  ${label}  ${o.file}:${r.line}  ${r.test}`);
-      if (r.providerError) console.log(`           provider error, no verdict: ${r.providerError}`);
+      if (r.providerError) console.log(`           ${describeFailure(r.providerError)}`);
       for (const f of r.failures) console.log(`           ${f}`);
     }
   }
   const all = outcomes.flatMap((o) => o.results);
-  const noVerdict = all.filter((r) => r.providerError).length;
+  const config = all.filter((r) => r.providerError?.kind === "configuration").length;
+  const provider = all.filter((r) => r.providerError?.kind === "provider").length;
+  const noVerdict = config + provider;
   const failed = all.filter((r) => !r.passed && !r.providerError).length;
   const errors = outcomes.filter((o) => o.error).length;
+  const why = [
+    config ? `${config} configuration error${config === 1 ? "" : "s"}` : "",
+    provider ? `${provider} provider failure${provider === 1 ? "" : "s"}` : "",
+  ].filter(Boolean);
   console.log(
     `\n${all.length - failed - noVerdict} passed, ${failed} failed` +
-      (noVerdict ? `, ${noVerdict} without a verdict (provider error)` : "") +
+      (noVerdict ? `, ${noVerdict} without a verdict (${why.join(", ")})` : "") +
       (errors ? `, ${errors} file(s) with errors` : "")
   );
 }
@@ -134,6 +136,7 @@ export async function runTest(
     if (typeof loaded === "string") outcomes.push({ file, error: loaded, results: [] });
     else {
       warnAboutEvals(loaded, file);
+      warnAboutTemperature(loaded, file);
       programs.push({ file, program: loaded });
     }
   }

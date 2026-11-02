@@ -598,7 +598,7 @@ describe("chain — integration: summarize-and-translate.prompt", () => {
               noUnusedParameters: false,
               skipLibCheck: true,
               baseUrl: ".",
-              paths: { "promptlang/runtime": [RUNTIME_REL] },
+              paths: { "@promptlang/core/runtime": [RUNTIME_REL] },
             },
             include: ["*.ts"],
           },
@@ -623,7 +623,7 @@ describe("chain — integration: summarize-and-translate.prompt", () => {
 
     const runner = `
 import { summarize_and_translate } from "./generated.ts";
-import { MockClient } from "promptlang/runtime";
+import { MockClient } from "@promptlang/core/runtime";
 
 const client = new MockClient([
   { content: "This is a short summary.", usage: { input_tokens: 5, output_tokens: 5 } },

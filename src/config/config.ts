@@ -1,4 +1,5 @@
 import { parseYaml, YamlParseError, type YamlValue } from "@promptlang/yaml-parser";
+import type { SourceEntry } from "../registry/resolver";
 
 /**
  * Fully-resolved PromptLang project configuration.
@@ -31,10 +32,6 @@ export interface PromptLangConfig {
   dependencies: DependencyEntry[];
 }
 
-export interface SourceEntry {
-  path: string;
-}
-
 interface DependencyEntry {
   name: string;
   version: string;
@@ -56,7 +53,7 @@ export const CONFIG_DEFAULTS = {
   linter: {
     ai: {
       enabled: false,
-      model: "claude-haiku-4-5",
+      model: "claude-haiku-5-5",
       concurrency: 3,
     },
   },

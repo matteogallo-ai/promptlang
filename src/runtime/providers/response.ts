@@ -39,3 +39,19 @@ export function invalidField(provider: string, field: string): never {
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
+
+/**
+ * Seconds to wait from a `Retry-After` header (delta-seconds or an HTTP-date,
+ * RFC 9110 §10.2.3), or undefined when the header is absent or unreadable.
+ */
+export function parseRetryAfter(
+  header: string | null,
+  now: number = Date.now()
+): number | undefined {
+  if (header === null) return undefined;
+  const value = header.trim();
+  if (/^\d+$/.test(value)) return Number(value);
+  const date = Date.parse(value);
+  if (Number.isNaN(date) || /^-/.test(value)) return undefined;
+  return Math.max(0, Math.ceil((date - now) / 1000));
+}

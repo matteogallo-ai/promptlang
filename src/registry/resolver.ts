@@ -1,9 +1,10 @@
+// node:fs, not Bun.file: resolveGraph is public API and must run under Node too.
+import { readFile, stat } from "node:fs/promises";
 import { dirname, isAbsolute, normalize, resolve } from "node:path";
 import { tokenize } from "../lexer/lexer";
 import { parse } from "../parser/parser";
 import { LexerError } from "../lexer/errors";
 import { ParserError } from "../parser/errors";
-import type { SourceEntry } from "../config/config";
 import type { Program } from "../ast/nodes";
 import { satisfies } from "../semver/semver";
 
@@ -64,6 +65,15 @@ export class VersionMismatchError extends ResolverError {
   }
 }
 
+/**
+ * A source root from promptlang.yaml. Declared here, not imported from the
+ * config module, so the published declarations of resolveGraph do not pull in
+ * the YAML parser's types.
+ */
+export interface SourceEntry {
+  path: string;
+}
+
 export interface ResolverOptions {
   /** Directories (from `promptlang.yaml`'s `sources`) to search for imports. */
   sources?: SourceEntry[];
@@ -121,7 +131,7 @@ export async function resolveGraph(
   async function load(file: string): Promise<Program> {
     let ast = asts.get(file);
     if (!ast) {
-      const source = await Bun.file(file).text();
+      const source = await readFile(file, "utf8");
       try {
         ast = parse(tokenize(source));
       } catch (error) {
@@ -219,5 +229,8 @@ function candidatePaths(
 }
 
 async function fileExists(path: string): Promise<boolean> {
-  return Bun.file(path).exists();
+  return stat(path).then(
+    (s) => s.isFile(),
+    () => false
+  );
 }

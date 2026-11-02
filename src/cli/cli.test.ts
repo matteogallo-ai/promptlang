@@ -97,9 +97,9 @@ describe("version", () => {
     restore();
     expect(code).toBe(0);
     expect(output()).toContain("promptlang");
-    // Version must match SemVer 1.x — asserting the exact value would
-    // couple the test to the release cadence.
-    expect(output()).toMatch(/1\.\d+\.\d+(-.+)?/);
+    // The major is pinned by tests/stability.test.ts; here any SemVer version will do,
+    // so a minor or patch release does not touch this test.
+    expect(output()).toMatch(/^promptlang \d+\.\d+\.\d+(-.+)?$/m);
   });
 
   test("prints repository URL", async () => {
@@ -465,7 +465,7 @@ describe("compile --emit-tsconfig", () => {
     expect(content.compilerOptions.strict).toBe(true);
   });
 
-  test("emitted tsconfig contains paths mapping for promptlang/runtime", async () => {
+  test("emitted tsconfig contains paths mapping for @promptlang/core/runtime", async () => {
     const restore = silenceAll();
     await main([
       "bun",
@@ -479,9 +479,9 @@ describe("compile --emit-tsconfig", () => {
     restore();
     const content = JSON.parse(await Bun.file(`${EMIT_OUT}/tsconfig.json`).text());
     const paths = content.compilerOptions?.paths ?? {};
-    expect(paths["promptlang/runtime"]).toBeDefined();
-    expect(Array.isArray(paths["promptlang/runtime"])).toBe(true);
-    expect((paths["promptlang/runtime"] as string[]).length).toBeGreaterThan(0);
+    expect(paths["@promptlang/core/runtime"]).toBeDefined();
+    expect(Array.isArray(paths["@promptlang/core/runtime"])).toBe(true);
+    expect((paths["@promptlang/core/runtime"] as string[]).length).toBeGreaterThan(0);
   });
 
   test("without --emit-tsconfig, no tsconfig.json is emitted (default unchanged)", async () => {
@@ -504,12 +504,12 @@ describe("compile --emit-tsconfig", () => {
       EMIT_OUT,
       "--emit-tsconfig",
       "--runtime-path",
-      "node_modules/promptlang/runtime/index.js",
+      "node_modules/@promptlang/core/dist/runtime/index.js",
     ]);
     restore();
     const content = JSON.parse(await Bun.file(`${EMIT_OUT}/tsconfig.json`).text());
-    const paths = content.compilerOptions?.paths?.["promptlang/runtime"] as string[];
-    expect(paths[0]).toBe("node_modules/promptlang/runtime/index.js");
+    const paths = content.compilerOptions?.paths?.["@promptlang/core/runtime"] as string[];
+    expect(paths[0]).toBe("node_modules/@promptlang/core/dist/runtime/index.js");
   });
 
   test("help mentions --emit-tsconfig flag", async () => {
@@ -945,5 +945,20 @@ describe("compile — test and eval blocks", () => {
     expect(warnings).toContain(
       `${file}:5:1: eval blocks are parsed but not executed in this version`
     );
+  });
+
+  test("@temperature on a Claude model compiles with a warning that it is not sent", async () => {
+    const { code, warnings, file } = await compileSource(
+      `@model claude-opus-5-5\n@temperature 0.2\n${PROMPT}`
+    );
+    expect(code).toBe(0);
+    expect(warnings).toContain(
+      `${file}:2:1: @temperature is not sent to Anthropic (API version 2026-10-21 rejects it); it applies to OpenAI and Ollama only`
+    );
+  });
+
+  test("@temperature on a non-Claude model compiles without that warning", async () => {
+    const { warnings } = await compileSource(`@model gpt-5\n@temperature 0.2\n${PROMPT}`);
+    expect(warnings).not.toContain("@temperature");
   });
 });

@@ -1,5 +1,5 @@
 import { resolveFiles } from "../files";
-import { warnAboutEvals } from "../warnings";
+import { warnAboutEvals, warnAboutTemperature } from "../warnings";
 import { tokenize } from "../../lexer/lexer";
 import { parse } from "../../parser/parser";
 import { compile } from "../../compiler/compiler";
@@ -135,6 +135,7 @@ export async function runCompile(args: string[]): Promise<number> {
       }
 
       warnAboutEvals(ast, file);
+      warnAboutTemperature(ast, file);
 
       if (target === "python") {
         const generated = compilePython(ast, file);
@@ -197,9 +198,9 @@ export async function runCompile(args: string[]): Promise<number> {
     const tsconfigPath = join(outDir, "tsconfig.json");
     await Bun.write(tsconfigPath, buildTsconfig(runtimePath));
     console.log(`  emitted   ${tsconfigPath}`);
-    console.log(`            (paths "promptlang/runtime" → ${runtimePath})`);
-    console.log(`            Note: the mapping points at this checkout's runtime source,`);
-    console.log(`            because @promptlang/core is not published to npm.`);
+    console.log(`            (paths "@promptlang/core/runtime" → ${runtimePath})`);
+    console.log(`            Note: the mapping points at this checkout's runtime source;`);
+    console.log(`            with @promptlang/core installed, the import resolves without it.`);
   }
 
   return hasErrors ? 1 : 0;
@@ -224,7 +225,7 @@ function buildTsconfig(runtimePath: string): string {
         skipLibCheck: true,
         baseUrl: ".",
         paths: {
-          "promptlang/runtime": [runtimePath],
+          "@promptlang/core/runtime": [runtimePath],
         },
       },
       include: ["./*.ts"],

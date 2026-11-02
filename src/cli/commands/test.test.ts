@@ -3,9 +3,9 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { PromptClient } from "../../runtime/client";
-import { NetworkError } from "../../runtime/errors";
-import { fetchSpy, useFetchSpy } from "../../../tests/support/fetch-spy";
-import { createLiveClient, runTest, type TestCommandDeps } from "./test";
+import { InvalidRequestError, NetworkError } from "../../runtime/errors";
+import { captureConsole } from "../../../tests/support/console";
+import { runTest, type TestCommandDeps } from "./test";
 
 let dir: string;
 const HEADER = `@version "1.0.0"\n@model claude-haiku-4-5\n@max_tokens 10\n`;
@@ -19,20 +19,7 @@ async function write(name: string, body: string): Promise<string> {
   return file;
 }
 
-async function capture(fn: () => Promise<number>) {
-  const out: string[] = [];
-  const err: string[] = [];
-  const [log, error, warn] = [console.log, console.error, console.warn];
-  console.log = (...a: unknown[]) => out.push(a.join(" "));
-  console.error = (...a: unknown[]) => err.push(a.join(" "));
-  console.warn = (...a: unknown[]) => err.push(a.join(" "));
-  try {
-    const code = await fn();
-    return { code, stdout: out.join("\n"), stderr: err.join("\n") };
-  } finally {
-    [console.log, console.error, console.warn] = [log, error, warn];
-  }
-}
+const capture = captureConsole;
 
 function fakeDeps(answer: boolean, calls: string[] = []): TestCommandDeps {
   const client: PromptClient = {
@@ -157,7 +144,7 @@ describe("promptlang test --live", () => {
     await Bun.write(unpriced, `@version "1.0.0"\n@model llama3.1\n${PROMPT}${passing}`);
     const r = await capture(() => runTest([unpriced, "--live", "--yes"], fakeDeps(true, calls)));
     expect(r.code).toBe(2);
-    expect(r.stderr).toContain("no price is recorded for @model llama3.1");
+    expect(r.stderr).toContain("no price is recorded for model llama3.1");
     expect(calls).toEqual(["claude-haiku-4-5"]);
   });
 
@@ -175,28 +162,27 @@ describe("promptlang test --live", () => {
     expect(r.code).toBe(3);
     expect(r.stdout).toContain(`ERROR  ${file}:8  pass`);
     expect(r.stdout).toContain(
-      "provider error, no verdict: NetworkError: fetch failed: ECONNREFUSED"
+      "provider failure, no verdict (retry later): NetworkError: fetch failed: ECONNREFUSED"
     );
     expect(r.stdout).not.toContain("FAIL");
-    expect(r.stdout).toContain("0 passed, 0 failed, 1 without a verdict (provider error)");
+    expect(r.stdout).toContain("0 passed, 0 failed, 1 without a verdict (1 provider failure)");
   });
-});
 
-describe("createLiveClient", () => {
-  useFetchSpy();
-
-  test("makes exactly one attempt, so a retryable error is not billed again", async () => {
-    fetchSpy.mockResolvedValue(new Response('{"error":{"message":"overloaded"}}', { status: 529 }));
-    const client = createLiveClient({ ANTHROPIC_API_KEY: "sk-test" });
-    const request = {
-      model: "claude-haiku-4-5",
-      messages: [{ role: "user" as const, content: "x" }],
+  test("a rejected request: exit 3, reported as a configuration error, not an outage", async () => {
+    const file = await write("live-bad-request.prompt", passing);
+    const deps: TestCommandDeps = {
+      createClient: () => ({
+        async complete() {
+          throw new InvalidRequestError("max_tokens: too large for this model", "anthropic");
+        },
+      }),
+      confirm: () => true,
     };
-    await expect(client.complete(request)).rejects.toThrow();
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
-  });
-
-  test("refuses to start without ANTHROPIC_API_KEY", () => {
-    expect(() => createLiveClient({})).toThrow("--live needs ANTHROPIC_API_KEY");
+    const r = await capture(() => runTest([file, "--live", "--yes"], deps));
+    expect(r.code).toBe(3);
+    expect(r.stdout).toContain(
+      "configuration error, no verdict (fix the file or the key): InvalidRequestError: max_tokens: too large for this model"
+    );
+    expect(r.stdout).toContain("0 passed, 0 failed, 1 without a verdict (1 configuration error)");
   });
 });

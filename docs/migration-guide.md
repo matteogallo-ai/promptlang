@@ -1,14 +1,20 @@
 # Migration Guide
 
-## Unreleased changes (on `main`, untagged)
+## 1.2.0 → 2.0.0
 
-These changes can break existing setups. The release that ships them picks its
-version number by SemVer; see `CHANGELOG.md` under `[Unreleased]`.
+These changes break existing setups, hence the major version; the full list is in
+`CHANGELOG.md` under `[2.0.0]`.
+
+- **Install from npm.** `npm install @promptlang/core`. The library and runtime are
+  ESM for Node ≥ 20 and Bun; the `promptlang` CLI needs Bun ≥ 1.2.20.
+- **`@temperature` on Claude models.** `AnthropicClient` uses API version 2026-10-21,
+  which rejects `temperature` on every model, so the client leaves it out and
+  `compile` warns. Remove the line, or keep it for OpenAI and Ollama.
 
 - **Package name.** The package is `@promptlang/core` (the unscoped `promptlang`
   name on npm belongs to a third party). The CLI binary is still `promptlang`.
-  Generated code still imports `promptlang/runtime`, resolved through a `paths`
-  mapping (`compile --emit-tsconfig`).
+  Generated code imports `@promptlang/core/runtime` (it imported `promptlang/runtime`):
+  recompile, and install `@promptlang/core` in the project that runs the output.
 - **Empty API keys are rejected** (TypeScript runtime). `new AnthropicClient({ apiKey })` and
   `new OpenAIClient({ apiKey })` throw a `TypeError` when the key is undefined,
   empty or whitespace, instead of sending an unauthenticated request.
@@ -42,6 +48,5 @@ If you started on v0.4 or earlier:
 ## Vendoring compiled output
 
 Generated Python is self-contained: it ships with a generated `promptlang_runtime.py`
-(whose HTTP clients need `httpx`). Generated TypeScript imports `promptlang/runtime`,
-which is not published, so it needs this repository's `src/runtime/` reachable
-through a `paths` mapping; you cannot delete the checkout after compiling.
+(whose HTTP clients need `httpx`). Generated TypeScript imports `@promptlang/core/runtime`, so the project that runs it
+depends on `@promptlang/core`; nothing else from the compiler is needed at runtime.

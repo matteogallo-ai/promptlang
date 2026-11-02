@@ -8,10 +8,37 @@ import type {
 } from "../ast/nodes";
 import { compile } from "../compiler/compiler";
 import { MockClient, type PromptClient } from "../runtime/client";
-import { PromptClientError } from "../runtime/errors";
+import {
+  AuthenticationError,
+  InvalidRequestError,
+  NotFoundError,
+  PromptClientError,
+} from "../runtime/errors";
 import type { PromptRequest, PromptResponse } from "../runtime/types";
 import { importCompiled } from "./load-compiled";
 import { schemaErrors } from "./schema";
+
+/**
+ * Why a call got no answer. `configuration`: the provider refused what was sent
+ * (key, model, parameters), so retrying changes nothing until the file or the
+ * key is fixed. `provider`: timeout, network, rate limit, server or a malformed
+ * body, which a later retry can clear.
+ */
+export interface ProviderFailure {
+  kind: "configuration" | "provider";
+  message: string;
+}
+
+function classify(error: PromptClientError): ProviderFailure {
+  const configuration =
+    error instanceof AuthenticationError ||
+    error instanceof InvalidRequestError ||
+    error instanceof NotFoundError;
+  return {
+    kind: configuration ? "configuration" : "provider",
+    message: `${error.name}: ${error.message}`,
+  };
+}
 
 export interface TestResult {
   file: string;
@@ -20,8 +47,8 @@ export interface TestResult {
   passed: boolean;
   /** One line per failed assertion, or why the test could not run. */
   failures: string[];
-  /** Set when the provider failed (timeout, network, auth…): the test has no verdict. */
-  providerError?: string;
+  /** Set when the call failed (timeout, network, auth…): the test has no verdict. */
+  providerError?: ProviderFailure;
   output?: unknown;
   usage: { input_tokens: number; output_tokens: number };
 }
@@ -151,7 +178,7 @@ async function runOne(
   } catch (error) {
     // An infrastructure failure is not a verdict on the prompt; report it apart.
     if (error instanceof PromptClientError) {
-      return { ...result([]), passed: false, providerError: `${error.name}: ${error.message}` };
+      return { ...result([]), passed: false, providerError: classify(error) };
     }
     // Whatever else the prompt raises (an enum value outside the type, malformed
     // JSON) is the test's verdict, recorded with its message, not a runner crash.

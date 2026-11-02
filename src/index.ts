@@ -4,10 +4,10 @@
  * The runtime clients live behind the `@promptlang/core/runtime` subpath so that
  * generated code does not pull the compiler into application bundles.
  */
-import packageJson from "../package.json";
+import { version } from "../package.json";
 
 /** Version of this package, read from package.json so it cannot drift. */
-export const VERSION: string = packageJson.version;
+export const VERSION: string = version;
 
 export { tokenize } from "./lexer/lexer";
 export { LexerError } from "./lexer/errors";

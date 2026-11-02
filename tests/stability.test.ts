@@ -3,14 +3,14 @@ import pkg from "../package.json";
 import { main } from "../src/cli/cli";
 
 /**
- * Regression tests pinning the v1.0 API surface. If any of these fail, we
- * have broken a documented stability promise and the change needs a proper
- * MAJOR-version release, not a MINOR or PATCH.
+ * Regression tests pinning the 2.x package surface. If any of these fail, a
+ * documented stability promise is broken and the change needs a MAJOR
+ * release, not a MINOR or PATCH.
  */
 
-describe("v1.0 stability: package metadata", () => {
-  test("package.json version is 1.0.0 or a 1.x compatible successor", () => {
-    expect(pkg.version).toMatch(/^1\.\d+\.\d+(-.+)?$/);
+describe("2.x stability: package metadata", () => {
+  test("package.json version is 2.0.0 or a 2.x compatible successor", () => {
+    expect(pkg.version).toMatch(/^2\.\d+\.\d+(-.+)?$/);
   });
 
   // The unscoped `promptlang` name on npm belongs to a third party, so the package is
@@ -21,12 +21,19 @@ describe("v1.0 stability: package metadata", () => {
 
   test("bin entry exposes the CLI", () => {
     expect(pkg.bin).toBeDefined();
-    expect((pkg.bin as Record<string, string>).promptlang).toBe("./src/cli/cli.ts");
+    expect((pkg.bin as Record<string, string>).promptlang).toBe("dist/cli/cli.js");
   });
 
   test("runtime is exported at ./runtime for compiled stubs to import", () => {
-    const exports_ = pkg.exports as Record<string, string>;
-    expect(exports_["./runtime"]).toBe("./src/runtime/index.ts");
+    const exports_ = pkg.exports as Record<string, unknown>;
+    expect(exports_["./runtime"]).toEqual({
+      types: "./dist/runtime/index.d.ts",
+      import: "./dist/runtime/index.js",
+    });
+  });
+
+  test("the published files are the build output, not the sources", () => {
+    expect(pkg.files).toEqual(["dist", "README.md", "CHANGELOG.md", "LICENSE"]);
   });
 
   test("no third-party runtime dependencies (only first-party @promptlang/* allowed)", () => {
@@ -39,7 +46,7 @@ describe("v1.0 stability: package metadata", () => {
   });
 });
 
-describe("v1.0 stability: CLI surface", () => {
+describe("2.x stability: CLI surface", () => {
   function captureLog(): { output: () => string; restore: () => void } {
     const lines: string[] = [];
     const orig = console.log;

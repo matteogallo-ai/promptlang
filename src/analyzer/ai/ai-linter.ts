@@ -5,11 +5,20 @@ import type { AnalysisContext, Issue } from "../analyzer";
 import { AI_LINTER_SYSTEM_PROMPT, buildAnalysisUserMessage } from "./prompts/analysis-prompt";
 import { parseAiResponse } from "./issue-parser";
 
+/** Current Haiku: low cost per call, and it accepts no sampling parameters. */
+export const AI_LINTER_MODEL = "claude-haiku-5-5";
+/**
+ * Haiku 5.5 thinks adaptively by default and thinking counts against
+ * max_tokens, so the limit leaves room for it on top of the JSON answer. A
+ * truncated answer surfaces as an ai:parse-failure issue, never as "no issues".
+ */
+export const AI_LINTER_MAX_TOKENS = 4096;
+
 /** Options for configuring the AiLinter. */
 export interface AiLinterOptions {
   /** Inject a custom PromptClient (e.g. MockClient in tests). Skips ANTHROPIC_API_KEY check. */
   client?: PromptClient;
-  /** Claude model to use. Defaults to "claude-haiku-4-5". */
+  /** Claude model to use. Defaults to AI_LINTER_MODEL. */
   model?: string;
   /** Number of prompts to analyze concurrently. Defaults to 3. */
   concurrency?: number;
@@ -18,7 +27,7 @@ export interface AiLinterOptions {
 }
 
 /**
- * AI-powered linter that sends each PromptDeclaration to Claude Haiku
+ * AI-powered linter that sends each PromptDeclaration to Claude
  * for semantic analysis beyond what static rules can detect.
  */
 export class AiLinter {
@@ -40,7 +49,7 @@ export class AiLinter {
       }
       this.client = new AnthropicClient({ apiKey });
     }
-    this.model = options.model ?? "claude-haiku-4-5";
+    this.model = options.model ?? AI_LINTER_MODEL;
     this.concurrency = options.concurrency ?? 3;
     this.onProgress = options.onProgress;
   }
@@ -93,8 +102,7 @@ export class AiLinter {
   private async analyzePrompt(prompt: PromptDeclaration, file: string): Promise<Issue[]> {
     const request: PromptRequest = {
       model: this.model,
-      max_tokens: 1024,
-      temperature: 0.1,
+      max_tokens: AI_LINTER_MAX_TOKENS,
       messages: [
         { role: "system", content: AI_LINTER_SYSTEM_PROMPT },
         { role: "user", content: buildAnalysisUserMessage(prompt) },

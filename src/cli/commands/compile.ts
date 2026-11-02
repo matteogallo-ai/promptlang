@@ -1,4 +1,4 @@
-import { Glob } from "bun";
+import { resolveFiles } from "../files";
 import { tokenize } from "../../lexer/lexer";
 import { parse } from "../../parser/parser";
 import { compile } from "../../compiler/compiler";
@@ -225,27 +225,4 @@ function buildTsconfig(runtimePath: string): string {
     null,
     2
   )}\n`;
-}
-
-async function resolveFiles(paths: string[]): Promise<string[]> {
-  const files: string[] = [];
-
-  for (const p of paths) {
-    if (p.includes("*")) {
-      const glob = new Glob(p);
-      for await (const file of glob.scan(".")) {
-        if (file.endsWith(".prompt")) files.push(file);
-      }
-    } else if (p.endsWith(".prompt")) {
-      files.push(p);
-    } else {
-      const dir = p.replace(/\/+$/, "");
-      const glob = new Glob("**/*.prompt");
-      for await (const file of glob.scan(dir)) {
-        files.push(`${dir}/${file}`);
-      }
-    }
-  }
-
-  return [...new Set(files)];
 }

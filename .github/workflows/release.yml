@@ -1,0 +1,68 @@
+name: Release
+
+# A v* tag publishes @promptlang/core (and @promptlang/yaml-parser when its
+# version is not on npm yet), after the whole CI workflow passes on the tag.
+# Run it by hand with dry_run to see what would be published, publishing nothing.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "npm publish --dry-run (publish nothing)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    needs: ci
+    runs-on: ubuntu-latest
+    # Protection rules (required reviewers) can be set on this environment.
+    environment: npm
+    permissions:
+      contents: read
+      # OIDC token for npm provenance: the registry records which workflow built the tarball.
+      id-token: write
+    env:
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '--dry-run' || '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+          registry-url: "https://registry.npmjs.org"
+      - run: bun install --frozen-lockfile
+
+      - name: The tag names the version in package.json
+        if: github.event_name == 'push'
+        run: |
+          VERSION="v$(node -p "require('./package.json').version")"
+          if [ "$VERSION" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json ($VERSION)."
+            exit 1
+          fi
+
+      - name: Publish @promptlang/core
+        # prepack runs scripts/build.ts, so the tarball holds a fresh dist/.
+        run: npm publish --provenance --access public $DRY_RUN
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @promptlang/yaml-parser if this version is not on npm
+        working-directory: packages/yaml-parser
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          if npm view "@promptlang/yaml-parser@$VERSION" version >/dev/null 2>&1; then
+            echo "@promptlang/yaml-parser@$VERSION is already on npm; skipped."
+          else
+            npm publish --provenance --access public $DRY_RUN
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

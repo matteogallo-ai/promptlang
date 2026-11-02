@@ -21,7 +21,7 @@ describe("v1.0 stability: package metadata", () => {
 
   test("bin entry exposes the CLI", () => {
     expect(pkg.bin).toBeDefined();
-    expect((pkg.bin as Record<string, string>).promptlang).toBe("./dist/cli/cli.js");
+    expect((pkg.bin as Record<string, string>).promptlang).toBe("dist/cli/cli.js");
   });
 
   test("runtime is exported at ./runtime for compiled stubs to import", () => {

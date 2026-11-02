@@ -63,9 +63,10 @@
     "test:consumer": "bun run scripts/consumer-test.ts"
   },
   "devDependencies": {
-    "@promptlang/yaml-parser": "workspace:*",
     "@biomejs/biome": "2.6.4",
+    "@promptlang/yaml-parser": "workspace:*",
     "@types/bun": "latest",
+    "fast-check": "4.10.2",
     "knip": "6.44.1",
     "typescript": "^5.6.0"
   },

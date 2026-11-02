@@ -7,7 +7,8 @@
  * @promptlang/yaml-parser is bundled in, so the package has no runtime
  * dependency to resolve.
  */
-import { readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { statOrNull } from "./lib/stat-or-null";
 import { dirname, join } from "node:path";
 
 const ROOT = join(import.meta.dir, "..");
@@ -31,10 +32,7 @@ async function bundle(entrypoints: string[], target: "node" | "bun"): Promise<vo
 }
 
 async function isFile(path: string): Promise<boolean> {
-  return stat(path).then(
-    (s) => s.isFile(),
-    () => false
-  );
+  return (await statOrNull(path))?.isFile() ?? false;
 }
 
 const RELATIVE_SPECIFIER = /(\bfrom\s+|\bimport\()(["'])(\.{1,2}\/[^"']+)\2/g;

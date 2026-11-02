@@ -7,6 +7,7 @@
  * Output: one `file:line: kind: excerpt` per finding; exit 1 when any exist.
  */
 import { readdir, readFile, stat } from "node:fs/promises";
+import { statOrNull } from "./lib/stat-or-null";
 import { join, relative, sep } from "node:path";
 
 export type FindingKind =
@@ -94,13 +95,6 @@ async function* walk(dir: string): AsyncGenerator<string> {
   }
 }
 
-async function exists(path: string): Promise<boolean> {
-  return stat(path).then(
-    () => true,
-    () => false
-  );
-}
-
 async function listTargets(repoRoot: string): Promise<string[]> {
   const roots = [...ROOTS];
   for (const pkg of await readdir(join(repoRoot, "packages"), { withFileTypes: true })) {
@@ -109,7 +103,7 @@ async function listTargets(repoRoot: string): Promise<string[]> {
   const files = new Set<string>();
   for (const root of roots) {
     const abs = join(repoRoot, root);
-    if (!(await exists(abs))) continue;
+    if ((await statOrNull(abs)) === null) continue;
     if ((await stat(abs)).isDirectory()) {
       for await (const f of walk(abs)) files.add(f);
     } else {

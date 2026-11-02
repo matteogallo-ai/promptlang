@@ -25,6 +25,7 @@ type Case = [string, string, number, number, string?, string?];
 
 // biome-ignore format: one error case per line keeps the table reviewable
 const CASES: Case[] = [
+  ["prompt p() -> string { system: \"s\" }\nimport \"a.prompt\" as A", "'import' must appear at the top of the file, before any metadata (@...) or declarations.", 2, 1],
   ["@version \"1.0.0\"\nimport \"a.prompt\" as A", "'import' must appear at the top of the file, before any metadata (@...) or declarations.", 2, 1],
   ["import x as A", "Expected a string path after 'import', e.g. import \"shared/x.prompt\" as X", 1, 8, "STRING", "IDENT"],
   ["import \"{{x}}\" as A", "Import path cannot contain template interpolation '{{...}}'.", 1, 8],

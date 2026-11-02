@@ -20,8 +20,8 @@
       "preset": "recommended",
       "style": {
         // The lexer and parser index arrays right after explicit bounds checks; the
-        // assertions are the narrowing. Rewriting 160+ sites is a behaviour-risk refactor
-        // tracked separately, not a lint fix.
+        // assertions are the narrowing. Rewriting 160+ sites would be a behaviour-risk
+        // refactor, not a lint fix.
         "noNonNullAssertion": "off"
       },
       "suspicious": {

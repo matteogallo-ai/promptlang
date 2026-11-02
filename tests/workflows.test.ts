@@ -10,7 +10,10 @@ function wf(body: string, perms = "permissions:\n  contents: read\n"): string {
   return `name: t\non:\n  push:\n${perms}jobs:\n  j:\n    runs-on: ubuntu-latest\n${body}`;
 }
 
-describe("GitHub Actions workflows", () => {
+// Bun.YAML is absent from Bun 1.2.20, the oldest Bun the test matrix runs. These
+// tests check the repository's workflow files, not code users run, so the
+// "bun latest" and "claims" jobs running them is enough.
+describe.skipIf(typeof Bun.YAML === "undefined")("GitHub Actions workflows", () => {
   test("every workflow pins actions by SHA, reads by default and justifies each write", async () => {
     const files = (await readdir(DIR)).filter((f) => /\.ya?ml$/.test(f));
     expect(files.length).toBeGreaterThan(0);

@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { PromptClient } from "../../runtime/client";
 import { NetworkError } from "../../runtime/errors";
+import { captureConsole } from "../../../tests/support/console";
 import { runTest, type TestCommandDeps } from "./test";
 
 let dir: string;
@@ -18,20 +19,7 @@ async function write(name: string, body: string): Promise<string> {
   return file;
 }
 
-async function capture(fn: () => Promise<number>) {
-  const out: string[] = [];
-  const err: string[] = [];
-  const [log, error, warn] = [console.log, console.error, console.warn];
-  console.log = (...a: unknown[]) => out.push(a.join(" "));
-  console.error = (...a: unknown[]) => err.push(a.join(" "));
-  console.warn = (...a: unknown[]) => err.push(a.join(" "));
-  try {
-    const code = await fn();
-    return { code, stdout: out.join("\n"), stderr: err.join("\n") };
-  } finally {
-    [console.log, console.error, console.warn] = [log, error, warn];
-  }
-}
+const capture = captureConsole;
 
 function fakeDeps(answer: boolean, calls: string[] = []): TestCommandDeps {
   const client: PromptClient = {

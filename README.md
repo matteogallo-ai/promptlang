@@ -219,6 +219,9 @@ confidence-scored issues alongside the static analysis output.
 
 ### Cost
 
+`--ai` prints a cost estimate for your files and asks before any call; `--yes`
+approves without asking.
+
 Each analyzed prompt is one request to Claude Haiku 5.5 (by default) with
 `max_tokens: 4096`, which leaves room for its adaptive thinking. At list prices
 ($0.10 / $0.50 per million input / output tokens, prompts up to 100K tokens) the

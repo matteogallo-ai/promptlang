@@ -290,7 +290,10 @@ output, `--strict` to exit 1 on warnings):
 | `duplicate-prompts` | warning | the same prompt name declared in several files |
 
 `analyze --ai` additionally sends each prompt to Claude (default `claude-haiku-5-5`,
-key from `ANTHROPIC_API_KEY`). Its plumbing is tested with a mocked client only; see
+key from `ANTHROPIC_API_KEY`). It first prints a cost estimate (one call per prompt,
+each at its full `max_tokens`, no retries) and asks before calling; `--yes` approves
+without asking, and without a terminal `--yes` is required. Declining exits 2 with
+no call made; a missing key keeps the static results (exit as without `--ai`). Its plumbing is tested with a mocked client only; see
 [`CLAIMS.md`](CLAIMS.md). There are no suppression comments and no custom-rule API.
 
 ---

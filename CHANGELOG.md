@@ -71,6 +71,9 @@ release is chosen when it is tagged.
 - `promptlang test <paths> [--json] [--live [--yes]]`: runs `test` blocks against the
   generated TypeScript, replaying `mock:` responses by default; `--live` calls
   Anthropic after printing an approximate cost estimate and getting approval.
+- `analyze --ai` prints a cost estimate and asks before any call (`--yes` approves;
+  required without a terminal). It makes no retries, so the estimate counts each
+  call once.
 - `promptlang test` exits 3 when a provider error (any `PromptClientError`) left a
   test without a verdict, so an outage is never reported as a failed assertion.
 - Test syntax: `mock: "..."`, `expect contains:`, `expect matches:`, `expect schema`.

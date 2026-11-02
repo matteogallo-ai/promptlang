@@ -16,6 +16,9 @@
     "packages/yaml-parser": {
       "name": "@promptlang/yaml-parser",
       "version": "1.0.0",
+      "devDependencies": {
+        "fast-check": "4.10.2",
+      },
     },
   },
   "packages": {

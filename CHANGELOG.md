@@ -71,6 +71,9 @@ release is chosen when it is tagged.
 - `promptlang test <paths> [--json] [--live [--yes]]`: runs `test` blocks against the
   generated TypeScript, replaying `mock:` responses by default; `--live` calls
   Anthropic after printing an approximate cost estimate and getting approval.
+- Python runtime: empty keys are refused, HTTP errors and malformed responses raise
+  typed `PromptClientError` subclasses (the names TypeScript uses), and the Anthropic
+  client sends version 2026-10-21 without `temperature`.
 - `analyze --ai` prints a cost estimate and asks before any call (`--yes` approves;
   required without a terminal). It makes no retries, so the estimate counts each
   call once.

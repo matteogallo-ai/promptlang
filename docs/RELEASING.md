@@ -11,14 +11,20 @@ On a `v*` tag:
    `package` job: `npm pack --dry-run`, and `scripts/consumer-test.ts` on Node 20
    and the current LTS.
 2. If the tag differs from `v` + `package.json` `version`, the release stops.
-3. `npm publish --provenance --access public` publishes `@promptlang/core`. `prepack`
+3. It checks whether the `@promptlang/yaml-parser` version is on npm. Only an
+   `E404` answer means "not on npm"; any other registry error stops the release
+   before anything is published.
+4. `npm publish --provenance --access public` publishes `@promptlang/core`. `prepack`
    runs `scripts/build.ts` first, so the tarball holds a fresh `dist/`.
-4. `@promptlang/yaml-parser` is published only if its `package.json` version is not
-   on npm yet.
+5. `@promptlang/yaml-parser` is published if step 3 found its version missing.
 
-To see what would be published without publishing anything, run the workflow by
-hand (**Actions → Release → Run workflow**). `dry_run` is checked by default: every
-`npm publish` gets `--dry-run`. Locally, `npm publish --dry-run --access public`
+A prerelease version (one with a `-`, such as `2.1.0-rc.1`) is published under the
+`next` dist-tag, so `npm install @promptlang/core` keeps installing the last stable
+version. A `concurrency` group keeps two releases from running at once.
+
+Running the workflow by hand (**Actions → Release → Run workflow**) is always a dry
+run: every `npm publish` gets `--dry-run` and nothing is published, whatever the
+branch. Only a pushed tag publishes. Locally, `npm publish --dry-run --access public`
 shows the same tarball.
 
 ## What the maintainer configures once

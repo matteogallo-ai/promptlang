@@ -2,19 +2,20 @@ name: Release
 
 # A v* tag publishes @promptlang/core (and @promptlang/yaml-parser when its
 # version is not on npm yet), after the whole CI workflow passes on the tag.
-# Run it by hand with dry_run to see what would be published, publishing nothing.
+# Run by hand, it is always a dry run: only a tag publishes, so every published
+# version has passed the tag/version check below.
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
-    inputs:
-      dry_run:
-        description: "npm publish --dry-run (publish nothing)"
-        type: boolean
-        default: true
 
 permissions:
   contents: read
+
+# Two releases at once could race on the "is this version on npm" checks.
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   ci:
@@ -30,7 +31,7 @@ jobs:
       # OIDC token for npm provenance: the registry records which workflow built the tarball.
       id-token: write
     env:
-      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '--dry-run' || '' }}
+      DRY_RUN: ${{ github.event_name != 'push' && '--dry-run' || '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -49,20 +50,39 @@ jobs:
             exit 1
           fi
 
-      - name: Publish @promptlang/core
-        # prepack runs scripts/build.ts, so the tarball holds a fresh dist/.
-        run: npm publish --provenance --access public $DRY_RUN
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish @promptlang/yaml-parser if this version is not on npm
+      # Decided before anything is published, so a registry outage stops the job
+      # here instead of after @promptlang/core is out. Only E404 means "not on npm".
+      - name: Is this @promptlang/yaml-parser version on npm?
+        id: yaml_parser
         working-directory: packages/yaml-parser
         run: |
           VERSION="$(node -p "require('./package.json').version")"
-          if npm view "@promptlang/yaml-parser@$VERSION" version >/dev/null 2>&1; then
-            echo "@promptlang/yaml-parser@$VERSION is already on npm; skipped."
+          if OUT="$(npm view "@promptlang/yaml-parser@$VERSION" version 2>&1)"; then
+            echo "@promptlang/yaml-parser@$VERSION is already on npm; it is skipped."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          elif echo "$OUT" | grep -q E404; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
           else
-            npm publish --provenance --access public $DRY_RUN
+            echo "$OUT"
+            exit 1
           fi
+
+      - name: Publish @promptlang/core
+        # prepack runs scripts/build.ts, so the tarball holds a fresh dist/.
+        # A prerelease (2.1.0-rc.1) goes to the "next" dist-tag, never to "latest".
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          case "$VERSION" in *-*) TAG="--tag next" ;; *) TAG="" ;; esac
+          npm publish --provenance --access public $TAG $DRY_RUN
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @promptlang/yaml-parser
+        if: steps.yaml_parser.outputs.publish == 'true'
+        working-directory: packages/yaml-parser
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          case "$VERSION" in *-*) TAG="--tag next" ;; *) TAG="" ;; esac
+          npm publish --provenance --access public $TAG $DRY_RUN
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -40,6 +40,7 @@ function silenceAll(): () => void {
 
 // Temp file paths for error-case tests.
 const BAD_SYNTAX_FILE = "/tmp/promptlang-test-bad-syntax.prompt";
+const WARNING_FILE = "/tmp/promptlang-test-warning.prompt";
 const BAD_LEXER_FILE = "/tmp/promptlang-test-bad-lexer.prompt";
 
 beforeAll(async () => {
@@ -249,17 +250,16 @@ describe("analyze", () => {
   });
 
   test("--strict exits 1 when warnings are present", async () => {
+    // An undelimited user template is a prompt-injection-risk warning.
+    await Bun.write(
+      WARNING_FILE,
+      '@version "1.0.0"\nprompt p(x: string) -> string {\n  user: "Say {{x}}"\n}\ntest "t" {\n  input: p("a")\n  expect: a\n}\n'
+    );
     const restore = silenceAll();
-    // classify-ticket has injection warnings, so --strict causes exit 1.
-    const code = await main([
-      "bun",
-      "cli",
-      "analyze",
-      "--strict",
-      "docs/examples/classify-ticket.prompt",
-    ]);
+    const lenient = await main(["bun", "cli", "analyze", WARNING_FILE]);
+    const strict = await main(["bun", "cli", "analyze", "--strict", WARNING_FILE]);
     restore();
-    expect(code).toBe(1);
+    expect([lenient, strict]).toEqual([0, 1]);
   });
 
   test("--ai without ANTHROPIC_API_KEY prints error and falls back to static only (exit 0)", async () => {

@@ -7,8 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Remediation after the 2026-11-02 external audit. The version number for this
-release is chosen when it is tagged.
+## [2.0.0] - 2026-11-02
+
+Remediation after the 2026-11-02 external audit, and the first release of
+`@promptlang/core` on npm.
+
+**Why 2.0.0 and not 1.3.0.** Code written against 1.2.0 breaks in at least these
+ways, each of which SemVer reserves for a major version:
+- the package name (`promptlang` → `@promptlang/core`) and its `exports` (TypeScript
+  sources under `./src` → built `./dist` with `types`/`import` conditions), so every
+  import of 1.2.0 stops resolving;
+- generated code imports `@promptlang/core/runtime`, so 1.2.0 output must be
+  recompiled;
+- `@version` must be SemVer and `compile --target` must be `typescript` or
+  `python`, so files and scripts that 1.2.0 accepted are rejected;
+- `AnthropicClient` no longer sends `temperature`, so the same file samples
+  differently.
 
 ### Claimed but not true (corrected)
 - README marked **Native tests** and **SemVer for prompts** ✅; neither was
@@ -54,6 +68,12 @@ release is chosen when it is tagged.
 - **BREAKING:** `compile --target` accepts only `typescript` or `python`. Any other
   value (e.g. `py`) used to produce TypeScript silently; it is now an error.
 - `AnthropicClient` / `OpenAIClient` throw `TypeError` on an empty API key.
+- The AI linter runs on `claude-haiku-5-5` (was `claude-haiku-4-5`, still active but
+  ten times the price) with `max_tokens` 4096 and no `temperature`; `init` and the
+  config default follow.
+- The published package is built: ESM for Node ≥ 20 and Bun, with `.d.ts`
+  declarations; `@promptlang/yaml-parser` is bundled in, so `@promptlang/core` has no
+  runtime dependency. The CLI needs Bun ≥ 1.2.20.
 
 ### Security
 - The AI linter wraps each analyzed section in `<untrusted_prompt>` delimiters,
@@ -94,7 +114,11 @@ release is chosen when it is tagged.
 - Test syntax: `mock: "..."`, `expect contains:`, `expect matches:`, `expect schema`.
 - A test whose `input` calls a prompt or chain the file does not declare, or with
   arguments that do not match its parameters, is a compile error.
-- `compile` and `test` warn that `eval` blocks are parsed but not executed.
+- `compile` and `test` warn that `eval` blocks are parsed but not executed, and that
+  `@temperature` is not sent to Anthropic.
+- `.github/workflows/release.yml`: a `v*` tag runs CI, then `npm publish --provenance`;
+  see `docs/RELEASING.md`. CI packs the tarball, installs it into an empty project
+  and uses it from Node 20 and the current LTS (`scripts/consumer-test.ts`).
 - `bun run demo`: the SemVer scenario end to end in a temporary Git repository.
 - Optional parameters: `name?: Type` in prompts and chains (`name?: T` in
   TypeScript, `NotRequired[T]` in Python; an omitted one interpolates as "").
@@ -104,6 +128,8 @@ release is chosen when it is tagged.
   `benchmarks/bench.ts`; Biome and knip configuration; CI jobs for each.
 
 ### Fixed
+- `resolveGraph` / `resolveImport` used `Bun.file` and failed under Node.
+- The stale-narrative check missed "requires the v0.6 …" in a `.prompt` comment.
 - Tests that spawn `tsc` had bun's 5 s default timeout and flaked on cold runners.
 - Python type mapper fell through from primitive to enum on an unknown primitive.
 

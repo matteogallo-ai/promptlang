@@ -97,9 +97,9 @@ describe("version", () => {
     restore();
     expect(code).toBe(0);
     expect(output()).toContain("promptlang");
-    // Version must match SemVer 1.x — asserting the exact value would
-    // couple the test to the release cadence.
-    expect(output()).toMatch(/1\.\d+\.\d+(-.+)?/);
+    // The major is pinned by tests/stability.test.ts; here any SemVer version will do,
+    // so a minor or patch release does not touch this test.
+    expect(output()).toMatch(/^promptlang \d+\.\d+\.\d+(-.+)?$/m);
   });
 
   test("prints repository URL", async () => {

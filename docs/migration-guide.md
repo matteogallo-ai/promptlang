@@ -1,9 +1,15 @@
 # Migration Guide
 
-## Unreleased changes (on `main`, untagged)
+## 1.2.0 → 2.0.0
 
-These changes can break existing setups. The release that ships them picks its
-version number by SemVer; see `CHANGELOG.md` under `[Unreleased]`.
+These changes break existing setups, hence the major version; the full list is in
+`CHANGELOG.md` under `[2.0.0]`.
+
+- **Install from npm.** `npm install @promptlang/core`. The library and runtime are
+  ESM for Node ≥ 20 and Bun; the `promptlang` CLI needs Bun ≥ 1.2.20.
+- **`@temperature` on Claude models.** `AnthropicClient` uses API version 2026-10-21,
+  which rejects `temperature` on every model, so the client leaves it out and
+  `compile` warns. Remove the line, or keep it for OpenAI and Ollama.
 
 - **Package name.** The package is `@promptlang/core` (the unscoped `promptlang`
   name on npm belongs to a third party). The CLI binary is still `promptlang`.

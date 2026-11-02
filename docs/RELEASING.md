@@ -62,5 +62,5 @@ option A.
 
 - `CHANGELOG.md`: move `[Unreleased]` under the new version and date.
 - Bump `package.json` `version` (and `packages/yaml-parser/package.json` if it
-  changed). `bun run check:claims` and the `v1-stability` tests must pass.
+  changed). `bun run check:claims` and the `tests/stability.test.ts` tests must pass.
 - Write the release notes under `docs/release-notes/`.

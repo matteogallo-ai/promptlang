@@ -430,6 +430,8 @@ bunx tsc --project ./generated/tsconfig.json --noEmit
 | [docs/CLAIMS.md](docs/CLAIMS.md)                      | Every advertised capability → module → test → status |
 | [docs/ENGINEERING_STANDARDS.md](docs/ENGINEERING_STANDARDS.md) | Rules every change in this repository follows |
 | [docs/roadmap.md](docs/roadmap.md)                    | Public milestone roadmap                           |
+| [docs/RELEASING.md](docs/RELEASING.md)                | How a tag becomes an npm release, and its setup    |
+| [docs/release-notes/](docs/release-notes/)            | Notes for each release                             |
 | [docs/examples/](docs/examples/)                      | Annotated `.prompt` examples                       |
 
 ---
@@ -442,7 +444,7 @@ PromptLang is developed as a Bun workspace. The main package,
 
 | Package | Location | Version | Description |
 | --- | --- | --- | --- |
-| [`@promptlang/yaml-parser`](https://www.npmjs.com/package/@promptlang/yaml-parser) | `packages/yaml-parser/` | 1.0.0 (published on npm in v1.2.0) | Zero-dependency minimal YAML parser. Extracted from PromptLang core in v1.1.0 so sibling projects (like [Praxis](https://github.com/matteogallo-ai/praxis)) can reuse it via `bun add @promptlang/yaml-parser`. |
+| [`@promptlang/yaml-parser`](https://www.npmjs.com/package/@promptlang/yaml-parser) | `packages/yaml-parser/` | 1.0.0 (on npm since PromptLang v1.2.0) | Zero-dependency minimal YAML parser. Extracted from PromptLang core in v1.1.0 so sibling projects (like [Praxis](https://github.com/matteogallo-ai/praxis)) can reuse it via `bun add @promptlang/yaml-parser`. |
 
 Each package has its own `README.md`, `CHANGELOG.md`, and independent
 SemVer track.

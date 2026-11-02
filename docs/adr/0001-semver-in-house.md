@@ -35,7 +35,7 @@ comments, with no dependency.
 
 - We own the correctness. `src/semver/semver.test.ts` covers the specification's
   precedence example, invalid versions (leading zeros, missing parts, empty
-  identifiers), every operator and the pre-release rule (a pre-release only
+  identifiers, numbers above 2^53 - 1, which npm's `semver` also rejects), every operator and the pre-release rule (a pre-release only
   satisfies a range that names a pre-release of the same version, as npm does).
 - If users need the operators we do not support, switching to `semver` stays
   cheap: the module exposes `parseVersion`, `compareVersions`, `parseRange` and

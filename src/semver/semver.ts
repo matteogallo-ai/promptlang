@@ -22,6 +22,9 @@ const SEMVER =
 export function parseVersion(text: string): SemVer | null {
   const m = SEMVER.exec(text);
   if (!m) return null;
+  // Beyond 2^53 - 1, distinct numbers compare equal as JavaScript numbers.
+  const numbers = [m[1], m[2], m[3], ...(m[4] ?? "").split(".").filter((id) => /^\d+$/.test(id))];
+  if (numbers.some((n) => !Number.isSafeInteger(Number(n)))) return null;
   return {
     major: Number(m[1]),
     minor: Number(m[2]),

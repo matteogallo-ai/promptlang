@@ -1,8 +1,13 @@
-import type { PromptClient } from "../client";
 import type { PromptRequest, PromptResponse } from "../types";
-import { ConnectionError, NetworkError, NotFoundError, ServerError, TimeoutError } from "../errors";
-import { invalidField, isRecord, readJsonObject } from "./response";
-import { withRetry } from "./retry";
+import {
+  ConnectionError,
+  NetworkError,
+  NotFoundError,
+  type PromptClientError,
+  ServerError,
+} from "../errors";
+import { BaseHttpClient, type HttpRequestSpec } from "./base-http-client";
+import { invalidField, isRecord } from "./response";
 
 /** Options for configuring the OllamaClient. */
 export interface OllamaClientOptions {
@@ -25,97 +30,76 @@ export interface OllamaClientOptions {
 type OllamaErrorBody = { error?: string };
 
 /** HTTP client for local Ollama servers (`/api/chat`). No authentication required. */
-export class OllamaClient implements PromptClient {
+export class OllamaClient extends BaseHttpClient {
   private readonly baseURL: string;
-  private readonly timeout: number;
-  private readonly maxRetries: number;
-  private readonly retryDelay: number;
 
   constructor(options: OllamaClientOptions = {}) {
+    super({
+      provider: "ollama",
+      timeout: options.timeout ?? 120_000,
+      maxRetries: options.maxRetries ?? 2,
+      retryDelay: options.retryDelay ?? 500,
+    });
     this.baseURL = options.baseURL ?? "http://localhost:11434";
-    this.timeout = options.timeout ?? 120_000;
-    this.maxRetries = options.maxRetries ?? 2;
-    this.retryDelay = options.retryDelay ?? 500;
   }
 
-  async complete(request: PromptRequest): Promise<PromptResponse> {
-    return withRetry(() => this.doRequest(request), this.maxRetries, this.retryDelay);
-  }
-
-  private async doRequest(request: PromptRequest): Promise<PromptResponse> {
+  protected buildRequest(request: PromptRequest): HttpRequestSpec {
     const ollamaOptions: Record<string, unknown> = {};
     if (request.temperature !== undefined) ollamaOptions.temperature = request.temperature;
     if (request.max_tokens !== undefined) ollamaOptions.num_predict = request.max_tokens;
-
     const body: Record<string, unknown> = {
       model: request.model,
       messages: request.messages,
       stream: false,
     };
+    if (Object.keys(ollamaOptions).length > 0) body.options = ollamaOptions;
+    return {
+      url: `${this.baseURL}/api/chat`,
+      headers: { "content-type": "application/json" },
+      body,
+    };
+  }
 
-    if (Object.keys(ollamaOptions).length > 0) {
-      body.options = ollamaOptions;
+  /** A local server that is not running is a ConnectionError, with the fix in the message. */
+  protected networkError(error: Error & { code?: string }): PromptClientError {
+    if (
+      error.code === "ECONNREFUSED" ||
+      error.message?.includes("ECONNREFUSED") ||
+      error.message?.includes("Connection refused")
+    ) {
+      return new ConnectionError(
+        `Could not connect to Ollama at ${this.baseURL}. ` +
+          "Make sure the server is running ('ollama serve').",
+        "ollama"
+      );
     }
+    return new NetworkError(`Network error: ${error.message}`, "ollama");
+  }
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-
-    let response: Response;
+  /** Ollama answers 404 for a model it has not pulled; every other status is a server error. */
+  protected async errorFor(response: Response, request: PromptRequest): Promise<PromptClientError> {
+    if (response.status !== 404) return new ServerError(response.status, undefined, "ollama");
+    let detail = "";
     try {
-      response = await fetch(`${this.baseURL}/api/chat`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(body),
-        signal: controller.signal,
-      });
-    } catch (err) {
-      clearTimeout(timeoutId);
-      const error = err as Error & { code?: string };
-      if (error.name === "AbortError") {
-        throw new TimeoutError(`Request timed out after ${this.timeout}ms`, "ollama");
-      }
-      if (
-        error.code === "ECONNREFUSED" ||
-        error.message?.includes("ECONNREFUSED") ||
-        error.message?.includes("Connection refused")
-      ) {
-        throw new ConnectionError(
-          `Could not connect to Ollama at ${this.baseURL}. ` +
-            "Make sure the server is running ('ollama serve').",
-          "ollama"
-        );
-      }
-      throw new NetworkError(`Network error: ${error.message}`, "ollama");
+      const errorBody = (await response.json()) as OllamaErrorBody;
+      detail = errorBody.error ? ` (${errorBody.error})` : "";
+    } catch {
+      // A non-JSON 404 body still names the model and the fix.
     }
+    return new NotFoundError(
+      `Model '${request.model}' not found on the Ollama server${detail}. ` +
+        `Run 'ollama pull ${request.model}' to download it.`,
+      "ollama"
+    );
+  }
 
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        let detail = "";
-        try {
-          const errorBody = (await response.json()) as OllamaErrorBody;
-          detail = errorBody.error ? ` (${errorBody.error})` : "";
-        } catch {
-          // Ignore JSON parse failures.
-        }
-        throw new NotFoundError(
-          `Model '${request.model}' not found on the Ollama server${detail}. ` +
-            `Run 'ollama pull ${request.model}' to download it.`,
-          "ollama"
-        );
-      }
-      throw new ServerError(response.status, undefined, "ollama");
-    }
-
-    const data = await readJsonObject(response, "ollama");
+  protected parseResponse(data: Record<string, unknown>): PromptResponse {
     if (!isRecord(data.message) || typeof data.message.content !== "string") {
       invalidField("ollama", "message.content");
     }
     const content = (data.message as { content: string }).content;
     const inputTokens = typeof data.prompt_eval_count === "number" ? data.prompt_eval_count : 0;
     const outputTokens = typeof data.eval_count === "number" ? data.eval_count : 0;
-
     return {
       content,
       usage: {

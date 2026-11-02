@@ -1,15 +1,6 @@
-import type { PromptClient } from "../client";
 import type { PromptRequest, PromptResponse } from "../types";
-import {
-  AuthenticationError,
-  InvalidRequestError,
-  NetworkError,
-  RateLimitError,
-  ServerError,
-  TimeoutError,
-} from "../errors";
-import { invalidField, isRecord, readJsonObject, requireApiKey } from "./response";
-import { withRetry } from "./retry";
+import { BaseHttpClient, type HttpRequestSpec } from "./base-http-client";
+import { invalidField, isRecord, requireApiKey } from "./response";
 
 /** Options for configuring the OpenAIClient. */
 export interface OpenAIClientOptions {
@@ -27,94 +18,41 @@ export interface OpenAIClientOptions {
   organization?: string;
 }
 
-type OpenAIErrorBody = { error?: { message?: string } };
-
 /** HTTP client for the OpenAI Chat Completions API (`/v1/chat/completions`). */
-export class OpenAIClient implements PromptClient {
+export class OpenAIClient extends BaseHttpClient {
   private readonly apiKey: string;
   private readonly baseURL: string;
-  private readonly timeout: number;
-  private readonly maxRetries: number;
-  private readonly retryDelay: number;
   private readonly organization?: string;
 
   constructor(options: OpenAIClientOptions) {
+    super({
+      provider: "openai",
+      timeout: options.timeout ?? 60_000,
+      maxRetries: options.maxRetries ?? 3,
+      retryDelay: options.retryDelay ?? 1_000,
+    });
     this.apiKey = requireApiKey(options.apiKey, "OpenAIClient", "OPENAI_API_KEY");
     this.baseURL = options.baseURL ?? "https://api.openai.com/v1";
-    this.timeout = options.timeout ?? 60_000;
-    this.maxRetries = options.maxRetries ?? 3;
-    this.retryDelay = options.retryDelay ?? 1_000;
     this.organization = options.organization;
   }
 
-  async complete(request: PromptRequest): Promise<PromptResponse> {
-    return withRetry(() => this.doRequest(request), this.maxRetries, this.retryDelay);
-  }
-
-  private async doRequest(request: PromptRequest): Promise<PromptResponse> {
+  protected buildRequest(request: PromptRequest): HttpRequestSpec {
     // OpenAI supports system/user/assistant roles natively in the messages array.
     const body: Record<string, unknown> = {
       model: request.model,
       messages: request.messages,
     };
-
     if (request.temperature !== undefined) body.temperature = request.temperature;
     if (request.max_tokens !== undefined) body.max_tokens = request.max_tokens;
-
     const headers: Record<string, string> = {
       Authorization: `Bearer ${this.apiKey}`,
       "content-type": "application/json",
     };
+    if (this.organization) headers["OpenAI-Organization"] = this.organization;
+    return { url: `${this.baseURL}/chat/completions`, headers, body };
+  }
 
-    if (this.organization) {
-      headers["OpenAI-Organization"] = this.organization;
-    }
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-
-    let response: Response;
-    try {
-      response = await fetch(`${this.baseURL}/chat/completions`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(body),
-        signal: controller.signal,
-      });
-    } catch (err) {
-      clearTimeout(timeoutId);
-      const error = err as Error;
-      if (error.name === "AbortError") {
-        throw new TimeoutError(`Request timed out after ${this.timeout}ms`, "openai");
-      }
-      throw new NetworkError(`Network error: ${error.message}`, "openai");
-    }
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      let errorMessage: string | undefined;
-      try {
-        const errorBody = (await response.json()) as OpenAIErrorBody;
-        errorMessage = errorBody?.error?.message;
-      } catch {
-        // Ignore JSON parse failures on error responses.
-      }
-
-      switch (response.status) {
-        case 401:
-          throw new AuthenticationError(errorMessage, "openai");
-        case 429:
-          throw new RateLimitError(errorMessage, "openai");
-        case 400:
-        case 404:
-          throw new InvalidRequestError(errorMessage, "openai");
-        default:
-          throw new ServerError(response.status, errorMessage, "openai");
-      }
-    }
-
-    const data = await readJsonObject(response, "openai");
+  protected parseResponse(data: Record<string, unknown>): PromptResponse {
     const choice = Array.isArray(data.choices) ? data.choices[0] : undefined;
     if (!isRecord(choice) || !isRecord(choice.message))
       invalidField("openai", "choices[0].message");
@@ -132,7 +70,6 @@ export class OpenAIClient implements PromptClient {
     ) {
       invalidField("openai", "usage");
     }
-
     return {
       content,
       usage: {

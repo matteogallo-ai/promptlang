@@ -1,3 +1,5 @@
+// node:fs, not Bun.file: resolveGraph is public API and must run under Node too.
+import { readFile, stat } from "node:fs/promises";
 import { dirname, isAbsolute, normalize, resolve } from "node:path";
 import { tokenize } from "../lexer/lexer";
 import { parse } from "../parser/parser";
@@ -121,7 +123,7 @@ export async function resolveGraph(
   async function load(file: string): Promise<Program> {
     let ast = asts.get(file);
     if (!ast) {
-      const source = await Bun.file(file).text();
+      const source = await readFile(file, "utf8");
       try {
         ast = parse(tokenize(source));
       } catch (error) {
@@ -219,5 +221,8 @@ function candidatePaths(
 }
 
 async function fileExists(path: string): Promise<boolean> {
-  return Bun.file(path).exists();
+  return stat(path).then(
+    (s) => s.isFile(),
+    () => false
+  );
 }

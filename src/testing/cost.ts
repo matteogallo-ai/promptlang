@@ -17,6 +17,11 @@ const PRICES_USD_PER_MTOK: Readonly<Record<string, readonly [number, number]>> =
   "claude-haiku-4-5": [1, 5],
 };
 
+/** USD per million (input, output) tokens for `model`, or undefined when not recorded. */
+export function pricePerMTok(model: string): readonly [number, number] | undefined {
+  return PRICES_USD_PER_MTOK[model];
+}
+
 /** AnthropicClient's max_tokens when the file sets no @max_tokens. */
 const DEFAULT_MAX_TOKENS = 1024;
 /**
@@ -67,7 +72,7 @@ export function estimateLiveCost(program: Program): CostEstimate | null {
   const model = program.metadata.find((m) => m.kind === "ModelMetadata")?.value;
   if (typeof model !== "string")
     throw new UnpricedModelError("the file has tests but no @model to price them on");
-  const price = PRICES_USD_PER_MTOK[model];
+  const price = pricePerMTok(model);
   if (!price) {
     throw new UnpricedModelError(
       `no price is recorded for @model ${model} (priced: ${Object.keys(PRICES_USD_PER_MTOK).join(", ")})`

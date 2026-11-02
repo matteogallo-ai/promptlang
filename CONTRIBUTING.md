@@ -20,7 +20,7 @@ from fixing typos in docs to implementing compiler stages. Every change follows
 
 ### Prerequisites
 
-- [Bun](https://bun.sh) >= 1.1.0
+- [Bun](https://bun.sh) >= 1.2.20
 - Git >= 2.30
 
 ### Local setup

@@ -16,9 +16,7 @@ export function compilePythonStringLiteral(
     for (const match of value.matchAll(/\{\{(\w+)\}\}/g)) {
       const varName = match[1]!;
       if (!paramNames.has(varName)) {
-        throw new CompilerError(
-          `Template variable "{{${varName}}}" is not a declared parameter`
-        );
+        throw new CompilerError(`Template variable "{{${varName}}}" is not a declared parameter`);
       }
     }
   }
@@ -38,14 +36,12 @@ export function compilePythonStringLiteral(
     });
 
     // Escape remaining literal braces for f-strings
-    const withEscapedBraces = withPlaceholders
-      .replace(/\{/g, "{{")
-      .replace(/\}/g, "}}");
+    const withEscapedBraces = withPlaceholders.replace(/\{/g, "{{").replace(/\}/g, "}}");
 
     // Restore placeholders as f-string interpolations
     let result = withEscapedBraces;
     for (let i = 0; i < placeholders.length; i++) {
-      result = result.replace(`\x00PL${i}\x00`, `{input['${placeholders[i]}']}` );
+      result = result.replace(`\x00PL${i}\x00`, `{input['${placeholders[i]}']}`);
     }
 
     // Escape backslashes and quotes for the chosen quote style
@@ -61,9 +57,7 @@ export function compilePythonStringLiteral(
 function escapeForPython(value: string, isMultiline: boolean): string {
   if (isMultiline) {
     // In triple-quoted strings, only need to escape backslashes and triple-quotes
-    return value
-      .replace(/\\/g, "\\\\")
-      .replace(/"""/g, '\\"\\"\\"');
+    return value.replace(/\\/g, "\\\\").replace(/"""/g, '\\"\\"\\"');
   }
   // In regular double-quoted strings
   return value

@@ -639,10 +639,11 @@ console.log(result);
 `;
     await writeFile(join(TMP_DIR, "runner.ts"), runner);
 
-    const proc = Bun.spawn(
-      [process.execPath, "run", join(TMP_DIR, "runner.ts")],
-      { cwd: process.cwd(), stdout: "pipe", stderr: "pipe" }
-    );
+    const proc = Bun.spawn([process.execPath, "run", join(TMP_DIR, "runner.ts")], {
+      cwd: process.cwd(),
+      stdout: "pipe",
+      stderr: "pipe",
+    });
     const exitCode = await proc.exited;
     const stdout = await new Response(proc.stdout).text();
     const stderr = await new Response(proc.stderr).text();

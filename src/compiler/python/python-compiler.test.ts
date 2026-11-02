@@ -34,7 +34,10 @@ describe("Python compiler — header", () => {
   });
 
   test("source filename appears in header", () => {
-    const out = compilePython(parseSource(`@version "1.0.0"\nprompt greet() -> string { user: "Hi" }`), "my-file.prompt");
+    const out = compilePython(
+      parseSource(`@version "1.0.0"\nprompt greet() -> string { user: "Hi" }`),
+      "my-file.prompt"
+    );
     expect(out).toContain("Source: my-file.prompt");
   });
 
@@ -91,13 +94,17 @@ describe("Python compiler — prompt declarations", () => {
   });
 
   test("prompt with one string param → TypedDict field as str", () => {
-    const out = compile(`@version "1.0.0"\nprompt greet(name: string) -> string { user: "Hi {{name}}" }`);
+    const out = compile(
+      `@version "1.0.0"\nprompt greet(name: string) -> string { user: "Hi {{name}}" }`
+    );
     expect(out).toContain("class GreetInput(TypedDict):");
     expect(out).toContain("    name: str");
   });
 
   test("prompt with multiple params → all fields in TypedDict", () => {
-    const out = compile(`@version "1.0.0"\nprompt calc(x: number, y: boolean) -> string { user: "test" }`);
+    const out = compile(
+      `@version "1.0.0"\nprompt calc(x: number, y: boolean) -> string { user: "test" }`
+    );
     expect(out).toContain("    x: float");
     expect(out).toContain("    y: bool");
   });
@@ -151,17 +158,21 @@ prompt extract() -> Invoice { user: "test" }`);
 
   test("boolean return type generates true/false check", () => {
     const out = compile(`@version "1.0.0"\nprompt flag() -> boolean { user: "test" }`);
-    expect(out).toContain("lower not in (\"true\", \"false\")");
+    expect(out).toContain('lower not in ("true", "false")');
   });
 
   test("template {{var}} becomes f-string with input['var']", () => {
-    const out = compile(`@version "1.0.0"\nprompt greet(name: string) -> string { user: "Hi {{name}}" }`);
+    const out = compile(
+      `@version "1.0.0"\nprompt greet(name: string) -> string { user: "Hi {{name}}" }`
+    );
     expect(out).toContain(`{input['name']}`);
     expect(out).toContain('f"');
   });
 
   test("system section appears in messages", () => {
-    const out = compile(`@version "1.0.0"\nprompt greet() -> string { system: "You are a greeter." user: "Hi" }`);
+    const out = compile(
+      `@version "1.0.0"\nprompt greet() -> string { system: "You are a greeter." user: "Hi" }`
+    );
     expect(out).toContain('"role": "system"');
     expect(out).toContain("You are a greeter.");
   });
@@ -293,24 +304,27 @@ print("OK")
   }
 });
 
-test.if(pythonAvailable)("generated Python parses with ast.parse (extract-invoice struct)", async () => {
-  const source = await Bun.file("docs/examples/extract-invoice.prompt").text();
-  const ast = parse(tokenize(source));
-  const generated = compilePython(ast, "extract-invoice.prompt");
+test.if(pythonAvailable)(
+  "generated Python parses with ast.parse (extract-invoice struct)",
+  async () => {
+    const source = await Bun.file("docs/examples/extract-invoice.prompt").text();
+    const ast = parse(tokenize(source));
+    const generated = compilePython(ast, "extract-invoice.prompt");
 
-  const tmpDir = "/tmp/promptlang-python-invoice-test";
-  await mkdir(tmpDir, { recursive: true });
-  await writeFile(`${tmpDir}/extract_invoice.py`, generated);
-  await writeFile(`${tmpDir}/promptlang_runtime.py`, getPythonRuntimeSource());
+    const tmpDir = "/tmp/promptlang-python-invoice-test";
+    await mkdir(tmpDir, { recursive: true });
+    await writeFile(`${tmpDir}/extract_invoice.py`, generated);
+    await writeFile(`${tmpDir}/promptlang_runtime.py`, getPythonRuntimeSource());
 
-  try {
-    const result = Bun.spawnSync(["python3", "-m", "py_compile", `${tmpDir}/extract_invoice.py`]);
-    if (result.exitCode !== 0) {
-      const stderr = new TextDecoder().decode(result.stderr);
-      throw new Error(`py_compile failed:\n${stderr}\n\nGenerated:\n${generated}`);
+    try {
+      const result = Bun.spawnSync(["python3", "-m", "py_compile", `${tmpDir}/extract_invoice.py`]);
+      if (result.exitCode !== 0) {
+        const stderr = new TextDecoder().decode(result.stderr);
+        throw new Error(`py_compile failed:\n${stderr}\n\nGenerated:\n${generated}`);
+      }
+      expect(result.exitCode).toBe(0);
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
     }
-    expect(result.exitCode).toBe(0);
-  } finally {
-    await rm(tmpDir, { recursive: true, force: true });
   }
-});
+);

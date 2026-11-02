@@ -3,15 +3,21 @@ import { mapPythonType, toPythonPascalCase, toPythonConstName } from "./python-t
 
 describe("mapPythonType", () => {
   test("PrimitiveType string → str", () => {
-    expect(mapPythonType({ kind: "PrimitiveType", name: "string", line: 1, column: 1 })).toBe("str");
+    expect(mapPythonType({ kind: "PrimitiveType", name: "string", line: 1, column: 1 })).toBe(
+      "str"
+    );
   });
 
   test("PrimitiveType number → float", () => {
-    expect(mapPythonType({ kind: "PrimitiveType", name: "number", line: 1, column: 1 })).toBe("float");
+    expect(mapPythonType({ kind: "PrimitiveType", name: "number", line: 1, column: 1 })).toBe(
+      "float"
+    );
   });
 
   test("PrimitiveType boolean → bool", () => {
-    expect(mapPythonType({ kind: "PrimitiveType", name: "boolean", line: 1, column: 1 })).toBe("bool");
+    expect(mapPythonType({ kind: "PrimitiveType", name: "boolean", line: 1, column: 1 })).toBe(
+      "bool"
+    );
   });
 
   test("PrimitiveType date → str", () => {
@@ -22,21 +28,27 @@ describe("mapPythonType", () => {
     const result = mapPythonType({
       kind: "EnumType",
       values: ["bug", "feature_request", "other"],
-      line: 1, column: 1,
+      line: 1,
+      column: 1,
     });
     expect(result).toBe(`Literal["bug", "feature_request", "other"]`);
   });
 
   test("TypeReference → name as-is", () => {
-    expect(mapPythonType({ kind: "TypeReference", name: "Category", line: 1, column: 1 })).toBe("Category");
+    expect(mapPythonType({ kind: "TypeReference", name: "Category", line: 1, column: 1 })).toBe(
+      "Category"
+    );
   });
 
   test("StructType → dict (inline anonymous struct fallback)", () => {
-    expect(mapPythonType({
-      kind: "StructType",
-      fields: [],
-      line: 1, column: 1,
-    })).toBe("dict");
+    expect(
+      mapPythonType({
+        kind: "StructType",
+        fields: [],
+        line: 1,
+        column: 1,
+      })
+    ).toBe("dict");
   });
 });
 

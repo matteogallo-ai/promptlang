@@ -326,7 +326,14 @@ function compilePythonExpr(
       return expr.value ? "True" : "False";
 
     case "MemberExpression": {
-      const base = resolvePythonIdent(expr.object, paramNames, stepNames, allStepNames, chainName, context);
+      const base = resolvePythonIdent(
+        expr.object,
+        paramNames,
+        stepNames,
+        allStepNames,
+        chainName,
+        context
+      );
       return `${base}["${expr.property}"]`;
     }
 
@@ -361,9 +368,7 @@ function resolvePythonIdent(
       `Chain '${chainName}': step '${context}' references '${name}' which is defined later.`
     );
   }
-  throw new CompilerError(
-    `Chain '${chainName}': step '${context}' references undefined '${name}'`
-  );
+  throw new CompilerError(`Chain '${chainName}': step '${context}' references undefined '${name}'`);
 }
 
 function compilePythonCallArgs(
@@ -382,7 +387,15 @@ function compilePythonCallArgs(
 
   if (allNamed) {
     const entries = (args as NamedArgument[]).map((a) => {
-      const val = compilePythonExpr(a.value, paramNames, stepNames, allStepNames, chainName, context, callableRegistry);
+      const val = compilePythonExpr(
+        a.value,
+        paramNames,
+        stepNames,
+        allStepNames,
+        chainName,
+        context,
+        callableRegistry
+      );
       return `"${a.name}": ${val}`;
     });
     return `{${entries.join(", ")}}`;
@@ -395,10 +408,20 @@ function compilePythonCallArgs(
     );
   }
 
-  const positional = args.filter((a): a is Expression => a.kind !== "NamedArgument") as Expression[];
+  const positional = args.filter(
+    (a): a is Expression => a.kind !== "NamedArgument"
+  ) as Expression[];
   const entries = positional.map((arg, i) => {
     const paramName = calleeParams[i]!.name;
-    const val = compilePythonExpr(arg, paramNames, stepNames, allStepNames, chainName, context, callableRegistry);
+    const val = compilePythonExpr(
+      arg,
+      paramNames,
+      stepNames,
+      allStepNames,
+      chainName,
+      context,
+      callableRegistry
+    );
     return `"${paramName}": ${val}`;
   });
   return `{${entries.join(", ")}}`;

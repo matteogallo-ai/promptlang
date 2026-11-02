@@ -7,13 +7,7 @@ import { compile } from "./compiler";
 import { mapType, toPascalCase, toConstName } from "./type-mapper";
 import { compileStringLiteral, extractTemplateVars } from "./template-compiler";
 import { CompilerError } from "./errors";
-import type {
-  Program,
-  PrimitiveType,
-  EnumType,
-  StructType,
-  TypeReference,
-} from "../ast/nodes";
+import type { Program, PrimitiveType, EnumType, StructType, TypeReference } from "../ast/nodes";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -35,7 +29,9 @@ function enumType(values: string[]): EnumType {
   return { kind: "EnumType", values, ...pos() };
 }
 
-function structType(fields: Array<{ name: string; type: PrimitiveType; optional?: boolean }>): StructType {
+function structType(
+  fields: Array<{ name: string; type: PrimitiveType; optional?: boolean }>
+): StructType {
   return {
     kind: "StructType",
     fields: fields.map((f) => ({
@@ -61,7 +57,8 @@ describe("mapType", () => {
   test("string primitive", () => expect(mapType(primitiveType("string"))).toBe("string"));
   test("number primitive", () => expect(mapType(primitiveType("number"))).toBe("number"));
   test("boolean primitive", () => expect(mapType(primitiveType("boolean"))).toBe("boolean"));
-  test("date primitive maps to string", () => expect(mapType(primitiveType("date"))).toBe("string"));
+  test("date primitive maps to string", () =>
+    expect(mapType(primitiveType("date"))).toBe("string"));
 
   test("enum type produces union", () => {
     expect(mapType(enumType(["a", "b", "c"]))).toBe('"a" | "b" | "c"');
@@ -81,8 +78,10 @@ describe("mapType", () => {
   });
 
   test("toPascalCase single word", () => expect(toPascalCase("greet")).toBe("Greet"));
-  test("toPascalCase snake_case", () => expect(toPascalCase("classify_ticket")).toBe("ClassifyTicket"));
-  test("toPascalCase multi segment", () => expect(toPascalCase("summarize_and_translate")).toBe("SummarizeAndTranslate"));
+  test("toPascalCase snake_case", () =>
+    expect(toPascalCase("classify_ticket")).toBe("ClassifyTicket"));
+  test("toPascalCase multi segment", () =>
+    expect(toPascalCase("summarize_and_translate")).toBe("SummarizeAndTranslate"));
   test("toConstName", () => expect(toConstName("Category")).toBe("CATEGORY_VALUES"));
 });
 
@@ -122,9 +121,9 @@ describe("compileStringLiteral", () => {
   });
 
   test("unknown template variable throws CompilerError", () => {
-    expect(() =>
-      compileStringLiteral("Hello {{unknown}}", true, new Set(["name"]))
-    ).toThrow(CompilerError);
+    expect(() => compileStringLiteral("Hello {{unknown}}", true, new Set(["name"]))).toThrow(
+      CompilerError
+    );
   });
 
   test("unknown template variable error message is informative", () => {

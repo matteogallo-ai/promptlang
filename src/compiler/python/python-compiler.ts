@@ -1,4 +1,9 @@
-import type { Program, TypeDeclaration, PromptDeclaration, ChainDeclaration } from "../../ast/nodes";
+import type {
+  Program,
+  TypeDeclaration,
+  PromptDeclaration,
+  ChainDeclaration,
+} from "../../ast/nodes";
 import {
   buildPythonTypeRegistry,
   buildCallableRegistryForPython,
@@ -87,10 +92,18 @@ function extractPythonMetadata(program: Program): CompiledPythonMetadata {
   const meta: CompiledPythonMetadata = {};
   for (const m of program.metadata) {
     switch (m.kind) {
-      case "VersionMetadata": meta.version = m.value; break;
-      case "ModelMetadata": meta.model = m.value; break;
-      case "TemperatureMetadata": meta.temperature = m.value; break;
-      case "MaxTokensMetadata": meta.maxTokens = m.value; break;
+      case "VersionMetadata":
+        meta.version = m.value;
+        break;
+      case "ModelMetadata":
+        meta.model = m.value;
+        break;
+      case "TemperatureMetadata":
+        meta.temperature = m.value;
+        break;
+      case "MaxTokensMetadata":
+        meta.maxTokens = m.value;
+        break;
     }
   }
   return meta;

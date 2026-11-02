@@ -5,10 +5,14 @@ export function mapPythonType(type: TypeExpression): string {
   switch (type.kind) {
     case "PrimitiveType":
       switch (type.name) {
-        case "string": return "str";
-        case "number": return "float";
-        case "boolean": return "bool";
-        case "date": return "str";
+        case "string":
+          return "str";
+        case "number":
+          return "float";
+        case "boolean":
+          return "bool";
+        case "date":
+          return "str";
       }
     case "EnumType":
       return `Literal[${type.values.map((v) => JSON.stringify(v)).join(", ")}]`;

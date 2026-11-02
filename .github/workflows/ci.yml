@@ -90,3 +90,22 @@ jobs:
             echo "Base commit unavailable; checking $BASE..$HEAD (since main)."
           fi
           bun run scripts/check-commits.ts "$BASE..$HEAD"
+
+  semver-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: The examples' @version covers their interface changes
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          # Same fallback as the commits job: a new branch or a force-push has no usable "before".
+          if [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            BASE=$(git merge-base origin/main HEAD)
+            echo "Base commit unavailable; comparing with $BASE (merge-base with main)."
+          fi
+          bun run cli semver-check docs/examples --base "$BASE"

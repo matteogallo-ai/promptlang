@@ -2,7 +2,7 @@
 // Extracts structured data from raw invoice text.
 // Demonstrates struct output types and field-level test assertions.
 
-@version "1.0.0"
+@version "2.0.0"
 @model claude-opus-5-5
 @description "Invoice data extractor — struct output, field assertions"
 

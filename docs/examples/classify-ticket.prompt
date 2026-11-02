@@ -2,7 +2,7 @@
 // Classifies a support ticket into one of four predefined categories.
 // This is the canonical introductory example for PromptLang.
 
-@version "1.0.0"
+@version "2.0.0"
 @model claude-opus-5-5
 @description "Support ticket classifier — enum output, multiple tests"
 

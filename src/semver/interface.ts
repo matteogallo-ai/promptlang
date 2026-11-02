@@ -187,16 +187,18 @@ function diffOutput(
   for (const [f, b] of Object.entries(base.fields)) {
     const c = cur.fields[f];
     const path = `${prefix}${f}`;
-    if (!c)
+    if (!c) {
       push({ level: "major", declaration: name, description: `output field '${path}' removed` });
-    else if (c.optional !== b.optional)
+      continue;
+    }
+    if (c.optional !== b.optional)
       push({
         level: "major",
         declaration: name,
         description: `output field '${path}' became ${c.optional ? "optional" : "required"}`,
       });
     // A nested struct is judged field by field, so adding an optional field inside it stays minor.
-    else diffOutput(name, b.type, c.type, push, `${path}.`);
+    diffOutput(name, b.type, c.type, push, `${path}.`);
   }
   for (const [f, c] of Object.entries(cur.fields)) {
     if (f in base.fields) continue;

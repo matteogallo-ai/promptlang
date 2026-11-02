@@ -83,6 +83,10 @@ describe("diffPrograms — major", () => {
     const opt = PROMPT("x: string", "struct { a?: string }");
     expect(levels(req, opt)).toEqual(["major: p: output field 'a' became optional"]);
     expect(levels(opt, req)).toEqual(["major: p: output field 'a' became required"]);
+    expect(levels(req, PROMPT("x: string", "struct { a?: number }"))).toEqual([
+      "major: p: output field 'a' became optional",
+      "major: p: output field 'a' type changed: string → number",
+    ]);
   });
 
   test("a named output type is compared by structure, not by name", () => {

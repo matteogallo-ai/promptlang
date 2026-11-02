@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { compareVersions, parseRange, parseVersion, satisfies } from "./semver";
 
 describe("parseVersion (SemVer 2.0.0)", () => {
-  test("rejects numbers too large to compare exactly, as npm semver does", () => {
+  test("rejects numbers too large to compare exactly, including numeric pre-release identifiers", () => {
     expect(parseVersion("9007199254740992.0.0")).toBeNull();
     expect(parseVersion("1.0.0-99999999999999999999")).toBeNull();
     expect(parseVersion("9007199254740991.0.0-9007199254740991")).not.toBeNull();

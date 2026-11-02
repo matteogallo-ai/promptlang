@@ -465,7 +465,7 @@ describe("compile --emit-tsconfig", () => {
     expect(content.compilerOptions.strict).toBe(true);
   });
 
-  test("emitted tsconfig contains paths mapping for promptlang/runtime", async () => {
+  test("emitted tsconfig contains paths mapping for @promptlang/core/runtime", async () => {
     const restore = silenceAll();
     await main([
       "bun",
@@ -479,9 +479,9 @@ describe("compile --emit-tsconfig", () => {
     restore();
     const content = JSON.parse(await Bun.file(`${EMIT_OUT}/tsconfig.json`).text());
     const paths = content.compilerOptions?.paths ?? {};
-    expect(paths["promptlang/runtime"]).toBeDefined();
-    expect(Array.isArray(paths["promptlang/runtime"])).toBe(true);
-    expect((paths["promptlang/runtime"] as string[]).length).toBeGreaterThan(0);
+    expect(paths["@promptlang/core/runtime"]).toBeDefined();
+    expect(Array.isArray(paths["@promptlang/core/runtime"])).toBe(true);
+    expect((paths["@promptlang/core/runtime"] as string[]).length).toBeGreaterThan(0);
   });
 
   test("without --emit-tsconfig, no tsconfig.json is emitted (default unchanged)", async () => {
@@ -504,12 +504,12 @@ describe("compile --emit-tsconfig", () => {
       EMIT_OUT,
       "--emit-tsconfig",
       "--runtime-path",
-      "node_modules/promptlang/runtime/index.js",
+      "node_modules/@promptlang/core/dist/runtime/index.js",
     ]);
     restore();
     const content = JSON.parse(await Bun.file(`${EMIT_OUT}/tsconfig.json`).text());
-    const paths = content.compilerOptions?.paths?.["promptlang/runtime"] as string[];
-    expect(paths[0]).toBe("node_modules/promptlang/runtime/index.js");
+    const paths = content.compilerOptions?.paths?.["@promptlang/core/runtime"] as string[];
+    expect(paths[0]).toBe("node_modules/@promptlang/core/dist/runtime/index.js");
   });
 
   test("help mentions --emit-tsconfig flag", async () => {

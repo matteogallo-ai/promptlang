@@ -38,6 +38,8 @@ release is chosen when it is tagged.
 - `.promptlang/manifest.json` (schema version 2) stores project-relative POSIX
   paths; version 1 manifests with absolute paths are migrated on read.
 - `compile` rejects `.prompt` files with no declarations (exit 1).
+- **BREAKING:** generated TypeScript imports `@promptlang/core/runtime` instead of
+  `promptlang/runtime`, the package's real name; recompile existing output.
 - **BREAKING:** `AnthropicClient` sends `anthropic-version: 2026-10-21` and never
   sends `temperature`, which that version rejects on every model. `@temperature`
   has no effect on Anthropic requests; OpenAI and Ollama still receive it. The key

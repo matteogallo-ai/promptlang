@@ -139,7 +139,7 @@ Code generator that walks the AST and emits TypeScript source. Design goals:
 - The generated code is **human-readable** — it should look like code a competent
   developer would write, not a macro expansion.
 - Generated functions use `async/await` and return typed values.
-- No runtime dependency on PromptLang internals beyond the thin `promptlang/runtime`
+- No runtime dependency on PromptLang internals beyond the thin `@promptlang/core/runtime`
   package (model calls, output parsing).
 
 ### `src/compiler/python/`

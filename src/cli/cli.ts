@@ -46,9 +46,9 @@ File commands:
                                    --config <path>  Alternative config file
                                    --emit-tsconfig  Emit tsconfig.json with
                                      the correct paths mapping for
-                                     promptlang/runtime.
+                                     @promptlang/core/runtime.
                                    --runtime-path <path>  Override the path to
-                                     promptlang/runtime in the emitted tsconfig.
+                                     @promptlang/core/runtime in the emitted tsconfig.
   test <paths> [flags]      Run the test blocks of .prompt files. By default
                             each test's mock: response is replayed through
                             the generated code, with no network call.

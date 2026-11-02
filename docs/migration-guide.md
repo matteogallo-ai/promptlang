@@ -7,7 +7,7 @@ version number by SemVer; see `CHANGELOG.md` under `[Unreleased]`.
 
 - **Package name.** The package is `@promptlang/core` (the unscoped `promptlang`
   name on npm belongs to a third party). The CLI binary is still `promptlang`.
-  Generated code still imports `promptlang/runtime`, resolved through a `paths`
+  Generated code still imports `@promptlang/core/runtime`, resolved through a `paths`
   mapping (`compile --emit-tsconfig`).
 - **Empty API keys are rejected** (TypeScript runtime). `new AnthropicClient({ apiKey })` and
   `new OpenAIClient({ apiKey })` throw a `TypeError` when the key is undefined,
@@ -42,6 +42,6 @@ If you started on v0.4 or earlier:
 ## Vendoring compiled output
 
 Generated Python is self-contained: it ships with a generated `promptlang_runtime.py`
-(whose HTTP clients need `httpx`). Generated TypeScript imports `promptlang/runtime`,
+(whose HTTP clients need `httpx`). Generated TypeScript imports `@promptlang/core/runtime`,
 which is not published, so it needs this repository's `src/runtime/` reachable
 through a `paths` mapping; you cannot delete the checkout after compiling.

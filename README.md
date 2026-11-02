@@ -95,7 +95,7 @@ Use it:
 
 ```typescript
 import { classify_ticket } from "./generated/classify-ticket";
-import { AnthropicClient } from "promptlang/runtime";
+import { AnthropicClient } from "@promptlang/core/runtime";
 
 const client = new AnthropicClient({ apiKey: process.env.ANTHROPIC_API_KEY! });
 const category = await classify_ticket({ ticket: "..." }, client);
@@ -320,13 +320,13 @@ for the exact YAML subset supported.
 
 ## Available runtime providers
 
-The compiled TypeScript imports `PromptClient` from `promptlang/runtime`. Three
+The compiled TypeScript imports `PromptClient` from `@promptlang/core/runtime`. Three
 provider clients ship with PromptLang — pick the one that matches your stack.
 
 ### Anthropic
 
 ```typescript
-import { AnthropicClient } from "promptlang/runtime";
+import { AnthropicClient } from "@promptlang/core/runtime";
 import { classify_ticket } from "./generated/classify-ticket";
 
 const client = new AnthropicClient({
@@ -342,7 +342,7 @@ const category = await classify_ticket(
 ### OpenAI
 
 ```typescript
-import { OpenAIClient } from "promptlang/runtime";
+import { OpenAIClient } from "@promptlang/core/runtime";
 import { classify_ticket } from "./generated/classify-ticket";
 
 const client = new OpenAIClient({
@@ -356,7 +356,7 @@ const category = await classify_ticket({ ticket: "..." }, client);
 ### Ollama (local)
 
 ```typescript
-import { OllamaClient } from "promptlang/runtime";
+import { OllamaClient } from "@promptlang/core/runtime";
 import { classify_ticket } from "./generated/classify-ticket";
 
 // No API key required — Ollama runs locally.
@@ -375,7 +375,7 @@ has no entry for the requested model is skipped rather than sent a name it canno
 serve. An `AuthenticationError` stops the routing at once.
 
 ```typescript
-import { AnthropicClient, OpenAIClient, RoutingClient } from "promptlang/runtime";
+import { AnthropicClient, OpenAIClient, RoutingClient } from "@promptlang/core/runtime";
 import { classify_ticket } from "./generated/classify-ticket";
 
 const client = new RoutingClient({
@@ -396,10 +396,10 @@ const category = await classify_ticket({ ticket: "..." }, client);
 
 ## Working out of the repository
 
-The generated TypeScript uses `import { … } from "promptlang/runtime"`. Inside
+The generated TypeScript uses `import { … } from "@promptlang/core/runtime"`. Inside
 this repository that import resolves through the `paths` mapping in
 `tsconfig.json`. In an **external project** it fails with
-`TS2307: Cannot find module 'promptlang/runtime'`, because the package is not
+`TS2307: Cannot find module '@promptlang/core/runtime'`, because the package is not
 published.
 
 **Workaround** — pass `--emit-tsconfig` to `compile`. It writes a `tsconfig.json`

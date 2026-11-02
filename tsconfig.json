@@ -5,7 +5,7 @@
     "moduleResolution": "bundler",
     "baseUrl": ".",
     "paths": {
-      "promptlang/runtime": ["./src/runtime/index.ts"]
+      "@promptlang/core/runtime": ["./src/runtime/index.ts"]
     },
     "strict": true,
     "noImplicitAny": true,

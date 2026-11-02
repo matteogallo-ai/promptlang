@@ -198,7 +198,7 @@ export async function runCompile(args: string[]): Promise<number> {
     const tsconfigPath = join(outDir, "tsconfig.json");
     await Bun.write(tsconfigPath, buildTsconfig(runtimePath));
     console.log(`  emitted   ${tsconfigPath}`);
-    console.log(`            (paths "promptlang/runtime" → ${runtimePath})`);
+    console.log(`            (paths "@promptlang/core/runtime" → ${runtimePath})`);
     console.log(`            Note: the mapping points at this checkout's runtime source,`);
     console.log(`            because @promptlang/core is not published to npm.`);
   }
@@ -225,7 +225,7 @@ function buildTsconfig(runtimePath: string): string {
         skipLibCheck: true,
         baseUrl: ".",
         paths: {
-          "promptlang/runtime": [runtimePath],
+          "@promptlang/core/runtime": [runtimePath],
         },
       },
       include: ["./*.ts"],

@@ -28,7 +28,7 @@ PromptLang treats prompts as first-class typed code:
 - **Multi-provider runtime** (Anthropic, OpenAI, Ollama, or your own client)
 - **No third-party runtime dependencies**: Bun + `fetch` + your own API keys
 
-Not delivered yet, and labelled as such everywhere in this repository (see
+Not delivered, and labelled as such everywhere in this repository (see
 [`docs/CLAIMS.md`](docs/CLAIMS.md)):
 
 - **Native tests**: `test` blocks are parsed but not executed
@@ -59,7 +59,7 @@ prompt classify_ticket(ticket: string) -> Category {
   output: Category
 }
 
-// Parsed and kept in the AST; not executed yet (see Roadmap).
+// Parsed and kept in the AST; no command executes it (see Roadmap).
 test "classifies bug reports correctly" {
   input: classify_ticket("The submit button crashes the app on iOS 17")
   expect: bug
@@ -223,7 +223,7 @@ import "shared/classify.prompt" as Classify
 
 `install` resolves these imports into the project's dependency graph and
 `check` verifies their hashes. Calling an imported prompt from a chain
-(`Classify.classify_ticket(...)`) does not parse yet; chains can only call
+(`Classify.classify_ticket(...)`) does not parse; chains can only call
 prompts declared in the same file.
 
 Bootstrap a new project:
@@ -349,7 +349,7 @@ bunx tsc --project ./generated/tsconfig.json --noEmit
 ## Packages
 
 PromptLang is developed as a Bun workspace. The main package,
-`@promptlang/core` (not yet published; the CLI binary is `promptlang`), lives in `src/`. First-party companion packages live under
+`@promptlang/core` (not published to npm; the CLI binary is `promptlang`), lives in `src/`. First-party companion packages live under
 `packages/` and are published under the `@promptlang/` scope on npm.
 
 | Package | Location | Version | Description |

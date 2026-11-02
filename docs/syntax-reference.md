@@ -2,7 +2,7 @@
 
 Reference for the `.prompt` language as the current parser and compilers implement
 it. The formal grammar is [`src/parser/grammar.md`](../src/parser/grammar.md). Forms
-that parse but have no effect yet are marked **parsed only**; capabilities that do
+that parse but have no effect are marked **parsed only**; capabilities that do
 not exist are listed at the end, so nothing below describes behaviour the code does
 not have.
 
@@ -48,7 +48,7 @@ import "shared/x.prompt" as Alias
 The path is a plain string (no `{{…}}`). It is resolved relative to the importing
 file first, then against each `sources[].path` in `promptlang.yaml`. Imports feed
 `promptlang install` / `check` (dependency graph, cycle detection, integrity
-hashes). A chain cannot call an imported prompt yet: `Alias.name(...)` does not
+hashes). A chain cannot call an imported prompt: `Alias.name(...)` does not
 parse.
 
 ---

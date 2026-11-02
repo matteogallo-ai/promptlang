@@ -1,6 +1,6 @@
 # Migration Guide
 
-## Unreleased changes (on `main`, not yet tagged)
+## Unreleased changes (on `main`, untagged)
 
 These changes can break existing setups. The release that ships them picks its
 version number by SemVer; see `CHANGELOG.md` under `[Unreleased]`.

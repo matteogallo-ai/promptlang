@@ -12,6 +12,7 @@ import { join, relative, sep } from "node:path";
 export type FindingKind =
   | "implementation-coming"
   | "future-version"
+  | "future-tense"
   | "sprint"
   | "todo-without-issue";
 
@@ -40,6 +41,14 @@ const PATTERNS: ReadonlyArray<{ kind: FindingKind; regex: RegExp }> = [
     regex: /\bwill be (?:published|added|implemented|released|supported|available)\b/i,
   },
   { kind: "future-version", regex: /\bonce\b.*\b(?:is|are) (?:published|released|shipped)\b/i },
+  // Only verbs about the project's own future: "the call will fail" describes
+  // runtime behaviour and is not stale.
+  {
+    kind: "future-tense",
+    regex: /\bwill (?:add|support|ship|land|implement|introduce|provide|allow|enable)\b/i,
+  },
+  { kind: "future-tense", regex: /\bcoming soon\b|\bplanned for\b|\bsoon\.?$/i },
+  { kind: "future-tense", regex: /\b(?:not|no)\b[^.]*\byet\b/i },
   { kind: "sprint", regex: /\bsprints?\b/i },
   { kind: "sprint", regex: /\bS\d+\.\d+\b/ },
   {
@@ -47,7 +56,7 @@ const PATTERNS: ReadonlyArray<{ kind: FindingKind; regex: RegExp }> = [
     regex:
       /\b(?:lands?|landing|ships?|due|coming|scheduled|planned|deferred)\s+(?:in|to|for)\s+S\d+\b/i,
   },
-  { kind: "todo-without-issue", regex: /\b(?:TODO|FIXME|XXX)\b(?!\s*\(#\d+\))/ },
+  { kind: "todo-without-issue", regex: /\b(?:TODO|FIXME|XXX)\b(?!\(#\d+\))/ },
 ];
 
 /**

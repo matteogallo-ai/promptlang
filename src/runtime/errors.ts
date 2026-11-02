@@ -85,8 +85,8 @@ export class ConnectionError extends PromptClientError {
 }
 
 /**
- * Thrown on 404 responses that indicate a missing resource (e.g. a model not yet
- * downloaded in Ollama). Never retried.
+ * Thrown on 404 responses that indicate a missing resource (e.g. a model that
+ * Ollama has not downloaded). Never retried.
  */
 export class NotFoundError extends PromptClientError {
   constructor(message = "Resource not found.", provider?: string) {

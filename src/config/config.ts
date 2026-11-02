@@ -35,7 +35,7 @@ export interface SourceEntry {
   path: string;
 }
 
-export interface DependencyEntry {
+interface DependencyEntry {
   name: string;
   version: string;
   path: string;
@@ -309,7 +309,6 @@ function describeType(v: YamlValue): string {
   return typeof v;
 }
 
-export { YamlParseError };
 // Backwards-compat alias — external consumers may still import the
 // pre-extraction name. Deprecated: prefer `YamlParseError` in new code.
 export { YamlParseError as ConfigParseError };

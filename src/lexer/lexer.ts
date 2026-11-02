@@ -59,7 +59,7 @@ const AT_DIRECTIVES: Readonly<Record<string, TokenType>> = {
  * Newlines are emitted as NEWLINE tokens only between top-level
  * declarations; inside strings they are part of the literal value.
  */
-export class Lexer {
+class Lexer {
   private readonly source: string;
   private tokens: Token[] = [];
   private start = 0;

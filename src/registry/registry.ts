@@ -11,9 +11,9 @@ import {
 } from "./integrity";
 
 /** Directory (relative to the project root) where the registry lives. */
-export const REGISTRY_DIR = ".promptlang";
-export const MANIFEST_FILE = "manifest.json";
-export const INTEGRITY_FILE = "integrity.json";
+const REGISTRY_DIR = ".promptlang";
+const MANIFEST_FILE = "manifest.json";
+const INTEGRITY_FILE = "integrity.json";
 
 /**
  * On-disk shape of `.promptlang/manifest.json`. Contains the fully-resolved
@@ -30,7 +30,7 @@ export interface Manifest {
   imports: ManifestImport[];
 }
 
-export interface ManifestImport {
+interface ManifestImport {
   requested: string;
   alias: string;
   fromFile: string;
@@ -94,7 +94,7 @@ export async function readManifest(projectRoot: string): Promise<Manifest | null
  * Reads the persisted integrity record. Returns `{}` when it does not exist
  * yet, so callers can safely pass the result to `verifyIntegrity`.
  */
-export async function readIntegrity(projectRoot: string): Promise<IntegrityRecord> {
+async function readIntegrity(projectRoot: string): Promise<IntegrityRecord> {
   const path = join(projectRoot, REGISTRY_DIR, INTEGRITY_FILE);
   const file = Bun.file(path);
   if (!(await file.exists())) return {};

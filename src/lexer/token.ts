@@ -72,12 +72,6 @@ export enum TokenType {
   EOF = "EOF",
 }
 
-/** Source position within a `.prompt` file (1-indexed). */
-export interface Position {
-  line: number;
-  column: number;
-}
-
 /** A single lexical token with its type, raw lexeme, and source position. */
 export interface Token {
   type: TokenType;

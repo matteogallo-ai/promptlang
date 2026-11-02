@@ -50,7 +50,7 @@ import { ParserError } from "./errors";
  * Consumes a flat token list (from the Lexer) and produces a typed AST.
  * NEWLINE, COMMENT_LINE, and COMMENT_BLOCK tokens are discarded on construction.
  */
-export class Parser {
+class Parser {
   private readonly tokens: Token[];
   private current = 0;
 

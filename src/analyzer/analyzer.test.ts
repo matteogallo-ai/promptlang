@@ -312,13 +312,11 @@ describe("duplicate-prompts rule", () => {
 // Integration: analyze real example files
 // ---------------------------------------------------------------------------
 
-// Note: summarize-and-translate.prompt uses future syntax (>, <=, regex)
-// not yet supported by the lexer (v0.3). Integration tests use the two
-// fully-parseable example files only.
 describe("Integration — example files", () => {
   const PARSEABLE_FILES = [
     "docs/examples/classify-ticket.prompt",
     "docs/examples/extract-invoice.prompt",
+    "docs/examples/summarize-and-translate.prompt",
   ];
 
   async function loadContext(filePath: string): Promise<AnalysisContext> {
@@ -326,7 +324,7 @@ describe("Integration — example files", () => {
     return { file: filePath, ast: parse(tokenize(source)) };
   }
 
-  test("parses classify-ticket and extract-invoice without throwing", async () => {
+  test("parses every example file without throwing", async () => {
     for (const f of PARSEABLE_FILES) {
       const ctx = await loadContext(f);
       expect(ctx.ast.kind).toBe("Program");
@@ -346,7 +344,7 @@ describe("Integration — example files", () => {
     expect(issues).toHaveLength(0);
   });
 
-  test("analyze across both files returns issues", async () => {
+  test("analyze across the example files returns issues", async () => {
     const contexts = await Promise.all(PARSEABLE_FILES.map(loadContext));
     const issues = analyze(contexts);
     const injectionIssues = issues.filter((i) => i.rule === "prompt-injection-risk");
@@ -372,8 +370,8 @@ describe("Integration — example files", () => {
     expect(json.summary.errors).toBe(0);
   });
 
-  test("both example files have no missing-tests issues", async () => {
-    const contexts = await Promise.all(PARSEABLE_FILES.map(loadContext));
+  test("classify-ticket and extract-invoice have no missing-tests issues", async () => {
+    const contexts = await Promise.all(PARSEABLE_FILES.slice(0, 2).map(loadContext));
     const issues = contexts.flatMap((ctx) => missingTestsRule.check(ctx));
     expect(issues).toHaveLength(0);
   });

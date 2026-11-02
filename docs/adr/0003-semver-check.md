@@ -25,8 +25,8 @@ a list of files, and a rule for what "moved enough" means.
   deleted file is not reported, because there is no `@version` left to bump.
 - **Known limits.** A rename combined with a rewrite below 30% similarity, or one
   that also renames every declaration, reads as a deleted file plus a `new` one, so
-  its interface changes are not checked. A rename done with plain `mv` and not yet
-  staged is invisible to `git diff` and reads as `new` until `git add` (CI, which
+  its interface changes are not checked. A rename done with plain `mv` and left
+  unstaged is invisible to `git diff` and reads as `new` before `git add` (CI, which
   checks commits, sees it).
 - **Judging a bump.** The required level is the strictest change (ADR 0002). The
   actual bump is the first of MAJOR, MINOR, PATCH that differs. A version of lower

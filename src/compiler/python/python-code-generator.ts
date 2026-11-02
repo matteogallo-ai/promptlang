@@ -11,6 +11,7 @@ import type {
 import { mapPythonType, toPythonPascalCase, toPythonConstName } from "./python-type-mapper";
 import { compilePythonStringLiteral } from "./python-template-compiler";
 import { CompilerError } from "../errors";
+import { optionalParamNames } from "../code-generator";
 import type { CallableRegistry } from "../chain-compiler";
 
 export function buildCallableRegistryForPython(program: Program): CallableRegistry {
@@ -120,7 +121,8 @@ export function generatePythonPromptDeclaration(
     parts.push("    pass");
   } else {
     for (const p of parameters) {
-      parts.push(`    ${p.name}: ${mapPythonType(p.type)}`);
+      const pyType = mapPythonType(p.type);
+      parts.push(`    ${p.name}: ${p.optional ? `NotRequired[${pyType}]` : pyType}`);
     }
   }
   parts.push("");
@@ -151,7 +153,8 @@ export function generatePythonPromptDeclaration(
     const content = compilePythonStringLiteral(
       section.content.value,
       section.content.isTemplate,
-      paramNames
+      paramNames,
+      optionalParamNames(parameters)
     );
     parts.push(`            {`);
     parts.push(`                "role": "${section.role}",`);
@@ -195,7 +198,8 @@ export function generatePythonChain(
     parts.push("    pass");
   } else {
     for (const p of parameters) {
-      parts.push(`    ${p.name}: ${mapPythonType(p.type)}`);
+      const pyType = mapPythonType(p.type);
+      parts.push(`    ${p.name}: ${p.optional ? `NotRequired[${pyType}]` : pyType}`);
     }
   }
   parts.push("");

@@ -115,7 +115,8 @@ export function generatePromptDeclaration(
     const content = compileStringLiteral(
       section.content.value,
       section.content.isTemplate,
-      paramNames
+      paramNames,
+      optionalParamNames(parameters)
     );
     parts.push(`      {`);
     parts.push(`        role: "${section.role}",`);
@@ -153,14 +154,19 @@ function generateMetaConst(name: string, meta: CompiledMetadata): string {
   return lines.join("\n");
 }
 
-function generateInputInterface(inputType: string, params: Parameter[]): string {
+export function optionalParamNames(params: readonly Parameter[]): Set<string> {
+  return new Set(params.filter((p) => p.optional).map((p) => p.name));
+}
+
+/** `export interface XInput { ... }` for a prompt's or chain's parameters. */
+export function generateInputInterface(inputType: string, params: readonly Parameter[]): string {
   if (params.length === 0) {
     return `export interface ${inputType} {}`;
   }
   const lines: string[] = [];
   lines.push(`export interface ${inputType} {`);
   for (const p of params) {
-    lines.push(`  ${p.name}: ${mapType(p.type)};`);
+    lines.push(`  ${p.name}${p.optional ? "?" : ""}: ${mapType(p.type)};`);
   }
   lines.push("}");
   return lines.join("\n");

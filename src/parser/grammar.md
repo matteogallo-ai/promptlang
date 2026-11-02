@@ -83,7 +83,7 @@ PromptDeclaration
                    "}"
 
 ParameterList  ::= Parameter ("," Parameter)*
-Parameter      ::= IDENT ":" TypeExpression
+Parameter      ::= IDENT "?"? ":" TypeExpression   -- "?" marks an optional parameter
 
 PromptSection  ::= ("system" | "user" | "assistant") ":" StringLit   -- MessageSection
                  | "output" ":" TypeExpression                         -- OutputSection

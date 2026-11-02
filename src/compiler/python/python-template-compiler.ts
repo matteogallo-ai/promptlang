@@ -9,7 +9,8 @@ import { CompilerError } from "../errors";
 export function compilePythonStringLiteral(
   value: string,
   isTemplate: boolean,
-  paramNames: Set<string>
+  paramNames: Set<string>,
+  optionalNames: ReadonlySet<string> = new Set()
 ): string {
   if (isTemplate) {
     // Validate all template vars are declared params
@@ -41,7 +42,9 @@ export function compilePythonStringLiteral(
     // Restore placeholders as f-string interpolations
     let result = withEscapedBraces;
     for (let i = 0; i < placeholders.length; i++) {
-      result = result.replace(`\x00PL${i}\x00`, `{input['${placeholders[i]}']}`);
+      const name = placeholders[i]!;
+      const access = optionalNames.has(name) ? `input.get('${name}', '')` : `input['${name}']`;
+      result = result.replace(`\x00PL${i}\x00`, `{${access}}`);
     }
 
     // Escape backslashes and quotes for the chosen quote style

@@ -115,7 +115,9 @@ prompt classify_ticket(ticket: string) -> Category {
 }
 ```
 
-- Parameters are `name: Type`, comma-separated.
+- Parameters are `name: Type`, comma-separated; `name?: Type` is optional. An
+  omitted optional parameter is absent from the generated input type
+  (`title?: string` / `NotRequired[str]`) and `{{name}}` renders as the empty string.
 - Sections: `system:`, `user:`, `assistant:` (each a string) and `output:` (a type).
   Messages are sent in the order written.
 - Strings are `"double-quoted"` (with `\n`, `\"` escapes) or `"""triple-quoted"""`.

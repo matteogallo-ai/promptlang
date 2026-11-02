@@ -58,6 +58,8 @@ release is chosen when it is tagged.
   (exact, `^`, `~`, `>`, `>=`, `<`, `<=`, space-separated AND).
 - A syntax error in any file of the import graph is reported by `install` and
   `check` with the file path, instead of an uncaught exception.
+- Optional parameters: `name?: Type` in prompts and chains (`name?: T` in
+  TypeScript, `NotRequired[T]` in Python; an omitted one interpolates as "").
 - `InvalidResponseError` for provider 2xx bodies that are not JSON or lack the
   documented fields (not retried; `RoutingClient` still falls back).
 - `docs/CLAIMS.md`, `scripts/check-claims.ts`, `scripts/check-stale-narrative.ts`,

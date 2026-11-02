@@ -627,15 +627,20 @@ class Parser {
     return params;
   }
 
-  /** Parameter ::= IDENT ":" TypeExpression */
+  /** Parameter ::= IDENT "?"? ":" TypeExpression */
   private parseParameter(): Parameter {
     const nameTok = this.parseAnyIdent("Expected a parameter name");
-    this.expect(TokenType.COLON, `Expected ':' after parameter name '${nameTok.value}'`);
+    const optional = this.match(TokenType.QUESTION);
+    this.expect(
+      TokenType.COLON,
+      `Expected ':' after parameter name '${nameTok.value}${optional ? "?" : ""}'`
+    );
     const type = this.parseTypeExpression();
     return {
       kind: "Parameter",
       name: nameTok.value,
       type,
+      ...(optional && { optional: true }),
       line: nameTok.line,
       column: nameTok.column,
     };

@@ -1,9 +1,14 @@
 import { CompilerError } from "./errors";
 
+/**
+ * Compiles a section string to a TypeScript template literal. Parameters in
+ * `optionalNames` may be absent from the input; they interpolate as "".
+ */
 export function compileStringLiteral(
   value: string,
   isTemplate: boolean,
-  paramNames: Set<string>
+  paramNames: Set<string>,
+  optionalNames: ReadonlySet<string> = new Set()
 ): string {
   if (isTemplate) {
     for (const match of value.matchAll(/\{\{(\w+)\}\}/g)) {
@@ -18,7 +23,9 @@ export function compileStringLiteral(
   const escaped = value.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\{/g, "\\${");
 
   if (isTemplate) {
-    const withInterpolations = escaped.replace(/\{\{(\w+)\}\}/g, "${input.$1}");
+    const withInterpolations = escaped.replace(/\{\{(\w+)\}\}/g, (_m, name: string) =>
+      optionalNames.has(name) ? `\${input.${name} ?? ""}` : `\${input.${name}}`
+    );
     return `\`${withInterpolations}\``;
   }
 

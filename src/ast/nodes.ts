@@ -151,6 +151,8 @@ export interface Parameter extends AstNode {
   kind: "Parameter";
   name: string;
   type: TypeExpression;
+  /** True for `name?: Type`; absent for a required parameter. */
+  optional?: boolean;
 }
 
 // ---------------------------------------------------------------------------

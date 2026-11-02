@@ -52,12 +52,11 @@ const AT_DIRECTIVES: Readonly<Record<string, TokenType>> = {
 /**
  * Tokenizes a PromptLang source string into a flat list of tokens.
  *
- * Comments are emitted as tokens rather than discarded so that
- * future formatting tooling (a pretty-printer, an LSP) can reconstruct
- * the original source without losing comment placement.
+ * Comments are emitted as tokens rather than discarded so that a formatter or
+ * language server can rebuild the source with its comments; the parser drops them.
  *
- * Newlines are emitted as NEWLINE tokens only between top-level
- * declarations; inside strings they are part of the literal value.
+ * Newlines outside string literals are NEWLINE tokens, which the parser drops
+ * too; inside strings they are part of the literal value.
  */
 class Lexer {
   private readonly source: string;
@@ -380,8 +379,8 @@ class Lexer {
             );
         }
       } else if (ch === "{" && this.peekNext() === "{") {
-        // Start of a template interpolation — record the whole `{{...}}`
-        // as raw text for the parser to handle in v0.3.
+        // Start of a template interpolation: the whole `{{...}}` is kept raw,
+        // without escape processing, for src/compiler/template-compiler.ts.
         hasTemplate = true;
         value += this.advance(); // {
         value += this.advance(); // {
@@ -453,7 +452,7 @@ class Lexer {
 
   /**
    * Scans a numeric literal: integers and decimals.
-   * Scientific notation (`1e10`) is not supported in v0.2.
+   * Scientific notation (`1e10`) is not supported.
    * The first digit `ch` has already been consumed.
    *
    * @throws {LexerError} if the number is immediately followed by an identifier

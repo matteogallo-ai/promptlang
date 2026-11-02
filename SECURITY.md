@@ -1,53 +1,59 @@
 # Security Policy
 
-## Reporting a Vulnerability
+## Reporting a vulnerability
 
-If you discover a security vulnerability in PromptLang, please report it by emailing
-**matteo.gallo@gallarti.io** with the subject line `[SECURITY] PromptLang — <brief description>`.
+Email **matteo.gallo@gallarti.io** with the subject line
+`[SECURITY] PromptLang — <brief description>`. Do **not** open a public GitHub
+issue. Reports are acknowledged within 48 hours; a fix or mitigation is targeted
+within 14 days.
 
-Do **not** open a public GitHub issue for security vulnerabilities. We will acknowledge
-your report within 48 hours and aim to provide a fix or mitigation within 14 days.
+## Supported versions
 
-## Supported Versions
+| Version | Supported |
+| ------- | --------- |
+| 1.2.x (current `main`) | Yes |
+| < 1.2   | No |
 
-| Version        | Supported |
-| -------------- | --------- |
-| 0.1.x (alpha)  | Yes       |
+PromptLang is not published to npm; "supported" means fixes land on `main` and in
+the next tag. `@promptlang/yaml-parser` (published on npm) follows its own
+versions; the latest release is supported.
 
-Pre-1.0 releases receive security fixes on a best-effort basis. Once v1.0 is released,
-only the latest minor version will receive security patches.
+## How API keys are handled
 
-## Security Best Practices for Users
+What the code does today:
 
-### Secrets and API keys
+- Provider clients (`AnthropicClient`, `OpenAIClient`) receive the key as the
+  `apiKey` constructor option. PromptLang never reads a key from a file. The
+  documented pattern is `apiKey: process.env.ANTHROPIC_API_KEY`.
+- A missing, empty or whitespace-only key is rejected at construction with a
+  `TypeError`, so a request is never sent unauthenticated.
+- The key is sent only in the provider's auth header (`x-api-key` for Anthropic,
+  `Authorization: Bearer` for OpenAI) to the configured `baseURL`. It is not
+  logged and is not included in error messages.
+- The AI linter (`analyze --ai`) reads `ANTHROPIC_API_KEY` from the environment.
+- `promptlang.yaml` has no field for secrets. Do not put keys in `.prompt` files
+  or in `promptlang.yaml`: both are meant to be committed.
+- Setting `baseURL` sends your key to that host. Only point it at endpoints you
+  trust.
 
-- Never embed API keys or secrets inside `.prompt` files.
-- Use environment variables and the `promptlang.config.yaml` `env` block to inject
-  credentials at runtime. Example:
+## Threat model
 
-```yaml
-providers:
-  anthropic:
-    api_key: ${ANTHROPIC_API_KEY}
-```
+PromptLang compiles `.prompt` files into code that calls LLM providers. The assets
+are your provider keys, the integrity of the prompts you ship, and the behaviour
+of the model calls made from generated code.
 
-- Treat `.prompt` files as code: commit them to source control, but keep secrets out.
+| Threat | Where it enters | What PromptLang does | What it does not do |
+| ------ | --------------- | -------------------- | ------------------- |
+| Prompt injection through interpolated input | `{{variable}}` in a template, filled at runtime with end-user or retrieved content | The static rule `prompt-injection-risk` warns when a **user**-role section interpolates a variable and contains none of the delimiter markers `---`, triple backticks, `<tag>`, `<BEGIN>`/`<END>`, `[[`/`]]` | It does not escape, sanitize or bound the interpolated value at runtime; it does not check `system` or `assistant` sections; the presence of any marker anywhere in the section silences it, whether or not the marker actually surrounds the variable; it does not add an "untrusted content" instruction |
+| Hostile `.prompt` file | Imported or copied from someone else | `install` records SHA-256 hashes in `.promptlang/integrity.json`; `check` fails when a file changed since | It does not judge whether a prompt is malicious; a hash only tells you the file changed |
+| Hostile `.prompt` file sent to the AI linter | `analyze --ai` sends each prompt's text to Claude | — | The prompt text is inserted into the linter's request without delimiters or an untrusted-content instruction, so a crafted prompt can steer the linter's verdict (for example make it report no issues). Treat AI linter output as advisory |
+| Key leakage | Keys in source, logs or committed config | Keys are passed in memory only; empty keys are rejected | It cannot stop you from hard-coding a key or committing a `.env` file |
+| Untrusted model output | The response of any provider | Typed outputs are parsed (`JSON.parse` for structs, enum membership checks); a malformed provider response raises `InvalidResponseError` | It does not validate struct field contents beyond parsing; treat model output that drives code or queries as untrusted |
+| Generated code | Output of `compile` | Deterministic code generation; no network access at compile time (except `analyze --ai`) | Generated functions make network calls when run; review them, especially chains that make several calls |
 
-### Prompt injection
+## Reporting scope
 
-PromptLang compiles your prompts to TypeScript or Python stubs. The compiled output
-is responsible for calling the LLM API at runtime. Be aware of prompt injection risks
-when user-supplied data is interpolated into templates via `{{variable}}`:
-
-- Sanitize untrusted input before passing it to a compiled prompt function.
-- Consider wrapping user content in explicit delimiters in your system prompt.
-- Treat any LLM output that will be processed programmatically as untrusted data.
-
-The upcoming AI-powered linter (v0.7) will flag high-risk interpolation patterns
-and suggest safer alternatives.
-
-### Compiled output
-
-The TypeScript and Python stubs generated by the PromptLang compiler make network
-calls to LLM provider APIs. Review the generated code before deploying to production,
-especially when using the `chain` construct which may make multiple sequential calls.
+In scope: the compiler, CLI, runtime clients, analyzer and `@promptlang/yaml-parser`.
+Out of scope: vulnerabilities in the LLM providers themselves, and prompt-injection
+weaknesses in prompts you wrote (the linter rule above is a heuristic, not a
+guarantee).

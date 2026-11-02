@@ -15,10 +15,17 @@ export function createLiveClient(
   return new AnthropicClient({ apiKey, maxRetries: 0 });
 }
 
-/** Asks on the terminal whether to spend; true to proceed. */
-export function confirmInTerminal(flag: string, question: string): boolean {
+/**
+ * Asks on the terminal whether to spend; true to proceed. `interactive` is a
+ * parameter so tests do not depend on whether they run from a terminal.
+ */
+export function confirmInTerminal(
+  flag: string,
+  question: string,
+  interactive: boolean = process.stdin.isTTY === true
+): boolean {
   // Without a terminal there is nobody to answer; --yes is the explicit approval.
-  if (!process.stdin.isTTY)
+  if (!interactive)
     throw new UsageError(`${flag} without a terminal needs --yes to approve the cost`);
   return (prompt(question) ?? "").trim().toLowerCase() === "y";
 }

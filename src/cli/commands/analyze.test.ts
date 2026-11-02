@@ -55,7 +55,7 @@ describe("analyze --ai cost approval", () => {
     const r = await captureConsole(() =>
       runAnalyze(
         ["--ai", FILE],
-        deps((q) => confirmInTerminal("--ai", q), calls)
+        deps((q) => confirmInTerminal("--ai", q, false), calls)
       )
     );
     expect(r.code).toBe(2);

@@ -138,8 +138,8 @@ ways, each of which SemVer reserves for a major version:
   `src/compiler/typescript/` directories, the placeholder `build` script.
 
 ### Tags
-- `v0.5.0-alpha.0` exists in the local repository but was never pushed to
-  `origin`. History is not rewritten; push it with `git push origin v0.5.0-alpha.0`.
+- `v0.5.0-alpha.0` was missing from `origin`; it is now pushed, on the commit it
+  always pointed to (`f6765ae`). History is not rewritten.
 
 ## [1.2.0] — 2026-08-19
 

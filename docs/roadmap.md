@@ -14,7 +14,7 @@ Release history is in [`CHANGELOG.md`](../CHANGELOG.md).
 - [x] Recursive-descent parser and typed AST for `type`, `prompt`, `chain`, `test`, `eval`, `import`
 - [x] Primitive, enum, struct (optional fields) and named types
 - [x] TypeScript code generator: one async function per prompt, typed input and output
-- [x] Python code generator (3.10+, `Literal` / `TypedDict`) with a bundled runtime module
+- [x] Python code generator (3.11+, `Literal` / `TypedDict` / `NotRequired`) with a bundled runtime module
 - [x] `chain` compilation: sequential steps calling prompts declared in the same file,
       named and positional arguments, member access on step results, undefined
       identifiers and forward references rejected at compile time

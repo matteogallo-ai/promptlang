@@ -191,7 +191,7 @@ async def main():
 asyncio.run(main())
 ```
 
-Requires Python 3.10+ and `httpx` for real API calls (`pip install httpx`).
+Requires Python 3.11+ (generated files import `typing.NotRequired`) and `httpx` for real API calls (`pip install httpx`).
 The `MockClient` works with no dependencies for local testing.
 
 ---

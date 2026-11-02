@@ -28,7 +28,7 @@ const DEFAULT_MAX_TOKENS = 1024;
  * Characters per token, deliberately low: English averages ~4, and recent
  * Claude tokenizers count ~30% more tokens for the same text.
  */
-const CHARS_PER_TOKEN = 3;
+export const CHARS_PER_TOKEN = 3;
 
 export interface CostEstimate {
   model: string;
@@ -63,11 +63,31 @@ export function priceEstimate(
   return { model, calls, inputTokens, maxOutputTokens, estimatedUsd };
 }
 
-function argChars(call: CallExpression): number {
+function stringValue(a: CallExpression["arguments"][number]): string | null {
+  const v = a.kind === "NamedArgument" ? a.value : a;
+  return v.kind === "StringLiteral" ? v.value : null;
+}
+
+/**
+ * Characters of one prompt's messages once the call's arguments are inserted:
+ * each `{{name}}` counts as the argument it names, every time it appears. In a
+ * chain the names are the chain's own, so each counts as the longest argument.
+ */
+function renderedChars(call: CallExpression, prompt: PromptDeclaration, direct: boolean): number {
+  const byName = new Map<string, number>();
+  call.arguments.forEach((a, i) => {
+    const value = stringValue(a);
+    if (value === null) return;
+    const name = a.kind === "NamedArgument" ? a.name : prompt.parameters[i]?.name;
+    if (name) byName.set(name, value.length);
+  });
+  const longest = Math.max(0, ...call.arguments.map((a) => stringValue(a)?.length ?? 0));
   let n = 0;
-  for (const a of call.arguments) {
-    const v = a.kind === "NamedArgument" ? a.value : a;
-    if (v.kind === "StringLiteral") n += v.value.length;
+  for (const s of prompt.sections) {
+    if (s.kind !== "MessageSection") continue;
+    n += s.content.value.length;
+    for (const m of s.content.value.matchAll(/\{\{\s*([\w.]+)\s*\}\}/g))
+      n += (direct ? byName.get(m[1]!.split(".")[0]!) : undefined) ?? longest;
   }
   return n;
 }
@@ -112,9 +132,7 @@ export function estimateLiveCost(program: Program): CostEstimate | null {
     for (const [i, p] of reached.entries()) {
       calls++;
       carriedTokens += i * perCallOutput;
-      inputChars += argChars(call);
-      for (const s of p.sections)
-        if (s.kind === "MessageSection") inputChars += s.content.value.length;
+      inputChars += renderedChars(call, p, reached.length === 1 && p.name === call.callee);
     }
   }
   return priceEstimate(model, calls, inputChars, carriedTokens, calls * perCallOutput);

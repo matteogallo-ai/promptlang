@@ -43,7 +43,7 @@ src/config/          promptlang.yaml loading
 src/cli/             cli.ts + commands/
 packages/yaml-parser @promptlang/yaml-parser (published separately)
 scripts/             check-claims.ts, check-stale-narrative.ts, check-commits.ts, demo.ts,
-                     build.ts, consumer-test.ts, ai-linter-live-run.ts
+                     build.ts, consumer-test.ts, ai-linter-live-run.ts, check-workflows.ts
 benchmarks/bench.ts  generates docs/benchmarks.md
 tests/               cross-module tests; tests/support/ test helpers
 docs/                reference docs, CLAIMS.md, ENGINEERING_STANDARDS.md, examples/

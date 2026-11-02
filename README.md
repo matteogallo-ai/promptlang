@@ -5,6 +5,7 @@
 Write your LLM prompts as typed, first-class code and compile them to
 TypeScript or Python. Bring your own API key. No third-party runtime dependencies.
 
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/matteogallo-ai/promptlang/badge)](https://scorecard.dev/viewer/?uri=github.com/matteogallo-ai/promptlang)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue.svg)](tsconfig.json)
 [![Bun](https://img.shields.io/badge/runtime-Bun-black.svg)](https://bun.sh)

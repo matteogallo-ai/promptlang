@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { InvalidResponseError } from "../errors";
 import type { PromptClient } from "../client";
 import type { PromptRequest } from "../types";
@@ -6,19 +6,11 @@ import { AnthropicClient } from "./anthropic-client";
 import { OllamaClient } from "./ollama-client";
 import { OpenAIClient } from "./openai-client";
 import { RoutingClient } from "./routing-client";
+import { fetchSpy, useFetchSpy } from "../../../tests/support/fetch-spy";
 
 const REQUEST: PromptRequest = { model: "m", messages: [{ role: "user", content: "hi" }] };
 
-// biome-ignore lint/suspicious/noExplicitAny: Bun types fetch with a static preconnect member, so typed mock implementations do not satisfy it; this spy only feeds canned Responses.
-let fetchSpy: any;
-
-beforeEach(() => {
-  fetchSpy = spyOn(globalThis, "fetch").mockRejectedValue(new Error("unmocked fetch"));
-});
-
-afterEach(() => {
-  fetchSpy.mockRestore();
-});
+useFetchSpy();
 
 function ok(body: string): Response {
   return new Response(body, { status: 200 });

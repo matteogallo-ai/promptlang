@@ -1,4 +1,4 @@
-import { describe, test, expect, spyOn, beforeEach, afterEach } from "bun:test";
+import { describe, test, expect } from "bun:test";
 import { OpenAIClient } from "./openai-client";
 import {
   AuthenticationError,
@@ -9,6 +9,7 @@ import {
   NetworkError,
 } from "../errors";
 import type { PromptRequest } from "../types";
+import { fetchSpy, useFetchSpy } from "../../../tests/support/fetch-spy";
 
 const BASE_REQUEST: PromptRequest = {
   model: "gpt-4o",
@@ -32,18 +33,7 @@ function errResponse(status: number, message = "An error occurred"): Response {
 // Spy setup
 // ---------------------------------------------------------------------------
 
-// biome-ignore lint/suspicious/noExplicitAny: Bun types fetch with a static preconnect member, so typed mock implementations do not satisfy it; this spy only feeds canned Responses.
-let fetchSpy: any;
-
-beforeEach(() => {
-  fetchSpy = spyOn(globalThis, "fetch").mockRejectedValue(
-    new Error("fetch called without a mock — call fetchSpy.mockResolvedValueOnce in the test")
-  );
-});
-
-afterEach(() => {
-  fetchSpy.mockRestore();
-});
+useFetchSpy();
 
 // ---------------------------------------------------------------------------
 // Headers and URL

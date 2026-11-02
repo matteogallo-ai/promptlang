@@ -33,14 +33,14 @@ PromptLang treats prompts as first-class typed code:
 - **Multi-provider runtime** (Anthropic, OpenAI, Ollama, or your own client)
 - **Multi-provider fallback**: `RoutingClient` tries providers in order, translating
   the model name per provider (`modelMap`), and never falls back on a bad key
+- **AI-powered linter**: `analyze --ai` sends each prompt to Claude for a semantic
+  review; one live run is committed, its quality is not measured
 - **No third-party runtime dependencies**: Bun + `fetch` + your own API keys
 
 Not delivered, and labelled as such everywhere in this repository (see
 [`docs/CLAIMS.md`](docs/CLAIMS.md)):
 
 - **`eval` blocks**: parsed, not executed
-- **AI-powered linter**: the plumbing is tested with a mocked client only; there
-  is no committed live run, so its findings are not a measured quality
 
 ---
 
@@ -114,7 +114,7 @@ tools' public documentation and are not tested here.
 | Typed I/O                        |    ❌     |    ❌     |    ❌     |       ✅       |
 | Native tests                     |    ❌     |   SaaS    |   SaaS    | ✅ (mock or live; no evals) |
 | SemVer for prompts               |    ❌     |    ❌     |    ❌     |       ✅       |
-| AI-powered linter                |    ❌     |    ❌     |    ❌     | Partial (mocked tests only) |
+| AI-powered linter                |    ❌     |    ❌     |    ❌     | ✅ (one live run; quality not measured) |
 | Multi-provider fallback          |  Partial  |    ❌     |    ❌     | ✅ (per-provider model map) |
 | Compile to TypeScript **and** Python | ❌     |    ❌     |    ❌     |       ✅       |
 | Static analysis (SonarQube-style)|    ❌     |    ❌     |    ❌     |       ✅       |
@@ -204,9 +204,10 @@ fails cleanly, and the tests still pass ([`docs/examples/demo/`](docs/examples/d
 ## AI-Powered Linting
 
 PromptLang can send each prompt to an LLM for a semantic review at build time.
-Status: **partial**. The request/response plumbing is covered by tests that use a
-mocked client; no live run has been committed, so nothing here measures how good
-the findings are.
+The request/response plumbing is covered by tests that use a mocked client. One
+live run is committed ([`runs/live/ai-linter-2026-11-02T16-19-27-163Z.json`](runs/live/ai-linter-2026-11-02T16-19-27-163Z.json)): five prompts, five calls
+that all returned, 17 findings. It shows what the linter returned once; it does
+not measure how good the findings are.
 
 Static analysis catches structural issues (missing tests, unbounded templates, prompt
 injection risks). The AI linter catches semantic issues that static tools cannot see:
@@ -237,8 +238,9 @@ Each analyzed prompt is one request to Claude Haiku 5.5 (by default) with
 `max_tokens: 4096`, which leaves room for its adaptive thinking. At list prices
 ($0.10 / $0.50 per million input / output tokens, prompts up to 100K tokens) the
 three example files (four prompts) cost about $0.01 if every call used its full
-`max_tokens`. This is an estimate from request sizes, not a measurement. Costs are
-yours — bring your own API key.
+`max_tokens`. This is an estimate from request sizes, not a measurement. The
+committed live run (five prompts) used 5,557 input and 6,517 output tokens:
+$0.0038. Costs are yours — bring your own API key.
 
 ---
 

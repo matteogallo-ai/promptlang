@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **AI-powered linter** is `shipped` in `docs/CLAIMS.md`: the first live run is
+  committed under `runs/live/` (5/5 calls returned, $0.0038). It is one sample,
+  not a measure of the findings' quality.
+
 ## [2.0.0] - 2026-11-02
 
 Remediation after the 2026-11-02 external audit, and the first release of

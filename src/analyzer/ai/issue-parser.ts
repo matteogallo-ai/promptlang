@@ -15,12 +15,11 @@ interface RawAiIssue {
  * Parses the raw JSON string returned by Claude Haiku into typed Issue objects.
  * Strips markdown fences if present. Returns a parse-failure issue on malformed JSON.
  */
-export function parseAiResponse(
-  raw: string,
-  prompt: PromptDeclaration,
-  file: string
-): Issue[] {
-  const cleaned = raw.trim().replace(/^```json\s*/i, "").replace(/\s*```$/i, "");
+export function parseAiResponse(raw: string, prompt: PromptDeclaration, file: string): Issue[] {
+  const cleaned = raw
+    .trim()
+    .replace(/^```json\s*/i, "")
+    .replace(/\s*```$/i, "");
 
   let parsed: { issues?: RawAiIssue[] };
   try {

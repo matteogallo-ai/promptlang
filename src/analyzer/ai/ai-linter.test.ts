@@ -46,7 +46,13 @@ function makeContext(prompts: Array<{ name: string; systemContent?: string }>): 
               {
                 kind: "MessageSection" as const,
                 role: "system" as const,
-                content: { kind: "StringLiteral" as const, value: p.systemContent, isTemplate: false, line: 2, column: 1 },
+                content: {
+                  kind: "StringLiteral" as const,
+                  value: p.systemContent,
+                  isTemplate: false,
+                  line: 2,
+                  column: 1,
+                },
                 line: 2,
                 column: 1,
               },
@@ -76,7 +82,15 @@ describe("AiLinter", () => {
   test("analyzes a single prompt with 1 vague-instruction issue", async () => {
     const client = new SequentialMockClient([
       makeResponse([
-        { category: "VAGUE_INSTRUCTIONS", prompt_name: "greet", location: "system", excerpt: "be nice", message: "Non-actionable.", suggestion: "Define criteria.", confidence: "high" },
+        {
+          category: "VAGUE_INSTRUCTIONS",
+          prompt_name: "greet",
+          location: "system",
+          excerpt: "be nice",
+          message: "Non-actionable.",
+          suggestion: "Define criteria.",
+          confidence: "high",
+        },
       ]),
     ]);
     const linter = new AiLinter({ client });
@@ -89,8 +103,24 @@ describe("AiLinter", () => {
   test("analyzes a single prompt with multiple issues", async () => {
     const client = new SequentialMockClient([
       makeResponse([
-        { category: "VAGUE_INSTRUCTIONS", prompt_name: "p", location: "system", excerpt: "a", message: "m1", suggestion: "s1", confidence: "high" },
-        { category: "MISSING_FORMAT_SPEC", prompt_name: "p", location: "user", excerpt: "b", message: "m2", suggestion: "s2", confidence: "medium" },
+        {
+          category: "VAGUE_INSTRUCTIONS",
+          prompt_name: "p",
+          location: "system",
+          excerpt: "a",
+          message: "m1",
+          suggestion: "s1",
+          confidence: "high",
+        },
+        {
+          category: "MISSING_FORMAT_SPEC",
+          prompt_name: "p",
+          location: "user",
+          excerpt: "b",
+          message: "m2",
+          suggestion: "s2",
+          confidence: "medium",
+        },
       ]),
     ]);
     const linter = new AiLinter({ client });
@@ -102,7 +132,17 @@ describe("AiLinter", () => {
     const client = new SequentialMockClient([
       makeResponse([]),
       makeResponse([]),
-      makeResponse([{ category: "TOKEN_INEFFICIENCY", prompt_name: "c", location: "user", excerpt: "x", message: "m", suggestion: "s", confidence: "low" }]),
+      makeResponse([
+        {
+          category: "TOKEN_INEFFICIENCY",
+          prompt_name: "c",
+          location: "user",
+          excerpt: "x",
+          message: "m",
+          suggestion: "s",
+          confidence: "low",
+        },
+      ]),
     ]);
     const linter = new AiLinter({ client, concurrency: 2 });
     const ctx = makeContext([{ name: "a" }, { name: "b" }, { name: "c" }]);
@@ -113,7 +153,17 @@ describe("AiLinter", () => {
 
   test("confidence high → severity warning", async () => {
     const client = new SequentialMockClient([
-      makeResponse([{ category: "VAGUE_INSTRUCTIONS", prompt_name: "p", location: "system", excerpt: "x", message: "m", suggestion: "s", confidence: "high" }]),
+      makeResponse([
+        {
+          category: "VAGUE_INSTRUCTIONS",
+          prompt_name: "p",
+          location: "system",
+          excerpt: "x",
+          message: "m",
+          suggestion: "s",
+          confidence: "high",
+        },
+      ]),
     ]);
     const linter = new AiLinter({ client });
     const issues = await linter.analyze([makeContext([{ name: "p" }])]);
@@ -122,7 +172,17 @@ describe("AiLinter", () => {
 
   test("confidence medium → severity warning", async () => {
     const client = new SequentialMockClient([
-      makeResponse([{ category: "CONFLICTING_INSTRUCTIONS", prompt_name: "p", location: "user", excerpt: "x", message: "m", suggestion: "s", confidence: "medium" }]),
+      makeResponse([
+        {
+          category: "CONFLICTING_INSTRUCTIONS",
+          prompt_name: "p",
+          location: "user",
+          excerpt: "x",
+          message: "m",
+          suggestion: "s",
+          confidence: "medium",
+        },
+      ]),
     ]);
     const linter = new AiLinter({ client });
     const issues = await linter.analyze([makeContext([{ name: "p" }])]);
@@ -131,7 +191,17 @@ describe("AiLinter", () => {
 
   test("confidence low → severity info", async () => {
     const client = new SequentialMockClient([
-      makeResponse([{ category: "TOKEN_INEFFICIENCY", prompt_name: "p", location: "user", excerpt: "x", message: "m", suggestion: "s", confidence: "low" }]),
+      makeResponse([
+        {
+          category: "TOKEN_INEFFICIENCY",
+          prompt_name: "p",
+          location: "user",
+          excerpt: "x",
+          message: "m",
+          suggestion: "s",
+          confidence: "low",
+        },
+      ]),
     ]);
     const linter = new AiLinter({ client });
     const issues = await linter.analyze([makeContext([{ name: "p" }])]);
@@ -140,7 +210,17 @@ describe("AiLinter", () => {
 
   test("rule is prefixed with ai:", async () => {
     const client = new SequentialMockClient([
-      makeResponse([{ category: "UNDEFINED_TERMS", prompt_name: "p", location: "system", excerpt: "x", message: "m", suggestion: "s", confidence: "high" }]),
+      makeResponse([
+        {
+          category: "UNDEFINED_TERMS",
+          prompt_name: "p",
+          location: "system",
+          excerpt: "x",
+          message: "m",
+          suggestion: "s",
+          confidence: "high",
+        },
+      ]),
     ]);
     const linter = new AiLinter({ client });
     const issues = await linter.analyze([makeContext([{ name: "p" }])]);
@@ -148,11 +228,7 @@ describe("AiLinter", () => {
   });
 
   test("onProgress callback is called for each batch", async () => {
-    const client = new SequentialMockClient([
-      makeResponse([]),
-      makeResponse([]),
-      makeResponse([]),
-    ]);
+    const client = new SequentialMockClient([makeResponse([]), makeResponse([]), makeResponse([])]);
     const progress: Array<[number, number]> = [];
     const linter = new AiLinter({
       client,
@@ -213,7 +289,16 @@ describe("AiLinter", () => {
         kind: "Program",
         imports: [],
         metadata: [],
-        declarations: [{ kind: "TestDeclaration", description: "t", input: { kind: "Identifier", name: "x", line: 1, column: 1 }, expectations: [], line: 1, column: 1 }],
+        declarations: [
+          {
+            kind: "TestDeclaration",
+            description: "t",
+            input: { kind: "Identifier", name: "x", line: 1, column: 1 },
+            expectations: [],
+            line: 1,
+            column: 1,
+          },
+        ],
         line: 1,
         column: 1,
       },
@@ -224,8 +309,28 @@ describe("AiLinter", () => {
 
   test("aggregates issues across multiple files", async () => {
     const client = new SequentialMockClient([
-      makeResponse([{ category: "VAGUE_INSTRUCTIONS", prompt_name: "a", location: "system", excerpt: "x", message: "m1", suggestion: "s1", confidence: "high" }]),
-      makeResponse([{ category: "MISSING_FORMAT_SPEC", prompt_name: "b", location: "user", excerpt: "y", message: "m2", suggestion: "s2", confidence: "medium" }]),
+      makeResponse([
+        {
+          category: "VAGUE_INSTRUCTIONS",
+          prompt_name: "a",
+          location: "system",
+          excerpt: "x",
+          message: "m1",
+          suggestion: "s1",
+          confidence: "high",
+        },
+      ]),
+      makeResponse([
+        {
+          category: "MISSING_FORMAT_SPEC",
+          prompt_name: "b",
+          location: "user",
+          excerpt: "y",
+          message: "m2",
+          suggestion: "s2",
+          confidence: "medium",
+        },
+      ]),
     ]);
     const linter = new AiLinter({ client });
     const ctx1 = makeContext([{ name: "a" }]);

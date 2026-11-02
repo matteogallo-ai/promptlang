@@ -95,8 +95,40 @@ export function workflowViolations(file: string, text: string): string[] {
         );
   }
 
-  const on = doc.on;
-  const events = typeof on === "string" ? [on] : Array.isArray(on) ? on : Object.keys(on ?? {});
-  if (events.includes("pull_request_target")) out.push(`${file}: uses pull_request_target`);
+  if (triggers(doc.on).includes("pull_request_target"))
+    out.push(`${file}: uses pull_request_target`);
   return out;
+}
+
+function triggers(on: unknown): string[] {
+  return typeof on === "string" ? [on] : Array.isArray(on) ? on : Object.keys(on ?? {});
+}
+
+/**
+ * The check-run names a workflow reports on a pull request, as a ruleset's
+ * required status checks must spell them: the job's `name` (or its key), with
+ * `${{ matrix.<key> }}` expanded, or `key (value)` for an unnamed one-key
+ * matrix. Matrices with `include`/`exclude` or several keys are not expanded.
+ */
+export function pullRequestCheckNames(text: string): string[] {
+  const doc = Bun.YAML.parse(text) as { on?: unknown; jobs?: Record<string, unknown> };
+  if (!triggers(doc.on).includes("pull_request")) return [];
+  const names: string[] = [];
+  for (const [key, raw] of Object.entries(doc.jobs ?? {})) {
+    const job = raw as { name?: unknown; strategy?: { matrix?: Record<string, unknown> } };
+    const matrix = Object.entries(job.strategy?.matrix ?? {});
+    const values = matrix.length === 1 && Array.isArray(matrix[0]![1]) ? matrix[0]![1] : null;
+    if (!values) {
+      names.push(typeof job.name === "string" ? job.name : key);
+      continue;
+    }
+    const axis = matrix[0]![0];
+    for (const v of values)
+      names.push(
+        typeof job.name === "string"
+          ? job.name.replace(new RegExp(`\\$\\{\\{\\s*matrix\\.${axis}\\s*\\}\\}`, "g"), String(v))
+          : `${key} (${String(v)})`
+      );
+  }
+  return names;
 }

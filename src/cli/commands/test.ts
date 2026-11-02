@@ -5,6 +5,7 @@ import { tokenize } from "../../lexer/lexer";
 import { ParserError } from "../../parser/errors";
 import { parse } from "../../parser/parser";
 import type { PromptClient } from "../../runtime/client";
+import { BudgetedClient } from "../../testing/budget";
 import { type CostEstimate, estimateLiveCost, UnpricedModelError } from "../../testing/cost";
 import {
   type ProviderFailure,
@@ -153,7 +154,9 @@ export async function runTest(
         console.error("Aborted: no provider call was made.");
         return EXIT_USAGE;
       }
-      mode = { kind: "live", client: deps.createClient() };
+      // The approved total is enforced in code, not only shown: no call may take the
+      // spend past it (src/testing/budget.ts).
+      mode = { kind: "live", client: new BudgetedClient(deps.createClient(), total) };
     } catch (error) {
       if (error instanceof UsageError || error instanceof UnpricedModelError) {
         console.error(`Error: ${error.message}`);

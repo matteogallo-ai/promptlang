@@ -168,6 +168,46 @@ describe("promptlang test --live", () => {
     expect(r.stdout).toContain("0 passed, 0 failed, 1 without a verdict (1 provider failure)");
   });
 
+  test("a call that overspends stops the next test: exit 3, a configuration error, nothing sent", async () => {
+    const file = await write("live-budget.prompt", passing + failing);
+    let sent = 0;
+    const deps: TestCommandDeps = {
+      createClient: () => ({
+        async complete() {
+          sent++;
+          return { content: "bug", usage: { input_tokens: 7, output_tokens: 1_000_000 } };
+        },
+      }),
+      confirm: () => true,
+    };
+    const r = await capture(() => runTest([file, "--live", "--yes"], deps));
+    expect(sent).toBe(1);
+    expect(r.code).toBe(3);
+    expect(r.stdout).toContain(
+      "configuration error, no verdict (fix the file or the key): BudgetExceededError: budget:"
+    );
+  });
+
+  test("a template using an input twice still fits the cap set to its estimate", async () => {
+    const twice = `@version "1.0.0"\n@model claude-haiku-4-5\n@max_tokens 10\ntype Kind = enum { bug, other }\nprompt classify(text: string) -> Kind {\n  user: "Classify: {{text}}. Again: {{text}}"\n}\ntest "long" {\n  input: classify("${"crash ".repeat(500)}")\n  mock: "bug"\n  expect: bug\n}\n`;
+    const file = join(dir, "live-twice.prompt");
+    await Bun.write(file, twice);
+    let sent = 0;
+    const deps: TestCommandDeps = {
+      createClient: () => ({
+        async complete() {
+          sent++;
+          return { content: "bug" };
+        },
+      }),
+      confirm: () => true,
+    };
+    const r = await capture(() => runTest([file, "--live", "--yes"], deps));
+    expect(r.stdout).not.toContain("BudgetExceededError");
+    expect(sent).toBe(1);
+    expect(r.code).toBe(0);
+  });
+
   test("a rejected request: exit 3, reported as a configuration error, not an outage", async () => {
     const file = await write("live-bad-request.prompt", passing);
     const deps: TestCommandDeps = {

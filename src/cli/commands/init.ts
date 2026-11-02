@@ -26,7 +26,7 @@ linter:
     model: claude-haiku-4-5
     concurrency: 3
 
-# Local packages (remote registry planned for post-v1.0).
+# Local packages only: there is no remote registry.
 # dependencies:
 #   - name: promptlang-support-templates
 #     version: ^1.0.0

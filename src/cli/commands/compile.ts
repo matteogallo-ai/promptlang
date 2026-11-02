@@ -174,8 +174,8 @@ export async function runCompile(args: string[]): Promise<number> {
     await Bun.write(tsconfigPath, buildTsconfig(runtimePath));
     console.log(`  emitted   ${tsconfigPath}`);
     console.log(`            (paths "promptlang/runtime" → ${runtimePath})`);
-    console.log(`            Note: --emit-tsconfig is for local/alpha use. Once promptlang`);
-    console.log(`            is published to npm (v1.0), this flag will not be needed.`);
+    console.log(`            Note: the mapping points at this checkout's runtime source,`);
+    console.log(`            because @promptlang/core is not published to npm.`);
   }
 
   return hasErrors ? 1 : 0;

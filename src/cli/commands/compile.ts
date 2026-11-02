@@ -1,5 +1,5 @@
-import type { Program } from "../../ast/nodes";
 import { resolveFiles } from "../files";
+import { warnAboutEvals } from "../warnings";
 import { tokenize } from "../../lexer/lexer";
 import { parse } from "../../parser/parser";
 import { compile } from "../../compiler/compiler";
@@ -232,14 +232,4 @@ function buildTsconfig(runtimePath: string): string {
     null,
     2
   )}\n`;
-}
-
-/** `eval` blocks parse so files using them stay valid, but nothing runs them yet. */
-function warnAboutEvals(program: Program, file: string): void {
-  const evals = program.declarations.filter((d) => d.kind === "EvalDeclaration");
-  for (const e of evals) {
-    console.warn(
-      `  [warn]    ${file}:${e.line}:${e.column}: eval blocks are parsed but not executed in this version`
-    );
-  }
 }

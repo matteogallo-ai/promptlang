@@ -10,6 +10,7 @@ import { runInstall } from "./commands/install";
 import { runList } from "./commands/list";
 import { runCheck } from "./commands/check";
 import { runSemverCheck } from "./commands/semver-check";
+import { runTest } from "./commands/test";
 
 const HELP = `
 promptlang — the typed language for production-grade LLM prompts
@@ -48,6 +49,15 @@ File commands:
                                      promptlang/runtime.
                                    --runtime-path <path>  Override the path to
                                      promptlang/runtime in the emitted tsconfig.
+  test <paths> [flags]      Run the test blocks of .prompt files. By default
+                            each test's mock: response is replayed through
+                            the generated code, with no network call.
+                            Flags: --json
+                                   --live  Call the provider (Anthropic,
+                                     ANTHROPIC_API_KEY) after showing a
+                                     worst-case cost estimate and asking
+                                   --yes   Approve the estimate without asking
+                            Exit: 0 all pass, 1 a failure, 2 usage error
   version                   Show version and repository info
 
 Examples:
@@ -58,6 +68,7 @@ Examples:
   promptlang analyze docs/examples/
   promptlang compile docs/examples/ --out ./generated --emit-tsconfig
   promptlang semver-check docs/examples/ --base main
+  promptlang test docs/examples/
 `.trim();
 
 export async function main(argv: string[]): Promise<number> {
@@ -84,6 +95,8 @@ export async function main(argv: string[]): Promise<number> {
         return await runCheck(args.slice(1));
       case "semver-check":
         return await runSemverCheck(args.slice(1));
+      case "test":
+        return await runTest(args.slice(1));
       case "version":
         return runVersion();
       case undefined:

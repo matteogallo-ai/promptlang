@@ -1,135 +1,78 @@
 # Syntax Reference
 
-Complete reference for the PromptLang DSL. This document describes the syntax as
-it will exist at v1.0. Sections that are not yet implemented are marked with their
-target milestone.
+Reference for the `.prompt` language as the current parser and compilers implement
+it. The formal grammar is [`src/parser/grammar.md`](../src/parser/grammar.md). Forms
+that parse but have no effect yet are marked **parsed only**; capabilities that do
+not exist are listed at the end, so nothing below describes behaviour the code does
+not have.
 
 ---
 
-## Section 1 — File Metadata (Directives)
+## Section 1 — File layout
 
-Every `.prompt` file begins with zero or more directives. Directives start with `@`
-and configure file-level metadata. They must appear before any type or prompt
-declarations.
+A file is, in order: `import` lines, metadata directives, then declarations
+(`type`, `prompt`, `chain`, `test`, `eval`). Comments are `// line` and
+`/* block */`. A file with no declarations and no imports is rejected by
+`promptlang compile`.
 
 ```promptlang
+import "shared/categories.prompt" as Categories
+
 @version "1.0.0"
-@model claude-opus-4.7
+@model claude-haiku-4-5
 @temperature 0.3
 @max_tokens 512
-@description "Classifies support tickets into predefined categories"
+@description "Classifies support tickets"
 ```
 
-| Directive        | Type             | Required | Description                                            |
-| ---------------- | ---------------- | -------- | ------------------------------------------------------ |
-| `@version`       | semver string    | Yes      | File version. Used for compatibility checks in chains. |
-| `@model`         | identifier       | No       | Default model for all prompts in this file.            |
-| `@temperature`   | float 0.0–2.0    | No       | Sampling temperature. Default: provider default.       |
-| `@max_tokens`    | integer          | No       | Maximum output tokens.                                 |
-| `@description`   | string           | No       | Human-readable description for tooling and registries. |
+### Directives
 
-**`@version` and semver compatibility**
+| Directive | Value | Effect today |
+| --- | --- | --- |
+| `@version` | string | Copied into the generated `<prompt>_meta.version`. Optional; **not validated** as SemVer. |
+| `@model` | identifier (may contain `-` and `.`) | Model name sent in every request from this file. Without it the generated code sends `model: ""`. |
+| `@temperature` | number | Copied into each request. No range check. |
+| `@max_tokens` | number | Copied into each request. |
+| `@description` | string | Kept in the AST; not emitted. |
+| `@breaking_changes` | string | **Parsed only.** |
+| `@migration_from` | two strings | **Parsed only.** |
 
-When a prompt is referenced in a `chain`, the compiler checks that the `@version`
-of the dependency satisfies the version range declared by the caller. This follows
-npm-style semver semantics.
+Directives apply to the whole file; there is no per-prompt override.
 
-**Per-prompt model override**
-
-The `@model` directive at file level is the default. Individual `prompt` blocks can
-override it:
+### Imports
 
 ```promptlang
-@model claude-opus-4.7     // file default
-
-prompt fast_check(text: string) -> boolean {
-  @model claude-haiku-4.5  // override for this prompt only
-  user: "Is this text appropriate? Answer true or false.\n{{text}}"
-  output: boolean
-}
+import "shared/x.prompt" as Alias
 ```
+
+The path is a plain string (no `{{…}}`). It is resolved relative to the importing
+file first, then against each `sources[].path` in `promptlang.yaml`. Imports feed
+`promptlang install` / `check` (dependency graph, cycle detection, integrity
+hashes). A chain cannot call an imported prompt yet: `Alias.name(...)` does not
+parse.
 
 ---
 
 ## Section 2 — Types
 
-### Primitive types
-
-| Type      | Description               | Example value     |
-| --------- | ------------------------- | ----------------- |
-| `string`  | UTF-8 text                | `"hello"`         |
-| `number`  | IEEE 754 double           | `42`, `3.14`      |
-| `boolean` | true / false              | `true`            |
-
-### Enum types
+| Form | Example | TypeScript | Python |
+| --- | --- | --- | --- |
+| Primitive | `string`, `number`, `boolean`, `date` | `string`, `number`, `boolean`, `string` | `str`, `float`, `bool`, `str` |
+| Enum | `enum { bug, question }` | string-literal union | `Literal[...]` |
+| Struct | `struct { name: string, reply_to?: string }` | `interface` with `reply_to?: string` | `TypedDict` with `NotRequired[str]` |
+| Named type | `type TicketId = string` | `export type TicketId = string;` | `TicketId = str` |
 
 ```promptlang
-type Sentiment = enum { positive, neutral, negative }
+type Category = enum { bug, feature_request, question, other }
 
-type Priority = enum { low, medium, high, critical }
-```
-
-Enum members are lowercase identifiers. The compiled TypeScript output uses a union
-of string literals:
-
-```typescript
-type Sentiment = "positive" | "neutral" | "negative";
-```
-
-### Struct types
-
-```promptlang
-type Address = struct {
-  street: string
-  city: string
-  country: string
-  postal_code: string
-}
-
-type ExtractedInvoice = struct {
-  amount: number
-  currency: string
-  invoice_date: string
-  vendor: string
-  line_items: string[]
+type Ticket = struct {
+  subject: string,
+  body: string,
+  reply_to?: string,
 }
 ```
 
-Struct fields can be any type including other structs and arrays. Fields are separated
-by newlines (commas are optional).
-
-### Array types
-
-```promptlang
-type Keywords = string[]
-
-type Contacts = struct {
-  name: string
-}[]
-```
-
-### Optional fields
-
-```promptlang
-type ParsedEmail = struct {
-  subject: string
-  body: string
-  reply_to?: string   // optional: may be absent in output
-}
-```
-
-Optional fields use the `?` suffix. The compiler emits `string | undefined` in
-TypeScript and `Optional[str]` in Python.
-
-### Type aliases
-
-```promptlang
-type TicketId = string
-type Confidence = number   // expected range: 0.0–1.0
-```
-
-Simple aliases do not create new types in the compiled output — they are expanded
-inline. Useful for documentation.
+Array types (`string[]`) are not supported.
 
 ---
 

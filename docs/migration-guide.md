@@ -15,7 +15,7 @@ version number by SemVer; see `CHANGELOG.md` under `[Unreleased]`.
 - **Malformed provider responses** raise `InvalidResponseError` (exported from the
   TypeScript runtime) instead of an untyped `TypeError`. The generated Python
   runtime is unchanged.
-- **Empty `.prompt` files** (no declarations, no imports) make `compile` exit 1.
+- **`.prompt` files with no declarations** (empty, or only imports and metadata) make `compile` exit 1.
 - **`integrity.json` keys** are project-relative POSIX paths. Older files with
   absolute keys are migrated when read; re-run `promptlang install` to rewrite them.
 

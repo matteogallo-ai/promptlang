@@ -110,9 +110,10 @@ export async function runCompile(args: string[]): Promise<number> {
     try {
       const tokens = tokenize(source);
       const ast = parse(tokens);
-      // An empty file would otherwise "compile" to a module exporting nothing and
-      // be reported as success, so the missing prompt only surfaces at import time.
-      if (ast.declarations.length === 0 && ast.imports.length === 0) {
+      // A file without declarations would otherwise "compile" to a module exporting
+      // nothing and be reported as success, so the missing prompt only surfaces at
+      // import time. Imports do not count: both compilers emit no code for them.
+      if (ast.declarations.length === 0) {
         throw new CompilerError("file contains no declarations (empty .prompt file)", 1, 1);
       }
 

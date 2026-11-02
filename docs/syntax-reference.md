@@ -12,8 +12,8 @@ not have.
 
 A file is, in order: `import` lines, metadata directives, then declarations
 (`type`, `prompt`, `chain`, `test`, `eval`). Comments are `// line` and
-`/* block */`. A file with no declarations and no imports is rejected by
-`promptlang compile`.
+`/* block */`. A file with no declarations (imports and metadata alone) is
+rejected by `promptlang compile`, because neither compiler emits code for imports.
 
 ```promptlang
 import "shared/categories.prompt" as Categories

@@ -815,6 +815,16 @@ describe("compile — empty .prompt files", () => {
     expect(stderr).toContain("no declarations");
   });
 
+  test("a file with only imports is an error: compilers emit nothing for imports", async () => {
+    await Bun.write(join(DIR, "shared.prompt"), "type A = enum { x }\n");
+    const { code, stderr } = await compileFile(
+      "imports-only.prompt",
+      `import "shared.prompt" as S\n`
+    );
+    expect(code).toBe(1);
+    expect(stderr).toContain("no declarations");
+  });
+
   test("a file that only declares types is not empty", async () => {
     const { code } = await compileFile(
       "types.prompt",

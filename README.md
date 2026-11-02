@@ -158,8 +158,10 @@ test "extracts the total" {
   TypeScript, so request building and output parsing are what is tested. It does
   not measure the model: the mock is written by hand. A test without `mock:` fails
   in this mode.
-- **Live mode** (`--live`, Anthropic models, `ANTHROPIC_API_KEY`): prints a worst-case
-  cost estimate (every call at its full `max_tokens`) and asks before calling;
+- **Live mode** (`--live`, Anthropic models, `ANTHROPIC_API_KEY`): prints a cost
+  estimate (every call at its full `max_tokens`, input approximated at 3 characters
+  per token, chain steps charged with earlier steps' outputs, no retries: the client
+  makes none) and asks before calling;
   `--yes` approves without asking. Models without a recorded price are refused.
 - `--json` for tools; exit 0 when every test passes, 1 on a failure, 2 on usage errors.
 - A test whose `input` calls a prompt or chain that the file does not declare is a

@@ -63,7 +63,11 @@ function promptsReached(program: Program, callee: string): PromptDeclaration[] {
   return [];
 }
 
-/** Worst-case cost of running `program`'s tests once against its @model. */
+/**
+ * Cost of running `program`'s tests once against its @model, with every call
+ * at its full max_tokens and no retries. Input is approximated (characters ÷ 3),
+ * so the figure is an estimate, not a guarantee.
+ */
 export function estimateLiveCost(program: Program): CostEstimate | null {
   const tests = program.declarations.filter(
     (d): d is TestDeclaration => d.kind === "TestDeclaration"
@@ -83,16 +87,20 @@ export function estimateLiveCost(program: Program): CostEstimate | null {
 
   let calls = 0;
   let inputChars = 0;
+  // Upper bound for chains: every earlier step's whole output may reach a later step's input.
+  let carriedTokens = 0;
   for (const t of tests) {
     const call = t.input as CallExpression;
-    for (const p of promptsReached(program, call.callee)) {
+    const reached = promptsReached(program, call.callee);
+    for (const [i, p] of reached.entries()) {
       calls++;
+      carriedTokens += i * perCallOutput;
       inputChars += argChars(call);
       for (const s of p.sections)
         if (s.kind === "MessageSection") inputChars += s.content.value.length;
     }
   }
-  const inputTokens = Math.ceil(inputChars / CHARS_PER_TOKEN);
+  const inputTokens = Math.ceil(inputChars / CHARS_PER_TOKEN) + carriedTokens;
   const maxOutputTokens = calls * perCallOutput;
   const maxUsd = (inputTokens * price[0] + maxOutputTokens * price[1]) / 1_000_000;
   return { model, calls, inputTokens, maxOutputTokens, maxUsd };

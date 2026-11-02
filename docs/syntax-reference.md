@@ -216,8 +216,9 @@ with its message.
 - **Mock mode** (default): no network. A test without `mock:` fails with a message
   saying so. Mock tests check the code path, not the model's answers.
 - **Live mode** (`--live`): calls Anthropic with `ANTHROPIC_API_KEY`, using the file's
-  `@model`. Before any call it prints a worst-case estimate per file (input ≈ prompt
-  and argument characters ÷ 3; output = calls × `@max_tokens`, default 1024) priced
+  `@model`, without retries. Before any call it prints an estimate per file (input ≈
+  prompt and argument characters ÷ 3, plus, for a chain, every earlier step's full
+  output; output = calls × `@max_tokens`, default 1024) priced
   from a table of Claude models, and asks for confirmation; `--yes` approves without
   asking and is required without a terminal. A model missing from the price table is
   refused. `mock:` is ignored.

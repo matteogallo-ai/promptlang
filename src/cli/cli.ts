@@ -55,7 +55,7 @@ File commands:
                             Flags: --json
                                    --live  Call the provider (Anthropic,
                                      ANTHROPIC_API_KEY) after showing a
-                                     worst-case cost estimate and asking
+                                     cost estimate and asking
                                    --yes   Approve the estimate without asking
                             Exit: 0 all pass, 1 a failure, 2 usage error,
                                   3 provider error (no verdict)

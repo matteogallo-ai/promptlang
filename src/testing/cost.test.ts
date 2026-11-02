@@ -28,7 +28,10 @@ describe("estimateLiveCost", () => {
   test("a chain test counts one call per prompt step", () => {
     const chain = `chain c(x: string) -> string {\n  step a = p(x: x)\n  step b = p(x: a)\n  return b\n}\n`;
     const t = `test "t" {\n  input: c("x")\n  expect: x\n}\n`;
-    expect(est(`@model claude-haiku-5-5\n${PROMPT}${chain}${t}`)?.calls).toBe(2);
+    const e = est(`@model claude-haiku-5-5\n@max_tokens 100\n${PROMPT}${chain}${t}`);
+    expect(e?.calls).toBe(2);
+    // Each step: (30 + 1) chars → 21 tokens for both; step b may also receive step a's ≤100 output tokens.
+    expect(e?.inputTokens).toBe(Math.ceil(62 / 3) + 100);
   });
 
   test("no tests, no estimate; an unpriced or missing model refuses", () => {

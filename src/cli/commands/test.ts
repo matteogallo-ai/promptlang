@@ -28,7 +28,8 @@ const defaultDeps: TestCommandDeps = {
   createClient: () => {
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) throw new UsageError("--live needs ANTHROPIC_API_KEY in the environment");
-    return new AnthropicClient({ apiKey });
+    // No retries: the approved estimate counts each call once.
+    return new AnthropicClient({ apiKey, maxRetries: 0 });
   },
   confirm: (question) => {
     // Without a terminal there is nobody to answer; --yes is the explicit approval.
@@ -57,7 +58,9 @@ function load(text: string): Program | string {
 
 function printEstimate(estimates: Array<{ file: string; estimate: CostEstimate }>): number {
   let total = 0;
-  console.error("Live run estimate (worst case: every call uses its full max_tokens):");
+  console.error(
+    "Live run estimate (every call at its full max_tokens, input ≈ characters ÷ 3, no retries):"
+  );
   for (const { file, estimate: e } of estimates) {
     total += e.maxUsd;
     console.error(

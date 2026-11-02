@@ -64,8 +64,8 @@ export async function runCompile(args: string[]): Promise<number> {
   const outDir =
     outIdx !== -1 && args[outIdx + 1] ? args[outIdx + 1]! : (config?.compile.out ?? "./generated");
 
-  // An unrecognised value used to fall through to TypeScript, so `--target py`
-  // silently produced .ts files; the CLI now rejects it, like promptlang.yaml does.
+  // Reject unknown values rather than defaulting: a fallback to TypeScript would
+  // hand `--target py` users .ts files with no warning. promptlang.yaml does the same.
   let target: Target = config?.compile.target ?? "typescript";
   if (targetIdx !== -1) {
     const value = args[targetIdx + 1];

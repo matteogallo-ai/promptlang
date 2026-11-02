@@ -1,103 +1,41 @@
-# Migration Guide — PromptLang 0.x → 1.0
+# Migration Guide
 
-PromptLang 1.0 is **fully backward compatible** with the 0.x line. If you have
-`.prompt` files written against v0.9, they continue to work in v1.0 without
-any changes. The generated TypeScript and Python output is byte-identical to
-what v0.9 produced.
+## Unreleased changes (on `main`, not yet tagged)
 
-If you are on v0.9, upgrading is a no-op: run `bun install` again against the
-1.0 tag and continue.
+These changes can break existing setups. The release that ships them picks its
+version number by SemVer; see `CHANGELOG.md` under `[Unreleased]`.
 
----
+- **Package name.** The package is `@promptlang/core` (the unscoped `promptlang`
+  name on npm belongs to a third party). The CLI binary is still `promptlang`.
+  Generated code still imports `promptlang/runtime`, resolved through a `paths`
+  mapping (`compile --emit-tsconfig`).
+- **Empty API keys are rejected.** `new AnthropicClient({ apiKey })` and
+  `new OpenAIClient({ apiKey })` throw a `TypeError` when the key is undefined,
+  empty or whitespace, instead of sending an unauthenticated request.
+- **Malformed provider responses** raise `InvalidResponseError` (exported from the
+  runtime) instead of an untyped `TypeError`.
+- **Empty `.prompt` files** (no declarations, no imports) make `compile` exit 1.
+- **`integrity.json` keys** are project-relative POSIX paths. Older files with
+  absolute keys are migrated when read; re-run `promptlang install` to rewrite them.
 
-## What changed
+## 0.x → 1.0
 
-- **API is now stable.** Starting with v1.0.0, PromptLang commits to
-  [semantic versioning](https://semver.org/):
-  - MINOR releases (1.x) add features without breaking existing code.
-  - PATCH releases (1.0.x) fix bugs without changing behavior.
-  - MAJOR releases (2.0) may introduce breaking changes with a documented
-    migration path.
-- **Documentation consolidated.** README has a new hero, a comparison table
-  against LangChain / LangSmith / W&B Weave, and a linked table of contents
-  for `docs/`.
-- **New**: [`docs/migration-guide.md`](migration-guide.md) (this file).
-- **New**: [`docs/benchmarks.md`](benchmarks.md) with measured performance on
-  the reference machine.
+1.0 kept the 0.9 `.prompt` syntax, CLI commands, runtime constructors and
+`promptlang.yaml` schema. Generated files are not byte-for-byte reproducible
+between runs or versions: each one carries a `Generated at` timestamp, the source
+path and the generator version in its header.
 
-## What did NOT change
+If you started on v0.4 or earlier:
 
-- All `.prompt` syntax from v0.9 works identically.
-- All CLI commands work identically (`parse`, `tokens`, `analyze`, `compile`,
-  `init`, `install`, `list`, `check`, `version`).
-- Generated TypeScript output is byte-identical (same header, same imports,
-  same function signatures).
-- Generated Python output is byte-identical.
-- Runtime API (`PromptClient`, `MockClient`, `AnthropicClient`,
-  `OpenAIClient`, `OllamaClient`, `RoutingClient`) is stable — the same
-  constructors, options, and error types.
-- `promptlang.yaml` schema is unchanged.
-- `.promptlang/manifest.json` on-disk format is unchanged (still `version: 1`).
+1. **Regenerate compiled files** with `bun run cli compile <path> --out <dir>` to pick
+   up code-generator fixes.
+2. **Adopt `promptlang.yaml`** for multi-file projects: `bun run cli init`, then
+   `bun run cli install` to write `.promptlang/manifest.json` and `integrity.json`.
+3. **Python target**: `bun run cli compile <path> --out ./generated --target python`.
 
----
+## Vendoring compiled output
 
-## For users of very early versions (v0.1 → v0.4)
-
-If you started with v0.4 or earlier (before the Python compiler and AI
-linter), you may want to:
-
-1. **Regenerate your compiled files.** Bug fixes and small ergonomic
-   improvements have accumulated across 11 alpha versions. Re-running
-   `bun run cli compile ...` picks them up.
-2. **Adopt `promptlang.yaml` (v0.9+)** for cleaner multi-file projects. Run
-   `bun run cli init` in your project root to scaffold one, then
-   `bun run cli install` to populate `.promptlang/manifest.json` and
-   `integrity.json`.
-3. **Enable the AI linter** for semantic issue detection:
-   ```bash
-   export ANTHROPIC_API_KEY=sk-ant-...
-   bun run cli analyze <path> --ai
-   ```
-4. **Consider the Python target** if any of your consumers are Python
-   services:
-   ```bash
-   bun run cli compile <path> --out ./generated --target python
-   ```
-   The same `.prompt` file compiles to both TypeScript and Python without
-   modification.
-
----
-
-## What's next in 1.x
-
-The 1.x line focuses on distribution and ecosystem, not language changes:
-
-- **npm package publication** — `npm install promptlang` will work as a
-  first-class dependency. This is the highest-priority 1.x item.
-- **Additional provider clients** — Google Gemini, Mistral, Cohere.
-- **Streaming responses** — `PromptClient.stream()` companion to
-  `.complete()`.
-- **IDE integrations** — VS Code syntax highlighting; a Language Server
-  Protocol implementation for hover types, go-to-definition, and diagnostics.
-- **Remote package registry** — the current registry is local-only; a
-  remote layer will make `dependencies:` in `promptlang.yaml` resolve to a
-  hosted index.
-- **MCP server integration** — expose compiled prompts as MCP tools.
-
-**Breaking changes are reserved for 2.0** with a proper migration path
-published ahead of time. If you find something that feels like a breaking
-change in 1.x, that's a bug — please open an issue.
-
----
-
-## Uninstalling / vendoring
-
-Because PromptLang has **zero external dependencies** at runtime, you can
-vendor the generated `.ts` / `.py` files into your codebase and delete
-PromptLang entirely once you have compiled. Your production runtime only
-needs the tiny `promptlang/runtime` module (a few hundred lines of pure
-TypeScript with no imports beyond `fetch`).
-
-This is a deliberate architectural choice: PromptLang is a compile-time
-tool. It does not require you to depend on it at runtime unless you want
-to keep regenerating stubs.
+Generated Python is self-contained: it ships with a generated `promptlang_runtime.py`
+(whose HTTP clients need `httpx`). Generated TypeScript imports `promptlang/runtime`,
+which is not published, so it needs this repository's `src/runtime/` reachable
+through a `paths` mapping; you cannot delete the checkout after compiling.

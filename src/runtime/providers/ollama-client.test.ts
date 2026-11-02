@@ -1,12 +1,6 @@
 import { describe, test, expect, spyOn, beforeEach, afterEach } from "bun:test";
 import { OllamaClient } from "./ollama-client";
-import {
-  ConnectionError,
-  NotFoundError,
-  ServerError,
-  TimeoutError,
-  NetworkError,
-} from "../errors";
+import { ConnectionError, NotFoundError, ServerError, TimeoutError, NetworkError } from "../errors";
 import type { PromptRequest } from "../types";
 
 const BASE_REQUEST: PromptRequest = {
@@ -206,9 +200,7 @@ describe("OllamaClient — errors and retries", () => {
   });
 
   test("retries on 500 and succeeds on subsequent attempt", async () => {
-    fetchSpy
-      .mockResolvedValueOnce(errResponse(500))
-      .mockResolvedValueOnce(okResponse());
+    fetchSpy.mockResolvedValueOnce(errResponse(500)).mockResolvedValueOnce(okResponse());
     const client = new OllamaClient({ maxRetries: 2, retryDelay: 0 });
     const result = await client.complete(BASE_REQUEST);
     expect(result.content).toBe("Hello from Llama!");

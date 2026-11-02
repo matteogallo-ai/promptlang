@@ -259,9 +259,7 @@ describe("AnthropicClient — errors and retries", () => {
   });
 
   test("retries on 500 and succeeds on subsequent attempt", async () => {
-    fetchSpy
-      .mockResolvedValueOnce(errResponse(500))
-      .mockResolvedValueOnce(okResponse());
+    fetchSpy.mockResolvedValueOnce(errResponse(500)).mockResolvedValueOnce(okResponse());
     const client = new AnthropicClient({ apiKey: "key", maxRetries: 3, retryDelay: 0 });
     const result = await client.complete(BASE_REQUEST);
     expect(result.content).toBe("Hi there!");

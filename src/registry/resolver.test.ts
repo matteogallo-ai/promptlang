@@ -45,14 +45,18 @@ beforeAll(async () => {
   // Multiple imports in one file
   await Bun.write(
     join(PROMPTS, "with-many.prompt"),
-    `import "./sibling.prompt" as S\n` +
-      `import "classify.prompt" as C\n` +
-      MIN_PROMPT("with_many")
+    `import "./sibling.prompt" as S\n` + `import "classify.prompt" as C\n` + MIN_PROMPT("with_many")
   );
 
   // Circular imports
-  await Bun.write(join(PROMPTS, "cycle-a.prompt"), `import "./cycle-b.prompt" as B\n` + MIN_PROMPT("a"));
-  await Bun.write(join(PROMPTS, "cycle-b.prompt"), `import "./cycle-a.prompt" as A\n` + MIN_PROMPT("b"));
+  await Bun.write(
+    join(PROMPTS, "cycle-a.prompt"),
+    `import "./cycle-b.prompt" as B\n` + MIN_PROMPT("a")
+  );
+  await Bun.write(
+    join(PROMPTS, "cycle-b.prompt"),
+    `import "./cycle-a.prompt" as A\n` + MIN_PROMPT("b")
+  );
 });
 
 afterAll(async () => {
@@ -77,11 +81,10 @@ describe("resolveImport", () => {
 
   test("resolves a vendor-style path via sources", async () => {
     const from = join(PROMPTS, "with-vendor.prompt");
-    const resolved = await resolveImport(
-      "vendor/support-templates/greeting.prompt",
-      from,
-      { sources: [{ path: "." }], projectRoot: PROJECT }
-    );
+    const resolved = await resolveImport("vendor/support-templates/greeting.prompt", from, {
+      sources: [{ path: "." }],
+      projectRoot: PROJECT,
+    });
     expect(resolved).toBe(resolve(join(VENDOR, "greeting.prompt")));
   });
 

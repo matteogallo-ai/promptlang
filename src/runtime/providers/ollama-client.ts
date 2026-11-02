@@ -1,12 +1,6 @@
 import type { PromptClient } from "../client";
 import type { PromptRequest, PromptResponse } from "../types";
-import {
-  ConnectionError,
-  NetworkError,
-  NotFoundError,
-  ServerError,
-  TimeoutError,
-} from "../errors";
+import { ConnectionError, NetworkError, NotFoundError, ServerError, TimeoutError } from "../errors";
 import { withRetry } from "./retry";
 
 /** Options for configuring the OllamaClient. */

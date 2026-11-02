@@ -140,10 +140,7 @@ describe("RoutingClient — onFallback callback", () => {
     const calls: number[] = [];
     const client = new RoutingClient({
       primary: failingClient(new Error("primary failed")),
-      fallbacks: [
-        failingClient(new Error("fallback0 failed")),
-        succeedingClient("third"),
-      ],
+      fallbacks: [failingClient(new Error("fallback0 failed")), succeedingClient("third")],
       onFallback: (_, index) => calls.push(index),
     });
 
@@ -157,7 +154,9 @@ describe("RoutingClient — onFallback callback", () => {
     const client = new RoutingClient({
       primary: succeedingClient(),
       fallbacks: [succeedingClient()],
-      onFallback: () => { called = true; },
+      onFallback: () => {
+        called = true;
+      },
     });
     await client.complete(BASE_REQUEST);
     expect(called).toBe(false);

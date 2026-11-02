@@ -27,9 +27,7 @@ export async function withRetry<T>(
       lastError = err as Error;
       if (isNonRetryable(lastError)) throw lastError;
       if (attempt < maxRetries && baseDelay > 0) {
-        await new Promise<void>((resolve) =>
-          setTimeout(resolve, baseDelay * 2 ** attempt)
-        );
+        await new Promise<void>((resolve) => setTimeout(resolve, baseDelay * 2 ** attempt));
       }
     }
   }

@@ -19,9 +19,7 @@ describe("v1.0 stability: package metadata", () => {
 
   test("bin entry exposes the CLI", () => {
     expect(pkg.bin).toBeDefined();
-    expect((pkg.bin as Record<string, string>).promptlang).toBe(
-      "./src/cli/cli.ts"
-    );
+    expect((pkg.bin as Record<string, string>).promptlang).toBe("./src/cli/cli.ts");
   });
 
   test("runtime is exported at ./runtime for compiled stubs to import", () => {

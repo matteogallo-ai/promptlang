@@ -42,9 +42,7 @@ export async function buildIntegrity(files: string[]): Promise<IntegrityRecord> 
  * Files that no longer exist are reported as `mismatched` too, with a
  * sentinel `<missing>` hash in the diagnostic.
  */
-export async function verifyIntegrity(
-  record: IntegrityRecord
-): Promise<IntegrityMismatch[]> {
+export async function verifyIntegrity(record: IntegrityRecord): Promise<IntegrityMismatch[]> {
   const mismatches: IntegrityMismatch[] = [];
   for (const [file, expected] of Object.entries(record)) {
     const exists = await Bun.file(file).exists();
@@ -70,9 +68,6 @@ export interface IntegrityMismatch {
  * Merges a partial integrity record into an existing one. Newer entries win.
  * Useful when only some files were re-hashed after a change.
  */
-export function mergeIntegrity(
-  base: IntegrityRecord,
-  update: IntegrityRecord
-): IntegrityRecord {
+export function mergeIntegrity(base: IntegrityRecord, update: IntegrityRecord): IntegrityRecord {
   return { ...base, ...update };
 }

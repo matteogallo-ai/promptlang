@@ -54,9 +54,7 @@ describe("OpenAIClient — headers and URL", () => {
     fetchSpy.mockResolvedValueOnce(okResponse());
     await new OpenAIClient({ apiKey: "sk-test-key" }).complete(BASE_REQUEST);
     const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
-    expect((init.headers as Record<string, string>)["Authorization"]).toBe(
-      "Bearer sk-test-key"
-    );
+    expect((init.headers as Record<string, string>)["Authorization"]).toBe("Bearer sk-test-key");
   });
 
   test("sends content-type: application/json header", async () => {
@@ -187,9 +185,7 @@ describe("OpenAIClient — errors and retries", () => {
   });
 
   test("retries on 429 and succeeds on subsequent attempt", async () => {
-    fetchSpy
-      .mockResolvedValueOnce(errResponse(429))
-      .mockResolvedValueOnce(okResponse());
+    fetchSpy.mockResolvedValueOnce(errResponse(429)).mockResolvedValueOnce(okResponse());
     const client = new OpenAIClient({ apiKey: "key", maxRetries: 3, retryDelay: 0 });
     const result = await client.complete(BASE_REQUEST);
     expect(result.content).toBe("Hello from GPT!");

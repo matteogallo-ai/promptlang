@@ -1,13 +1,7 @@
 import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import { rm, mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import {
-  hashFile,
-  hashString,
-  buildIntegrity,
-  verifyIntegrity,
-  mergeIntegrity,
-} from "./integrity";
+import { hashFile, hashString, buildIntegrity, verifyIntegrity, mergeIntegrity } from "./integrity";
 
 const ROOT = "/tmp/promptlang-integrity-test";
 
@@ -56,10 +50,16 @@ describe("buildIntegrity / verifyIntegrity", () => {
 
   test("verifyIntegrity flags a file whose contents changed after recording", async () => {
     const file = join(ROOT, "changed.prompt");
-    await Bun.write(file, `@version "1.0.0"\nprompt orig() -> string { user: "a" output: string }\n`);
+    await Bun.write(
+      file,
+      `@version "1.0.0"\nprompt orig() -> string { user: "a" output: string }\n`
+    );
     const record = await buildIntegrity([file]);
     // Mutate the file after building integrity.
-    await Bun.write(file, `@version "1.0.0"\nprompt mutated() -> string { user: "b" output: string }\n`);
+    await Bun.write(
+      file,
+      `@version "1.0.0"\nprompt mutated() -> string { user: "b" output: string }\n`
+    );
     const mismatches = await verifyIntegrity(record);
     expect(mismatches).toHaveLength(1);
     expect(mismatches[0]!.file).toBe(file);

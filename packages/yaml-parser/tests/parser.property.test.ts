@@ -70,7 +70,7 @@ type Node =
 /** Ordinary keys plus the names an object literal treats specially. */
 const key = fc.oneof(
   fc.stringMatching(/^[a-z_][a-z0-9_-]{0,6}$/),
-  fc.constantFrom("constructor", "toString", "hasOwnProperty")
+  fc.constantFrom("__proto__", "constructor", "toString", "hasOwnProperty")
 );
 
 const { node } = fc.letrec<{ node: Node }>((tie) => ({

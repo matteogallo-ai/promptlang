@@ -5,6 +5,14 @@ All notable changes to this package are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and versioning follows [SemVer 2.0](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- A `__proto__` mapping key is kept as an own data property. It used to be
+  dropped (`__proto__: x` parsed to `{}`), and a nested mapping under it
+  became the parent object's prototype.
+
 ## [1.0.0] — 2026-08-14
 
 Initial release. Extracted verbatim from PromptLang core

@@ -83,9 +83,10 @@ jobs:
           BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
           HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
         run: |
-          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
-            echo "No base commit (new branch); checking HEAD only."
-            bun run scripts/check-commits.ts "$HEAD~1..$HEAD"
-          else
-            bun run scripts/check-commits.ts "$BASE..$HEAD"
+          # A new branch has an all-zero "before", and a force-push leaves "before"
+          # unreachable; both fall back to everything not yet on main.
+          if [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            BASE=$(git merge-base origin/main "$HEAD")
+            echo "Base commit unavailable; checking $BASE..$HEAD (since main)."
           fi
+          bun run scripts/check-commits.ts "$BASE..$HEAD"

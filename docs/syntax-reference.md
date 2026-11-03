@@ -123,6 +123,11 @@ prompt classify_ticket(ticket: string) -> Category {
   Triple-quoted content is sent as written, indentation included.
 - `{{name}}` interpolates a parameter. The static rule `unbounded-template` warns when
   `name` is not a declared parameter.
+- A name must be valid in the target language, or compilation fails with its
+  position: no `-` (allowed in `@model` only), and no reserved word of the target
+  where the generated code binds the name. In TypeScript that is prompt, chain, step
+  and type names (`delete`, `if`; types also not `any`, `string`...). In Python it is
+  every name, parameters and struct fields included (`class`, `pass`).
 
 ### Generated output handling
 

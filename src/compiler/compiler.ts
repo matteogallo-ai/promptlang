@@ -1,3 +1,4 @@
+import { checkTargetNames } from "./target-names";
 import { checkTestReferences } from "./test-references";
 import type { Program, TypeDeclaration, PromptDeclaration, ChainDeclaration } from "../ast/nodes";
 import {
@@ -11,6 +12,7 @@ import pkg from "../../package.json";
 
 export function compile(program: Program, sourceFile: string): string {
   checkTestReferences(program);
+  checkTargetNames(program, "typescript");
   const timestamp = new Date().toISOString();
   const parts: string[] = [];
 

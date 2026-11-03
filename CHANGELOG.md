@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Python module names are importable.** `sentiment.v2.prompt` compiled to
   `sentiment.v2.py`, which `__init__.py` imported as a package `sentiment`;
   it is now `sentiment_v2.py`.
+- **A name the target language cannot hold is a compile error.** `prompt
+  delete(...)`, a step named `if`, a Python parameter named `class` or any name
+  with `-` compiled to a module that does not parse, with exit 0.
 - The `--help` example and the benchmark compile `docs/examples/*.prompt`:
   the folder also holds the demo's two versions of one prompt, which are
   alternatives and do not compile together.

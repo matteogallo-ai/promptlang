@@ -507,7 +507,7 @@ class Lexer {
       }
     }
     const word = this.source.slice(this.start, this.current);
-    const type = KEYWORDS[word] ?? TokenType.IDENT;
+    const type = Object.hasOwn(KEYWORDS, word) ? KEYWORDS[word]! : TokenType.IDENT;
     this.addToken(type, word);
   }
 }

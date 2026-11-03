@@ -26,7 +26,7 @@ import {
 } from "../src/runtime/providers/anthropic-client";
 import { BudgetedClient } from "../src/testing/budget";
 import { checksumMismatches, sha256 } from "./checksums";
-import { pricePerMTok } from "../src/testing/cost";
+import { callUsd, pricePerMTok } from "../src/testing/cost";
 import {
   type CaseResult,
   categoryOf,
@@ -217,8 +217,10 @@ export async function evaluate(
     },
     repeats,
     estimate_usd: estimate(corpus, repeats),
-    cost_usd:
-      calls.reduce((s, c) => s + c.input_tokens * price[0] + c.output_tokens * price[1], 0) / 1e6,
+    cost_usd: calls.reduce(
+      (s, c) => s + callUsd(AI_LINTER_MODEL, c.input_tokens, c.output_tokens),
+      0
+    ),
     charged_usd: client.spentUsd,
     complete: results.length === jobs.length,
     price_usd_per_mtok: { input: price[0], output: price[1] },

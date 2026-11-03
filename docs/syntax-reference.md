@@ -218,7 +218,9 @@ with its message.
   `@model`, without retries. Before any call it prints an estimate per file (input ≈
   prompt and argument characters ÷ 3, plus, for a chain, every earlier step's full
   output; output = calls × `@max_tokens`, default 1024) priced
-  from a table of Claude models, and asks for confirmation; `--yes` approves without
+  from a table of Claude models, each call on the rate card its own prompt length
+  selects (Claude Haiku 5.5 bills five times its rate for a prompt over 100K
+  tokens), and asks for confirmation; `--yes` approves without
   asking and is required without a terminal. A model missing from the price table is
   refused. `mock:` is ignored.
 - `--json` prints `{ ok, mode, usage, files: [{ file, error?, results }] }`.

@@ -12,12 +12,12 @@ export function estimateLinterCost(
   model: string = AI_LINTER_MODEL
 ): CostEstimate {
   let calls = 0;
-  let chars = 0;
+  const chars: number[] = [];
   for (const ctx of contexts) {
     for (const d of ctx.ast.declarations) {
       if (d.kind !== "PromptDeclaration") continue;
       calls++;
-      chars += AI_LINTER_SYSTEM_PROMPT.length + buildAnalysisUserMessage(d).length;
+      chars.push(AI_LINTER_SYSTEM_PROMPT.length + buildAnalysisUserMessage(d).length);
     }
   }
   return priceEstimate(model, calls, chars, calls * AI_LINTER_MAX_TOKENS);

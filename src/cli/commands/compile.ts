@@ -16,7 +16,7 @@ import {
 } from "../../config/config";
 import { YamlParseError } from "@promptlang/yaml-parser";
 import { mkdir } from "node:fs/promises";
-import { join, basename, relative, resolve } from "node:path";
+import { join, basename, isAbsolute, relative, resolve } from "node:path";
 
 const TARGETS = ["typescript", "python"] as const;
 type Target = (typeof TARGETS)[number];
@@ -196,9 +196,10 @@ export async function runCompile(args: string[]): Promise<number> {
 
   if (emitTsconfig && target !== "python") {
     const tsconfigPath = join(outDir, "tsconfig.json");
-    await Bun.write(tsconfigPath, buildTsconfig(runtimePath));
+    const pathsEntry = asPathsEntry(runtimePath);
+    await Bun.write(tsconfigPath, buildTsconfig(pathsEntry));
     console.log(`  emitted   ${tsconfigPath}`);
-    console.log(`            (paths "@promptlang/core/runtime" → ${runtimePath})`);
+    console.log(`            (paths "@promptlang/core/runtime" → ${pathsEntry})`);
     console.log(`            Note: the mapping points at this checkout's runtime source;`);
     console.log(`            with @promptlang/core installed, the import resolves without it.`);
   }
@@ -212,7 +213,15 @@ function computeDefaultRuntimePath(outDir: string): string {
   return relative(outDirAbs, runtimeAbs);
 }
 
-function buildTsconfig(runtimePath: string): string {
+// Without baseUrl (removed in TypeScript 7), a paths entry resolves from the
+// tsconfig's directory and must start with "./" or "../" (TS5090 otherwise);
+// TypeScript accepts either separator, and path.relative() returns ..\ on Windows.
+function asPathsEntry(path: string): string {
+  if (isAbsolute(path) || /^\.\.?[\\/]/.test(path)) return path;
+  return `./${path}`;
+}
+
+function buildTsconfig(pathsEntry: string): string {
   return `${JSON.stringify(
     {
       compilerOptions: {
@@ -223,9 +232,8 @@ function buildTsconfig(runtimePath: string): string {
         noImplicitAny: true,
         esModuleInterop: true,
         skipLibCheck: true,
-        baseUrl: ".",
         paths: {
-          "@promptlang/core/runtime": [runtimePath],
+          "@promptlang/core/runtime": [pathsEntry],
         },
       },
       include: ["./*.ts"],

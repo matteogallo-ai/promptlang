@@ -22,6 +22,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   data instead of being dropped or replacing the object's prototype, and a backslash
   in a single-quoted string is literal.
 
+### Changed
+- `compile --emit-tsconfig` no longer writes `baseUrl`, which TypeScript 7 rejects
+  (TS5102). A `--runtime-path` that is neither absolute nor starts with `./` or
+  `../` (either separator) is written with a leading `./`, since `paths` entries
+  without `baseUrl` must be relative. A tsconfig emitted by an earlier version
+  keeps `baseUrl`: re-run `compile --emit-tsconfig` before moving to TypeScript 7
+  (deleting the line alone leaves a non-relative `paths` entry, TS5090).
+- The repository builds and type-checks with TypeScript 7 (`typescript` ^7.0.2).
+
 ## [2.0.0] - 2026-11-02
 
 Remediation after the 2026-11-02 external audit, and the first release of

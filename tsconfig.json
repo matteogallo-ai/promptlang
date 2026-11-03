@@ -3,7 +3,6 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "baseUrl": ".",
     "paths": {
       "@promptlang/core": ["./src/index.ts"],
       "@promptlang/core/runtime": ["./src/runtime/index.ts"]

@@ -123,9 +123,11 @@ prompt classify_ticket(ticket: string) -> Category {
   Triple-quoted content is sent as written, indentation included.
 - `{{name}}` interpolates a parameter. The static rule `unbounded-template` warns when
   `name` is not a declared parameter. A parameter whose type is a struct declared in
-  the same file (directly or through an alias) is inserted as compact JSON, the same
-  text in TypeScript and Python; one whose type comes from an imported file is
-  inserted as the target language prints it.
+  the same file (directly or through an alias) is inserted as compact JSON. Strings,
+  booleans, `null` and nesting are the same text in TypeScript and Python; numbers
+  are printed by each language (`3.0` in Python for a `float`, `3` in TypeScript).
+  A parameter whose type comes from an imported file is inserted as the target
+  language prints it.
 
 ### Generated output handling
 

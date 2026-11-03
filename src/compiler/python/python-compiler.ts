@@ -15,6 +15,7 @@ import {
 } from "./python-code-generator";
 import pkg from "../../../package.json";
 import { structParamNames } from "../code-generator";
+import { extractTemplateVars } from "../template-compiler";
 
 /** Compiles a PromptLang Program to a Python source string. */
 export function compilePython(program: Program, sourceFile: string): string {
@@ -45,9 +46,16 @@ export function compilePython(program: Program, sourceFile: string): string {
     parts.push(`from typing import ${typingImports.join(", ")}`);
   }
   const registry = buildPythonTypeRegistry(program);
-  const insertsJson = program.declarations.some(
-    (d) => d.kind === "PromptDeclaration" && structParamNames(d.parameters, registry).size > 0
-  );
+  const insertsJson = program.declarations.some((d) => {
+    if (d.kind !== "PromptDeclaration") return false;
+    const json = structParamNames(d.parameters, registry);
+    return d.sections.some(
+      (s) =>
+        s.kind === "MessageSection" &&
+        s.content.isTemplate &&
+        extractTemplateVars(s.content.value).some((v) => json.has(v))
+    );
+  });
   if (insertsJson) parts.push("import json as _promptlang_json");
   parts.push(`from .promptlang_runtime import PromptClient, PromptRequest`);
   parts.push("");

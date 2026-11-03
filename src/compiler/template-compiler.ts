@@ -26,7 +26,9 @@ export function compileStringLiteral(
 
   if (isTemplate) {
     const withInterpolations = escaped.replace(/\{\{(\w+)\}\}/g, (_m, name: string) => {
-      const value = jsonNames.has(name) ? `JSON.stringify(input.${name})` : `input.${name}`;
+      const value = jsonNames.has(name)
+        ? `globalThis.JSON.stringify(input.${name})`
+        : `input.${name}`;
       if (!optionalNames.has(name)) return `\${${value}}`;
       return jsonNames.has(name)
         ? `\${input.${name} === undefined ? "" : ${value}}`

@@ -44,7 +44,8 @@ export function compilePythonStringLiteral(
     let result = withEscapedBraces;
     for (let i = 0; i < placeholders.length; i++) {
       const name = placeholders[i]!;
-      // The same text as the TypeScript target's JSON.stringify.
+      // The separators and ensure_ascii of JSON.stringify; numbers are printed
+      // by each language (Python writes 3.0 and 1e+20, TypeScript 3 and 1e20).
       const json = `_promptlang_json.dumps(input['${name}'], ensure_ascii=False, separators=(',', ':'))`;
       const access = jsonNames.has(name)
         ? optionalNames.has(name)

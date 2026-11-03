@@ -19,6 +19,12 @@ type Alias = Ctx
 prompt reply(ctx: Ctx, other: Alias, inline: struct { tag: string }, extra?: Ctx, q: string) -> string {
   user: "<c>{{ctx}}</c> <o>{{other}}</o> <i>{{inline}}</i> <e>{{extra}}</e> <q>{{q}}</q>"
 }
+prompt JSON(ctx: Ctx, extra?: Ctx) -> string {
+  system: """Say "hi" to:
+<c>{{ctx}}</c>
+<e>{{extra}}</e>"""
+  user: "go"
+}
 `;
 
 const INPUT = {
@@ -27,24 +33,30 @@ const INPUT = {
   inline: { tag: "a" },
   q: "hi",
 };
+// A prompt named JSON hides the global in TypeScript; a present optional struct; a
+// multi-line system section (a triple-quoted f-string in Python).
+const SYSTEM_INPUT = { ctx: { plan: "pro", seats: 3 }, extra: { plan: "x", seats: 2 } };
+const SYSTEM_EXPECTED =
+  'Say "hi" to:\n<c>{"plan":"pro","seats":3}</c>\n<e>{"plan":"x","seats":2}</e>';
 const EXPECTED =
   '<c>{"plan":"pro","seats":3}</c> <o>{"plan":"é\\"x","seats":1}</o> <i>{"tag":"a"}</i> <e></e> <q>hi</q>';
+
+type Call = (input: object, c: MockClient) => Promise<string>;
 
 describe("a struct parameter reaches the model as JSON", () => {
   // It was interpolated as "[object Object]" in TypeScript and as a Python dict repr.
   test("in generated TypeScript", async () => {
-    const mod = await importCompiled<{
-      reply: (input: typeof INPUT, c: MockClient) => Promise<string>;
-    }>(compile(parse(tokenize(SOURCE)), "reply.prompt"));
-    const sent: PromptRequest[] = [];
-    await mod.reply(
-      INPUT,
-      new MockClient((req) => {
-        sent.push(req);
-        return { content: "ok" };
-      })
+    const mod = await importCompiled<{ reply: Call; JSON: Call }>(
+      compile(parse(tokenize(SOURCE)), "reply.prompt")
     );
-    expect(sent[0]!.messages[0]!.content).toBe(EXPECTED);
+    const sent: PromptRequest[] = [];
+    const client = new MockClient((req) => {
+      sent.push(req);
+      return { content: "ok" };
+    });
+    await mod.reply(INPUT, client);
+    await mod.JSON(SYSTEM_INPUT, client);
+    expect(sent.map((r) => r.messages[0]!.content)).toEqual([EXPECTED, SYSTEM_EXPECTED]);
   });
 
   test("in generated Python, byte for byte the same", async () => {
@@ -59,20 +71,31 @@ describe("a struct parameter reaches the model as JSON", () => {
       );
       const script = `
 import asyncio, json, sys
-from pkg.reply import reply
+from pkg import reply as m
 from pkg.promptlang_runtime import MockClient
 sent = []
 def answer(req):
     sent.append(req)
     return {"content": "ok"}
-asyncio.run(reply(json.loads(sys.argv[1]), MockClient(answer)))
-sys.stdout.write(json.dumps(sent[0]["messages"][0]["content"]))
+asyncio.run(m.reply(json.loads(sys.argv[1]), MockClient(answer)))
+asyncio.run(m.JSON(json.loads(sys.argv[2]), MockClient(answer)))
+sys.stdout.write(json.dumps([r["messages"][0]["content"] for r in sent]))
 `;
-      const r = Bun.spawnSync(["python3", "-c", script, JSON.stringify(INPUT)], { cwd: dir });
+      const args = [JSON.stringify(INPUT), JSON.stringify(SYSTEM_INPUT)];
+      const r = Bun.spawnSync(["python3", "-c", script, ...args], { cwd: dir });
       if (r.exitCode !== 0) throw new Error(r.stderr.toString());
-      expect(JSON.parse(r.stdout.toString())).toBe(EXPECTED);
+      expect(JSON.parse(r.stdout.toString())).toEqual([EXPECTED, SYSTEM_EXPECTED]);
     } finally {
       await rm(dir, { recursive: true, force: true });
     }
+  });
+
+  // A module without one stays as it was, and an unused import would be flagged by linters.
+  test("Python imports json only where a struct parameter is inserted", () => {
+    const unused = `@version "1.0.0"\ntype Ctx = struct { a: string }\nprompt p(c: Ctx) -> string {\n  user: "x"\n}\n`;
+    expect(compilePython(parse(tokenize(unused)), "p.prompt")).not.toContain("import json");
+    expect(compilePython(parse(tokenize(SOURCE)), "reply.prompt")).toContain(
+      "import json as _promptlang_json"
+    );
   });
 });

@@ -5,6 +5,7 @@ import type {
   PromptDeclaration,
   TestDeclaration,
 } from "../ast/nodes";
+import { buildTypeRegistry, structParamNames, type TypeRegistry } from "../compiler/code-generator";
 import { extractTemplateVars } from "../compiler/template-compiler";
 
 /**
@@ -105,18 +106,23 @@ function literalText(a: CallExpression["arguments"][number]): string | null {
  * arguments by name. A chain step can insert a chain argument, a literal of the
  * step or an earlier step's output, so each placeholder counts as the longest of
  * those. It has to be an upper bound: the cap refuses a call longer than estimated.
+ * A struct parameter is inserted as JSON: a literal counts as its JSON text, and
+ * text of unknown content as the most JSON can make of it, 6 characters each
+ * (`\u001f`) and 2 quotes.
  */
 function renderedChars(
   call: CallExpression,
   prompt: PromptDeclaration,
-  step: { literals: number[]; earlierSteps: number; maxTokens: number } | null
+  step: { literals: number[]; earlierSteps: number; maxTokens: number } | null,
+  registry: TypeRegistry
 ): number {
+  const json = structParamNames(prompt.parameters, registry);
   const byName = new Map<string, number>();
   call.arguments.forEach((a, i) => {
     const value = literalText(a);
     if (value === null) return;
     const name = a.kind === "NamedArgument" ? a.name : prompt.parameters[i]?.name;
-    if (name) byName.set(name, value.length);
+    if (name) byName.set(name, json.has(name) ? JSON.stringify(value).length : value.length);
   });
   const longest = Math.max(
     step ? ABSENT_OR_OBJECT_CHARS : 0,
@@ -129,7 +135,7 @@ function renderedChars(
     if (s.kind !== "MessageSection") continue;
     n += s.content.value.length;
     for (const name of extractTemplateVars(s.content.value))
-      n += (step ? undefined : byName.get(name)) ?? longest;
+      n += (step ? undefined : byName.get(name)) ?? (json.has(name) ? 6 * longest + 2 : longest);
   }
   return n;
 }
@@ -185,6 +191,7 @@ export function estimateLiveCost(program: Program): CostEstimate | null {
   const maxTokens = program.metadata.find((m) => m.kind === "MaxTokensMetadata")?.value;
   const perCallOutput = typeof maxTokens === "number" ? maxTokens : DEFAULT_MAX_TOKENS;
 
+  const registry = buildTypeRegistry(program);
   let calls = 0;
   let inputChars = 0;
   for (const t of tests) {
@@ -196,7 +203,7 @@ export function estimateLiveCost(program: Program): CostEstimate | null {
       const step = direct
         ? null
         : { literals: r.literals, earlierSteps: i, maxTokens: perCallOutput };
-      inputChars += renderedChars(call, r.prompt, step);
+      inputChars += renderedChars(call, r.prompt, step, registry);
     }
   }
   return priceEstimate(model, calls, inputChars, calls * perCallOutput);

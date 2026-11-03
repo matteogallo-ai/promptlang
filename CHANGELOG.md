@@ -35,6 +35,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Code that catches `InvalidRequestError` for a 404 catches `NotFoundError`.
 
 ### Fixed
+- **A struct parameter reaches the model as JSON.** `{{ctx}}` with `ctx` a struct
+  was sent as `[object Object]` from TypeScript and as a dict repr from Python;
+  both now send `{"plan":"pro","seats":3}` (numbers as each language prints them).
 - **Struct outputs are no longer cast unchecked.** Generated TypeScript
   `JSON.parse`d and cast the answer, and generated Python returned `json.loads`'
   result, so `{"amount": "not a number", "hacked": true}` came back typed as

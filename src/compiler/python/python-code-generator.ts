@@ -10,7 +10,7 @@ import type {
 import { mapPythonType, toPythonPascalCase, toPythonConstName } from "./python-type-mapper";
 import { compilePythonStringLiteral } from "./python-template-compiler";
 import { CompilerError } from "../errors";
-import { optionalParamNames, type TypeRegistry } from "../code-generator";
+import { optionalParamNames, structParamNames, type TypeRegistry } from "../code-generator";
 import { outputSpec } from "../output-schema";
 import type { CallableRegistry } from "../chain-compiler";
 
@@ -150,7 +150,8 @@ export function generatePythonPromptDeclaration(
       section.content.value,
       section.content.isTemplate,
       paramNames,
-      optionalParamNames(parameters)
+      optionalParamNames(parameters),
+      structParamNames(parameters, registry)
     );
     parts.push(`            {`);
     parts.push(`                "role": "${section.role}",`);

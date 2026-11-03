@@ -1,6 +1,11 @@
 import type { PromptClient } from "../client";
 import type { PromptRequest, PromptResponse } from "../types";
-import { AllProvidersFailedError, AuthenticationError, InvalidRequestError } from "../errors";
+import {
+  AllProvidersFailedError,
+  AuthenticationError,
+  IncompleteResponseError,
+  InvalidRequestError,
+} from "../errors";
 
 /**
  * A provider with its own model names. Generated code sends one model (the
@@ -75,8 +80,10 @@ export class RoutingClient implements PromptClient {
         const error = err as Error;
         errors.push(error);
 
-        // A wrong API key is never retryable via fallback.
-        if (error instanceof AuthenticationError) throw error;
+        // A wrong API key is never retryable via fallback, and an incomplete answer
+        // is not sent elsewhere (see IncompleteResponseError).
+        if (error instanceof AuthenticationError || error instanceof IncompleteResponseError)
+          throw error;
 
         // Notify about the switch before trying the next provider.
         if (i + 1 < this.entries.length) {

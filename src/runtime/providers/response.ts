@@ -4,42 +4,35 @@ import { IncompleteResponseError, InvalidResponseError } from "../errors";
 export type StopKind = "complete" | "max_tokens" | "refusal" | "unexpected_stop";
 
 /**
- * Throws IncompleteResponseError unless generation ended normally with some text.
- * `raw` is the provider's own stop value, quoted in the message so it can be looked up.
- * The model's text never enters the message: it is untrusted and may be long.
+ * Throws IncompleteResponseError unless generation ended normally with some
+ * non-blank text. `decidedBy` is the provider's stop value, or the field that
+ * carried a refusal, quoted so it can be looked up; it comes from the provider,
+ * so it is capped. The model's text never enters the message: it is untrusted
+ * and may be long.
  */
 export function requireCompleteAnswer(
   provider: string,
   stop: StopKind,
-  raw: string,
+  decidedBy: string,
   text: string,
-  maxTokens: number | undefined
+  maxTokens: number | undefined,
+  usage: { input_tokens: number; output_tokens: number } | undefined
 ): void {
+  const fail = (message: string, reason: IncompleteResponseError["reason"]): never => {
+    throw new IncompleteResponseError(message, reason, provider, usage);
+  };
+  const quoted = `\`${decidedBy.slice(0, 64)}\``;
   if (stop === "max_tokens") {
     const limit = maxTokens === undefined ? "the provider default" : `max_tokens ${maxTokens}`;
-    throw new IncompleteResponseError(
+    fail(
       `${provider} stopped at the output limit (${limit}) before finishing the answer; raise @max_tokens on the prompt`,
-      "max_tokens",
-      provider
+      "max_tokens"
     );
   }
-  if (stop === "refusal") {
-    throw new IncompleteResponseError(
-      `${provider} refused to answer (stop reason \`${raw}\`)`,
-      "refusal",
-      provider
-    );
-  }
-  if (stop === "unexpected_stop") {
-    throw new IncompleteResponseError(
-      `${provider} stopped with \`${raw}\` before giving a final answer`,
-      "unexpected_stop",
-      provider
-    );
-  }
-  if (text === "") {
-    throw new IncompleteResponseError(`${provider} returned no text`, "empty", provider);
-  }
+  if (stop === "refusal") fail(`${provider} refused to answer (${quoted})`, "refusal");
+  if (stop === "unexpected_stop")
+    fail(`${provider} stopped with ${quoted} before giving a final answer`, "unexpected_stop");
+  if (text.trim() === "") fail(`${provider} returned no text`, "empty");
 }
 
 /** Rejects missing, empty or whitespace API keys before any request is sent. */

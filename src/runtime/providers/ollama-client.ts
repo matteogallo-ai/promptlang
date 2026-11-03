@@ -98,8 +98,11 @@ export class OllamaClient extends BaseHttpClient {
       invalidField("ollama", "message.content");
     }
     const content = (data.message as { content: string }).content;
-    const inputTokens = typeof data.prompt_eval_count === "number" ? data.prompt_eval_count : 0;
-    const outputTokens = typeof data.eval_count === "number" ? data.eval_count : 0;
+    // Ollama uses prompt_eval_count / eval_count; we normalize to our interface.
+    const counts = {
+      input_tokens: typeof data.prompt_eval_count === "number" ? data.prompt_eval_count : 0,
+      output_tokens: typeof data.eval_count === "number" ? data.eval_count : 0,
+    };
     // Ollama reports `length` when num_predict cut generation; older servers omit done_reason.
     const raw = typeof data.done_reason === "string" ? data.done_reason : "";
     requireCompleteAnswer(
@@ -107,15 +110,9 @@ export class OllamaClient extends BaseHttpClient {
       raw === "length" ? "max_tokens" : "complete",
       raw,
       content,
-      request.max_tokens
+      request.max_tokens,
+      counts
     );
-    return {
-      content,
-      usage: {
-        // Ollama uses prompt_eval_count / eval_count; we normalize to our interface.
-        input_tokens: inputTokens,
-        output_tokens: outputTokens,
-      },
-    };
+    return { content, usage: counts };
   }
 }

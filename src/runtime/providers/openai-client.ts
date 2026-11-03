@@ -24,11 +24,15 @@ export interface OpenAIClientOptions {
   organization?: string;
 }
 
-/** `stop` is a finished answer; a body with no `finish_reason` is judged by its text alone. */
+/**
+ * `stop` is a finished answer; a body with no `finish_reason` is judged by its
+ * text alone. Any other value is an unexpected stop, including the non-standard
+ * values some OpenAI-compatible servers send on success.
+ */
 function openaiStop(raw: string): StopKind {
   if (raw === "" || raw === "stop") return "complete";
   if (raw === "length") return "max_tokens";
-  if (raw === "content_filter" || raw === "refusal") return "refusal";
+  if (raw === "content_filter") return "refusal";
   return "unexpected_stop";
 }
 
@@ -84,17 +88,21 @@ export class OpenAIClient extends BaseHttpClient {
     ) {
       invalidField("openai", "usage");
     }
-    const refused = typeof message.refusal === "string" && message.refusal !== "";
+    // OpenAI uses prompt_tokens / completion_tokens; we normalize to our interface.
+    const counts = { input_tokens: usage.prompt_tokens, output_tokens: usage.completion_tokens };
     const finish = (choice as Record<string, unknown>).finish_reason;
-    const raw = refused ? "refusal" : typeof finish === "string" ? finish : "";
-    requireCompleteAnswer("openai", openaiStop(raw), raw, content, request.max_tokens);
-    return {
-      content,
-      usage: {
-        // OpenAI uses prompt_tokens / completion_tokens; we normalize to our interface.
-        input_tokens: usage.prompt_tokens,
-        output_tokens: usage.completion_tokens,
-      },
-    };
+    const raw = typeof finish === "string" ? finish : "";
+    // A refusal can arrive in its own field with finish_reason "stop".
+    if (typeof message.refusal === "string" && message.refusal !== "")
+      requireCompleteAnswer(
+        "openai",
+        "refusal",
+        "message.refusal",
+        content,
+        request.max_tokens,
+        counts
+      );
+    requireCompleteAnswer("openai", openaiStop(raw), raw, content, request.max_tokens, counts);
+    return { content, usage: counts };
   }
 }

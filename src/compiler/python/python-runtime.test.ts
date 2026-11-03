@@ -43,13 +43,13 @@ ANTHROPIC_OK = json.dumps({"content": [{"type": "text", "text": "ok"}],
 OPENAI_OK = json.dumps({"choices": [{"message": {"content": "ok"}}],
                         "usage": {"prompt_tokens": 3, "completion_tokens": 1}})
 
-def outcome(make, status, text):
+def outcome(make, status, text, req=REQ):
     httpx.NEXT[:] = [(status, text)]
     try:
-        res = asyncio.run(make().complete(REQ))
+        res = asyncio.run(make().complete(req))
         return {"ok": res}
     except rt.IncompleteResponseError as e:
-        return {"error": type(e).__name__, "reason": e.reason, "message": str(e)}
+        return {"error": type(e).__name__, "reason": e.reason, "message": str(e), "usage": e.usage}
     except rt.PromptClientError as e:
         return {"error": type(e).__name__, "message": str(e)}
 
@@ -99,6 +99,9 @@ out = {
     "openai_length": outcome(openai, 200, openai_body({"content": "trunc"}, "length")),
     "openai_filtered": outcome(openai, 200, openai_body({"content": None}, "content_filter")),
     "openai_refusal": outcome(openai, 200, openai_body({"content": None, "refusal": "no"}, "stop")),
+    "anthropic_default_limit": outcome(anthropic, 200, anthropic_body([], "max_tokens"),
+                                       {k: v for k, v in REQ.items() if k != "max_tokens"}),
+    "anthropic_blank": outcome(anthropic, 200, anthropic_body([{"type": "text", "text": " \\n "}], "end_turn")),
 }
 json.dump(out, sys.stdout)
 `;
@@ -197,6 +200,7 @@ describe("Python runtime guards", () => {
       error: "IncompleteResponseError",
       reason: "empty",
       message: "openai returned no text",
+      usage: { input_tokens: 1, output_tokens: 1 },
     });
   });
 
@@ -206,13 +210,27 @@ describe("Python runtime guards", () => {
       reason: "max_tokens",
       message:
         "anthropic stopped at the output limit (max_tokens 64) before finishing the answer; raise @max_tokens on the prompt",
+      usage: { input_tokens: 3, output_tokens: 1 },
     });
-    expect(results.anthropic_refusal).toMatchObject({ reason: "refusal" });
-    expect(results.anthropic_pause).toMatchObject({ reason: "unexpected_stop" });
+    expect(results.anthropic_default_limit).toMatchObject({
+      message: expect.stringContaining("(max_tokens 1024)"),
+    });
+    expect(results.anthropic_refusal).toMatchObject({
+      reason: "refusal",
+      message: "anthropic refused to answer (`refusal`)",
+    });
+    expect(results.anthropic_pause).toMatchObject({
+      reason: "unexpected_stop",
+      message: "anthropic stopped with `pause_turn` before giving a final answer",
+    });
+    expect(results.anthropic_blank).toMatchObject({ reason: "empty" });
     expect(results.anthropic_empty).toMatchObject({ reason: "empty" });
     expect(results.anthropic_stop_sequence).toMatchObject({ ok: { content: "ok" } });
     expect(results.openai_length).toMatchObject({ reason: "max_tokens" });
     expect(results.openai_filtered).toMatchObject({ reason: "refusal" });
-    expect(results.openai_refusal).toMatchObject({ reason: "refusal" });
+    expect(results.openai_refusal).toMatchObject({
+      reason: "refusal",
+      message: "openai refused to answer (`message.refusal`)",
+    });
   });
 });

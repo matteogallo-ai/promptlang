@@ -106,16 +106,15 @@ export class AnthropicClient extends BaseHttpClient {
       .map((block) => block.text)
       .join("");
     const raw = typeof data.stop_reason === "string" ? data.stop_reason : "";
+    const counts = { input_tokens: usage.input_tokens, output_tokens: usage.output_tokens };
     requireCompleteAnswer(
       "anthropic",
       anthropicStop(raw),
       raw,
       text,
-      request.max_tokens ?? DEFAULT_MAX_TOKENS
+      request.max_tokens ?? DEFAULT_MAX_TOKENS,
+      counts
     );
-    return {
-      content: text,
-      usage: { input_tokens: usage.input_tokens, output_tokens: usage.output_tokens },
-    };
+    return { content: text, usage: counts };
   }
 }

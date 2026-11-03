@@ -106,7 +106,15 @@ describe("runTests in live mode", () => {
   test("an incomplete response is a configuration failure", async () => {
     const client: PromptClient = {
       async complete() {
-        throw new IncompleteResponseError("stopped at the output limit", "max_tokens", "anthropic");
+        throw new IncompleteResponseError(
+          "stopped at the output limit",
+          "max_tokens",
+          "anthropic",
+          {
+            input_tokens: 7,
+            output_tokens: 1024,
+          }
+        );
       },
     };
     const program = parse(
@@ -117,6 +125,8 @@ describe("runTests in live mode", () => {
       kind: "configuration",
       message: "IncompleteResponseError: stopped at the output limit",
     });
+    // Billed even though no answer came back.
+    expect(r?.usage).toEqual({ input_tokens: 7, output_tokens: 1024 });
   });
 
   test("a provider failure is reported as a provider error, not as a failed assertion", async () => {

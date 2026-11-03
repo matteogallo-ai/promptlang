@@ -84,13 +84,17 @@ class InvalidResponseError(PromptClientError):
 class IncompleteResponseError(PromptClientError):
     """A well-formed 2xx body that is not a complete answer.
 
-    reason is "max_tokens", "refusal", "unexpected_stop" or "empty". The same
-    request gets the same stop, so the prompt or its @max_tokens must change.
+    reason is "max_tokens", "refusal", "unexpected_stop" or "empty". Not retried:
+    a cut answer is cut again at the same limit, and a refusal must not be
+    routed around.
     """
 
-    def __init__(self, message: str, reason: str, provider: str | None = None):
+    def __init__(self, message: str, reason: str, provider: str | None = None,
+                 usage: dict | None = None):
         super().__init__(message, provider)
         self.reason = reason
+        # What the provider billed for the call: a cut answer is billed in full.
+        self.usage = usage
 
 
 # max_tokens sent when the prompt has no @max_tokens; the Messages API requires one.
@@ -138,21 +142,24 @@ def _read_json_object(response: Any, provider: str) -> dict:
     return data
 
 
-def _require_complete_answer(provider: str, stop: str, raw: str, text: str, max_tokens: int | None) -> None:
-    # stop is "complete", "max_tokens", "refusal" or "unexpected_stop". The model's
-    # text never enters the message: it is untrusted and may be long.
+def _require_complete_answer(provider: str, stop: str, decided_by: str, text: str,
+                             max_tokens: int | None, usage: dict) -> None:
+    # stop is "complete", "max_tokens", "refusal" or "unexpected_stop". decided_by
+    # comes from the provider, so it is capped; the model's text never enters the
+    # message: it is untrusted and may be long.
+    quoted = f"\`{decided_by[:64]}\`"
     if stop == "max_tokens":
         limit = "the provider default" if max_tokens is None else f"max_tokens {max_tokens}"
         raise IncompleteResponseError(
             f"{provider} stopped at the output limit ({limit}) before finishing the answer; raise @max_tokens on the prompt",
-            "max_tokens", provider)
+            "max_tokens", provider, usage)
     if stop == "refusal":
-        raise IncompleteResponseError(f"{provider} refused to answer (stop reason \`{raw}\`)", "refusal", provider)
+        raise IncompleteResponseError(f"{provider} refused to answer ({quoted})", "refusal", provider, usage)
     if stop == "unexpected_stop":
         raise IncompleteResponseError(
-            f"{provider} stopped with \`{raw}\` before giving a final answer", "unexpected_stop", provider)
-    if text == "":
-        raise IncompleteResponseError(f"{provider} returned no text", "empty", provider)
+            f"{provider} stopped with {quoted} before giving a final answer", "unexpected_stop", provider, usage)
+    if text.strip() == "":
+        raise IncompleteResponseError(f"{provider} returned no text", "empty", provider, usage)
 
 
 def _anthropic_stop(raw: str) -> str:
@@ -171,7 +178,7 @@ def _openai_stop(raw: str) -> str:
         return "complete"
     if raw == "length":
         return "max_tokens"
-    if raw in ("content_filter", "refusal"):
+    if raw == "content_filter":
         return "refusal"
     return "unexpected_stop"
 
@@ -265,17 +272,11 @@ class AnthropicClient(PromptClient):
             for block in blocks
             if isinstance(block, dict) and block.get("type") == "text" and isinstance(block.get("text"), str)
         )
+        counts = {"input_tokens": usage["input_tokens"], "output_tokens": usage["output_tokens"]}
         raw = data.get("stop_reason") if isinstance(data.get("stop_reason"), str) else ""
         _require_complete_answer("anthropic", _anthropic_stop(raw), raw, content,
-                                 request.get("max_tokens", DEFAULT_MAX_TOKENS))
-
-        return {
-            "content": content,
-            "usage": {
-                "input_tokens": usage["input_tokens"],
-                "output_tokens": usage["output_tokens"],
-            },
-        }
+                                 request.get("max_tokens", DEFAULT_MAX_TOKENS), counts)
+        return {"content": content, "usage": counts}
 
 
 # ---- OpenAI provider ----
@@ -328,17 +329,15 @@ class OpenAIClient(PromptClient):
         if not isinstance(usage, dict) or not _is_count(usage.get("prompt_tokens")) or not _is_count(usage.get("completion_tokens")):
             _invalid_field("openai", "usage")
         content = content or ""
+        counts = {"input_tokens": usage["prompt_tokens"], "output_tokens": usage["completion_tokens"]}
         refusal = choice["message"].get("refusal")
+        if isinstance(refusal, str) and refusal:
+            # A refusal can arrive in its own field with finish_reason "stop".
+            _require_complete_answer("openai", "refusal", "message.refusal", content, request.get("max_tokens"), counts)
         finish = choice.get("finish_reason")
-        raw = "refusal" if isinstance(refusal, str) and refusal else (finish if isinstance(finish, str) else "")
-        _require_complete_answer("openai", _openai_stop(raw), raw, content, request.get("max_tokens"))
-        return {
-            "content": content,
-            "usage": {
-                "input_tokens": usage["prompt_tokens"],
-                "output_tokens": usage["completion_tokens"],
-            },
-        }
+        raw = finish if isinstance(finish, str) else ""
+        _require_complete_answer("openai", _openai_stop(raw), raw, content, request.get("max_tokens"), counts)
+        return {"content": content, "usage": counts}
 `;
 
 /** Returns the autonomous Python runtime source to be written alongside compiled files. */

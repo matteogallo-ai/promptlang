@@ -1,5 +1,6 @@
 import type { AstNode, Program, StructType, TypeExpression } from "../ast/nodes";
 import { CompilerError } from "./errors";
+import { toPascalCase } from "./type-mapper";
 
 export type Target = "typescript" | "python";
 
@@ -28,6 +29,73 @@ const PYTHON_RESERVED = new Set(
 );
 
 const LANGUAGE: Record<Target, string> = { typescript: "TypeScript", python: "Python" };
+
+/** Module-level names the generated code imports or relies on, which a declaration would shadow. */
+const GENERATED_GLOBALS: Record<Target, ReadonlySet<string>> = {
+  typescript: new Set(["PromptClient", "PromptRequest", "Promise"]),
+  python: new Set([
+    "PromptClient",
+    "PromptRequest",
+    "TypedDict",
+    "NotRequired",
+    "Literal",
+    "annotations",
+    "str",
+    "float",
+    "bool",
+    "int",
+    "list",
+    "dict",
+  ]),
+};
+
+/** Whether `name` is a reserved word of `target`, e.g. to name a Python module. */
+export function isReservedWord(name: string, target: Target): boolean {
+  return (target === "python" ? PYTHON_RESERVED : TYPESCRIPT_RESERVED).has(name);
+}
+
+interface Emitted {
+  name: string;
+  /** The declaration it comes from, for the message: "the prompt foo". */
+  source: string;
+  node: AstNode;
+}
+
+/**
+ * Every module-level name the generated code declares for `program`: each
+ * declaration's own name and those derived from it (`FooInput`, `foo_meta` or
+ * `FOO_META`, Python's `_FOO_VALUES`).
+ */
+function emittedNames(program: Program, target: Target): Emitted[] {
+  const out: Emitted[] = [];
+  for (const d of program.declarations) {
+    if (d.kind === "TypeDeclaration") {
+      const source = `the type ${d.name}`;
+      out.push({ name: d.name, source, node: d });
+      if (target === "python" && d.definition.kind === "EnumType")
+        out.push({ name: `_${d.name.toUpperCase()}_VALUES`, source, node: d });
+    } else if (d.kind === "PromptDeclaration" || d.kind === "ChainDeclaration") {
+      const source = `the ${d.kind === "PromptDeclaration" ? "prompt" : "chain"} ${d.name}`;
+      out.push({ name: d.name, source, node: d });
+      out.push({ name: `${toPascalCase(d.name)}Input`, source, node: d });
+      if (d.kind === "PromptDeclaration")
+        out.push({
+          name: target === "python" ? `${d.name.toUpperCase()}_META` : `${d.name}_meta`,
+          source,
+          node: d,
+        });
+    }
+  }
+  return out;
+}
+
+/** The names a module exports, which an index re-exporting several modules must hold once each. */
+export function exportedNames(program: Program, target: Target): string[] {
+  // Python's `import *` skips names that start with `_`.
+  return emittedNames(program, target)
+    .map((e) => e.name)
+    .filter((n) => target === "typescript" || !n.startsWith("_"));
+}
 
 interface Binding {
   name: string;
@@ -68,12 +136,20 @@ function names(program: Program, target: Target): Binding[] {
 
 /**
  * Refuses a name the generated code could not hold: a reserved word of the
- * target language where the code binds it, or a name with `-`, which the
- * lexer accepts for model names but no target accepts in an identifier.
+ * target language where the code binds it, a name with `-` (the lexer accepts
+ * one for model names, no target in an identifier), a name the generated code
+ * imports or relies on, a step named after a callable, or two declarations
+ * that generate the same module-level name.
  * Without this the compiler wrote a module that does not parse, and exited 0.
  */
 export function checkTargetNames(program: Program, target: Target): void {
   const language = LANGUAGE[target];
+  // A step of that name shadows the callable inside the chain.
+  const callables = new Set(
+    program.declarations.flatMap((d) =>
+      d.kind === "PromptDeclaration" || d.kind === "ChainDeclaration" ? [d.name] : []
+    )
+  );
   for (const { name, role, node, bound } of names(program, target)) {
     let problem: string | undefined;
     if (name.includes("-")) problem = `${language} identifiers cannot contain '-'`;
@@ -81,7 +157,22 @@ export function checkTargetNames(program: Program, target: Target): void {
       problem = `it is a reserved word in ${language}`;
     else if (target === "typescript" && role === "a type" && TYPESCRIPT_TYPE_NAMES.has(name))
       problem = `TypeScript reserves it as a type name`;
+    else if (role !== "a step" && bound && GENERATED_GLOBALS[target].has(name))
+      problem = `the generated ${language} uses that name`;
+    else if (role === "a step" && callables.has(name))
+      problem = "the file declares a prompt or chain of that name";
     if (problem)
       throw new CompilerError(`'${name}' cannot name ${role}: ${problem}`, node.line, node.column);
+  }
+  const first = new Map<string, Emitted>();
+  for (const e of emittedNames(program, target)) {
+    const other = first.get(e.name);
+    if (other)
+      throw new CompilerError(
+        `'${e.name}' is generated twice: for ${other.source} and for ${e.source}`,
+        e.node.line,
+        e.node.column
+      );
+    first.set(e.name, e);
   }
 }

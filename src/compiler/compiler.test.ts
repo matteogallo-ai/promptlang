@@ -193,6 +193,11 @@ describe("compile — header", () => {
     const out = compile(ast, "a\nexport const pwned = 1;\n.prompt");
     expect(out).not.toContain("\nexport const pwned");
     expect(out).toContain("// Source: a\\nexport const pwned = 1;\\n.prompt");
+    // JavaScript also ends a line at U+2028 and U+2029, which JSON leaves as is.
+    for (const separator of ["\u2028", "\u2029"]) {
+      const sep = compile(ast, `a${separator}export const pwned = 1;//.prompt`);
+      expect(sep).not.toContain(separator);
+    }
   });
 
   test("header contains PromptLang version", () => {

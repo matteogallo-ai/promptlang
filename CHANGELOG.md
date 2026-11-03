@@ -7,22 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **`compile` refuses outputs that would overwrite each other, and writes
+  nothing then** (breaking for folders that compiled before). Two files with the
+  same name in different folders compiled to one output file: the last won,
+  `index.ts` exported it twice, exit 0. `compile` now exits 1, before writing
+  any file, valid ones included, when two sources would produce the same file
+  (case ignored) or a file compile writes itself, or when two modules would
+  export the same name (`sentiment` in two files, or `FooBarInput` from
+  `foo_bar` and `fooBar`). Such files compile into different `--out` folders.
+- **Python output files are renamed** to importable module names:
+  `sentiment.v2.prompt` → `sentiment_v2.py` (`__init__.py` imported it as a
+  package `sentiment`), `2x.prompt` → `_2x.py`, `class.prompt` → `class_.py`.
+- **More names are compile errors**: reserved words where the generated code
+  binds the name (`prompt delete`, a step `if`, a Python parameter `class`),
+  any name with `-`, names the generated module imports (`PromptClient`,
+  `Promise`, Python's `TypedDict`, `str`...), a step named after a prompt of
+  the file, and two declarations generating the same name (a type `FooInput`
+  beside a prompt `foo`). Each compiled to a module that does not parse or
+  type-check, or that silently shadowed a name, with exit 0.
+- **Generated headers no longer carry a `Generated at` timestamp**, so the same
+  source and PromptLang version give the same bytes.
+
 ### Fixed
-- **`compile` no longer overwrites one source with another.** Two files with
-  the same name in different folders compiled to the same output file: the
-  last one won, `index.ts` exported it twice and the exit code was 0. `compile`
-  now exits 1 and writes nothing when two sources would produce the same file
-  (case ignored) or declare the same name, which the index cannot export twice.
-- **Python module names are importable.** `sentiment.v2.prompt` compiled to
-  `sentiment.v2.py`, which `__init__.py` imported as a package `sentiment`;
-  it is now `sentiment_v2.py`.
-- **A name the target language cannot hold is a compile error.** `prompt
-  delete(...)`, a step named `if`, a Python parameter named `class` or any name
-  with `-` compiled to a module that does not parse, with exit 0.
-- **Generated files are reproducible.** The `Generated at` timestamp is gone, so
-  the same source and PromptLang version give the same bytes. The source path in
-  headers and Python docstrings is escaped (a newline in a file name ended the
-  `//` comment), and docstrings name the source file instead of `<prompt>.prompt`.
+- **The source path in generated headers and Python docstrings is escaped.** A
+  newline, U+2028 or U+2029 in a file name ended the `//` comment and let the
+  rest of the name run as code. Python docstrings name the source file instead
+  of `<prompt>.prompt`.
 - The `--help` example and the benchmark compile `docs/examples/*.prompt`:
   the folder also holds the demo's two versions of one prompt, which are
   alternatives and do not compile together.

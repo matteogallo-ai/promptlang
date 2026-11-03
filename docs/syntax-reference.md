@@ -123,11 +123,18 @@ prompt classify_ticket(ticket: string) -> Category {
   Triple-quoted content is sent as written, indentation included.
 - `{{name}}` interpolates a parameter. The static rule `unbounded-template` warns when
   `name` is not a declared parameter.
-- A name must be valid in the target language, or compilation fails with its
-  position: no `-` (allowed in `@model` only), and no reserved word of the target
-  where the generated code binds the name. In TypeScript that is prompt, chain, step
-  and type names (`delete`, `if`; types also not `any`, `string`...). In Python it is
-  every name, parameters and struct fields included (`class`, `pass`).
+- Compilation fails, with the position, on a name the generated code cannot hold:
+  - a `-` (allowed in `@model` only);
+  - a reserved word of the target where the generated code binds the name: prompt,
+    chain, step and type names in TypeScript (`delete`, `if`; types also not `any`,
+    `string`...), every name in Python, parameters and struct fields included
+    (`class`, `pass`);
+  - a name the generated module imports or relies on (`PromptClient`, `Promise`;
+    in Python also `TypedDict`, `Literal`, `str`...);
+  - a step named after a prompt or chain of the file;
+  - two declarations that generate the same name: a prompt `foo` generates `foo`,
+    `FooInput` and `foo_meta` (`FOO_META` in Python), so a type `FooInput` beside
+    it is refused.
 
 ### Generated output handling
 
@@ -396,9 +403,11 @@ Plus `__init__.py` and a generated `promptlang_runtime.py` (its HTTP clients nee
 Each `.prompt` file compiles to one file in the `--out` folder, named after it:
 `x.prompt` → `x.ts`. For Python every character that cannot appear in a module name
 becomes `_` (`sentiment.v2.prompt` → `sentiment_v2.py`), with a leading `_` before a
-digit. The folder is flat and the index re-exports every module, so `compile` exits 1
-and writes nothing when two sources would produce the same file (letter case
-ignored, as on macOS and Windows) or declare the same prompt, chain or type name.
+digit and a trailing `_` after a keyword (`class.prompt` → `class_.py`). The folder
+is flat and the index re-exports every module, so `compile` exits 1 and writes
+nothing when two sources would produce the same file (letter case ignored, as on
+macOS and Windows) or a file compile writes itself (`index.ts`, `__init__.py`,
+`promptlang_runtime.py`), or when two modules would export the same name.
 
 ---
 

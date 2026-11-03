@@ -636,7 +636,8 @@ describe("error handling", () => {
 // Project commands: init, install, list, check, compile-from-config (v0.9)
 // ---------------------------------------------------------------------------
 
-import { rm, mkdir } from "node:fs/promises";
+import { rm, mkdir, mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const PROJECTS_ROOT = "/tmp/promptlang-v09-cli";
@@ -1038,7 +1039,10 @@ describe("compile — test and eval blocks", () => {
 });
 
 describe("compile — output names", () => {
-  const DIR = "/tmp/promptlang-output-names";
+  let DIR = "";
+  beforeAll(async () => {
+    DIR = await mkdtemp(join(tmpdir(), "promptlang-output-names-"));
+  });
   const prompt = (name: string) =>
     `@version "1.0.0"\nprompt ${name}(t: string) -> string {\n  user: "<t>{{t}}</t>"\n}\ntest "t" {\n  input: ${name}("a")\n  mock: "x"\n  expect: "x"\n}\n`;
 
@@ -1096,7 +1100,7 @@ describe("compile — output names", () => {
         ["--target", target]
       );
       expect(code).toBe(1);
-      expect(stderr).toContain("'sentiment' is declared in both");
+      expect(stderr).toContain("'sentiment' is exported by both");
       expect(written).toEqual([]);
     }
   });
@@ -1118,6 +1122,42 @@ describe("compile — output names", () => {
       "from ._2_fold import *",
       "from .sentiment_v2 import *",
     ]);
+  });
+
+  // compile writes these files itself; a source of that name was replaced by them.
+  test("a source named after a file compile writes itself is an error", async () => {
+    for (const [file, target, out] of [
+      ["index.prompt", "typescript", "index.ts"],
+      ["__init__.prompt", "python", "__init__.py"],
+      ["promptlang_runtime.prompt", "python", "promptlang_runtime.py"],
+    ] as const) {
+      const { code, stderr, written } = await compileTree({ [file]: prompt("p") }, [
+        "--target",
+        target,
+      ]);
+      expect(code).toBe(1);
+      expect(stderr).toContain(`compiles to ${out}, which compile writes itself`);
+      expect(written).toEqual([]);
+    }
+  });
+
+  // A derived name counts too: both prompts generate FooBarInput.
+  test("a name derived in two files is an error", async () => {
+    const { code, stderr } = await compileTree({
+      "a.prompt": prompt("foo_bar"),
+      "b.prompt": prompt("fooBar"),
+    });
+    expect(code).toBe(1);
+    expect(stderr).toContain("'FooBarInput' is exported by both");
+  });
+
+  test("a Python keyword as a file name gets a trailing _", async () => {
+    const { code, written } = await compileTree({ "class.prompt": prompt("p") }, [
+      "--target",
+      "python",
+    ]);
+    expect(code).toBe(0);
+    expect(written).toContain("class_.py");
   });
 
   subprocessTest("the compiled Python package imports", async () => {

@@ -8,6 +8,7 @@ import { getPythonRuntimeSource } from "../../compiler/python/python-runtime-tem
 import { LexerError } from "../../lexer/errors";
 import { ParserError } from "../../parser/errors";
 import { CompilerError } from "../../compiler/errors";
+import { exportedNames, isReservedWord } from "../../compiler/target-names";
 import {
   loadConfig,
   CONFIG_FILENAME,
@@ -140,13 +141,7 @@ export async function runCompile(args: string[]): Promise<number> {
         file,
         outName: target === "python" ? `${pythonModuleName(stem)}.py` : `${stem}.ts`,
         code: target === "python" ? compilePython(ast, file) : compile(ast, file),
-        names: ast.declarations.flatMap((d) =>
-          d.kind === "TypeDeclaration" ||
-          d.kind === "PromptDeclaration" ||
-          d.kind === "ChainDeclaration"
-            ? [d.name]
-            : []
-        ),
+        names: exportedNames(ast, target),
       });
     } catch (error) {
       if (
@@ -169,7 +164,7 @@ export async function runCompile(args: string[]): Promise<number> {
   // The output folder is flat and the index re-exports every module, so two
   // sources that share a file name or a declared name cannot both be written:
   // one would silently replace the other.
-  const collisions = findCollisions(compiled);
+  const collisions = findCollisions(compiled, target);
   if (collisions.length > 0) {
     for (const c of collisions) console.error(`  [error]   ${c}`);
     console.error("  Nothing was written. Compile these files to different --out folders.");
@@ -226,35 +221,39 @@ interface Compiled {
   file: string;
   outName: string;
   code: string;
-  /** The names the file declares, each exported by the module and by the index. */
+  /** The names the module exports, each re-exported by the index. */
   names: string[];
 }
 
 /** One message per output file or exported name that two sources would both produce. */
-function findCollisions(compiled: readonly Compiled[]): string[] {
+function findCollisions(compiled: readonly Compiled[], target: Target): string[] {
   const messages: string[] = [];
   const byFile = new Map<string, Compiled>();
+  const ownFiles = target === "python" ? ["__init__.py", "promptlang_runtime.py"] : ["index.ts"];
   const byName = new Map<string, Compiled>();
   for (const c of compiled) {
     // Case-insensitive file systems (macOS, Windows) hold only one of X.ts and x.ts.
     const key = c.outName.toLowerCase();
     const other = byFile.get(key);
-    if (other) messages.push(`${other.file} and ${c.file} both compile to ${c.outName}`);
+    if (ownFiles.includes(key))
+      messages.push(`${c.file} compiles to ${c.outName}, which compile writes itself`);
+    else if (other) messages.push(`${other.file} and ${c.file} both compile to ${c.outName}`);
     else byFile.set(key, c);
     for (const name of c.names) {
       const first = byName.get(name);
       if (first && first !== c)
-        messages.push(`'${name}' is declared in both ${first.file} and ${c.file}`);
+        messages.push(`'${name}' is exported by both ${first.file} and ${c.file}`);
       else byName.set(name, c);
     }
   }
   return messages;
 }
 
-/** A file name Python can import: `sentiment.v2` is read as a package `sentiment`. */
+/** A file name Python can import: `sentiment.v2` is read as a package `sentiment`, `class` not at all. */
 function pythonModuleName(stem: string): string {
   const name = stem.replace(/[^A-Za-z0-9_]/g, "_");
-  return /^[0-9]/.test(name) ? `_${name}` : name;
+  if (/^[0-9]/.test(name)) return `_${name}`;
+  return isReservedWord(name, "python") ? `${name}_` : name;
 }
 
 function computeDefaultRuntimePath(outDir: string): string {

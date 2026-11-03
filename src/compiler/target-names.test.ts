@@ -66,15 +66,46 @@ describe("names the target language cannot hold are compile errors", () => {
     expect(r.stderr.toString()).toBe("");
     const kwlist = r.stdout.toString().trim().split(" ");
     expect(kwlist.length).toBeGreaterThan(30);
-    // Some keywords are PromptLang keywords too and never reach the compiler.
-    const lexable = kwlist.filter((k) => {
+    // These are PromptLang keywords too and never reach the compiler; a lexer change shows here.
+    const unlexable = kwlist.filter((k) => {
       try {
         parse(tokenize(`@version "1.0.0"\n${prompt(k)}\n`));
-        return true;
-      } catch {
         return false;
+      } catch {
+        return true;
       }
     });
+    expect(unlexable).toEqual(["as", "import", "return"]);
+    const lexable = kwlist.filter((k) => !unlexable.includes(k));
     expect(lexable.filter((k) => refusal("python", prompt(k)) === undefined)).toEqual([]);
+  });
+
+  // Each of these compiled to a module that does not type-check or that silently
+  // shadows a name the generated code relies on.
+  test("a name the generated code also derives or imports", () => {
+    expect(refusal("python", `type FooInput = struct { a: number }\n${prompt("foo")}`)).toBe(
+      "3:1 'FooInput' is generated twice: for the type FooInput and for the prompt foo"
+    );
+    expect(refusal("typescript", `type PromptClient = string\n${prompt("p")}`)).toBe(
+      "2:1 'PromptClient' cannot name a type: the generated TypeScript uses that name"
+    );
+    expect(refusal("typescript", `type Promise = string\n${prompt("p")}`)).toContain(
+      "'Promise' cannot name a type"
+    );
+    for (const name of ["str", "Literal", "TypedDict", "PromptRequest"])
+      expect(refusal("python", `type ${name} = string\n${prompt("p")}`)).toContain(
+        `'${name}' cannot name a type: the generated Python uses that name`
+      );
+    expect(
+      refusal("typescript", `${prompt("p")}\nprompt p_meta() -> string { user: "x" }`)
+    ).toContain("'p_meta' is generated twice");
+  });
+
+  test("a step named after a prompt or chain of the file", () => {
+    const chain = `${prompt("summarize")}\nchain c(x: string) -> string {\n  step summarize = summarize(x: x)\n  return summarize\n}`;
+    for (const target of ["typescript", "python"] as const)
+      expect(refusal(target, chain)).toBe(
+        "4:3 'summarize' cannot name a step: the file declares a prompt or chain of that name"
+      );
   });
 });

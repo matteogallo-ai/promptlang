@@ -3,8 +3,9 @@ import { mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { loadConfig } from "../config/config";
 import { check, install, readManifest } from "./registry";
+import { SCRATCH } from "../../tests/support/scratch";
 
-const BASE = "/tmp/promptlang-registry-test";
+const BASE = join(SCRATCH, "promptlang-registry-test");
 
 async function makeProject(name: string): Promise<string> {
   const root = join(BASE, name);

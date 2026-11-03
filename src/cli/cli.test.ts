@@ -1,4 +1,7 @@
-import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { describe, test, expect, beforeAll } from "bun:test";
+import { rm, mkdir } from "node:fs/promises";
+import { join } from "node:path";
+import { SCRATCH } from "../../tests/support/scratch";
 import { runTsc, subprocessTest } from "../../tests/support/subprocess";
 import { main } from "./cli";
 
@@ -39,17 +42,13 @@ function silenceAll(): () => void {
 }
 
 // Temp file paths for error-case tests.
-const BAD_SYNTAX_FILE = "/tmp/promptlang-test-bad-syntax.prompt";
-const WARNING_FILE = "/tmp/promptlang-test-warning.prompt";
-const BAD_LEXER_FILE = "/tmp/promptlang-test-bad-lexer.prompt";
+const BAD_SYNTAX_FILE = join(SCRATCH, "promptlang-test-bad-syntax.prompt");
+const WARNING_FILE = join(SCRATCH, "promptlang-test-warning.prompt");
+const BAD_LEXER_FILE = join(SCRATCH, "promptlang-test-bad-lexer.prompt");
 
 beforeAll(async () => {
   await Bun.write(BAD_SYNTAX_FILE, '@version "1.0.0"\nprompt bad(x: string) -> { MISSING BRACE');
   await Bun.write(BAD_LEXER_FILE, '@version "1.0.0"\n"unterminated string\nmore content');
-});
-
-afterAll(async () => {
-  await Bun.file(BAD_SYNTAX_FILE).exists(); // just touch — cleanup not required in /tmp
 });
 
 // ---------------------------------------------------------------------------
@@ -331,7 +330,7 @@ describe("analyze", () => {
 // ---------------------------------------------------------------------------
 
 describe("compile", () => {
-  const OUT_DIR = "/tmp/promptlang-compile-test-out";
+  const OUT_DIR = join(SCRATCH, "promptlang-compile-test-out");
 
   test("compiles a valid .prompt file and exits 0", async () => {
     const restore = silenceAll();
@@ -414,7 +413,7 @@ describe("compile", () => {
 // ---------------------------------------------------------------------------
 
 describe("compile --emit-tsconfig", () => {
-  const EMIT_OUT = "/tmp/promptlang-emit-tsconfig-test";
+  const EMIT_OUT = join(SCRATCH, "promptlang-emit-tsconfig-test");
 
   test("--emit-tsconfig generates tsconfig.json in --out", async () => {
     const restore = silenceAll();
@@ -485,7 +484,7 @@ describe("compile --emit-tsconfig", () => {
   });
 
   test("without --emit-tsconfig, no tsconfig.json is emitted (default unchanged)", async () => {
-    const outDir = "/tmp/promptlang-no-emit-test";
+    const outDir = join(SCRATCH, "promptlang-no-emit-test");
     const restore = silenceAll();
     await main(["bun", "cli", "compile", "docs/examples/classify-ticket.prompt", "--out", outDir]);
     restore();
@@ -594,7 +593,7 @@ describe("compile --emit-tsconfig", () => {
   });
 
   subprocessTest("emitted tsconfig + generated .ts compiles with tsc", async () => {
-    const outDir = "/tmp/promptlang-emit-tsc-verify";
+    const outDir = join(SCRATCH, "promptlang-emit-tsc-verify");
     const restore = silenceAll();
     await main([
       "bun",
@@ -636,10 +635,7 @@ describe("error handling", () => {
 // Project commands: init, install, list, check, compile-from-config (v0.9)
 // ---------------------------------------------------------------------------
 
-import { rm, mkdir } from "node:fs/promises";
-import { join } from "node:path";
-
-const PROJECTS_ROOT = "/tmp/promptlang-v09-cli";
+const PROJECTS_ROOT = join(SCRATCH, "promptlang-v09-cli");
 
 async function makeProject(name: string): Promise<string> {
   const dir = join(PROJECTS_ROOT, name);
@@ -881,7 +877,7 @@ compile:
 });
 
 describe("compile — empty .prompt files", () => {
-  const DIR = "/tmp/promptlang-empty-prompt-test";
+  const DIR = join(SCRATCH, "promptlang-empty-prompt-test");
 
   async function compileFile(name: string, source: string) {
     await rm(DIR, { recursive: true, force: true });
@@ -933,7 +929,7 @@ describe("compile — empty .prompt files", () => {
 });
 
 describe("compile — --target validation", () => {
-  const DIR = "/tmp/promptlang-target-test";
+  const DIR = join(SCRATCH, "promptlang-target-test");
   const SOURCE = `@version "1.0.0"\nprompt hi(name: string) -> string {\n  user: "Hi {{name}}"\n}\n`;
 
   async function compileWith(targetArgs: string[]) {
@@ -982,7 +978,7 @@ describe("compile — --target validation", () => {
 });
 
 describe("compile — test and eval blocks", () => {
-  const DIR = "/tmp/promptlang-test-blocks";
+  const DIR = join(SCRATCH, "promptlang-test-blocks");
   const PROMPT = `@version "1.0.0"\nprompt hi(name: string) -> string {\n  user: "Hi {{name}}"\n}\n`;
 
   async function compileSource(source: string) {

@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   prompt contracts are compared by structure, yet the generated TypeScript and
   Python export `Category` by name and every consumer importing it broke. A
   declared type removed or renamed is now major, one added minor, and a changed
-  type that no prompt or chain uses is major (ADR 0002, amended).
+  type is judged like an output: narrowing an enum is major, adding an optional
+  struct field minor (ADR 0002, amended).
 
 ## [2.0.0] - 2026-11-03
 

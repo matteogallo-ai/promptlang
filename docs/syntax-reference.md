@@ -245,15 +245,16 @@ constrain it with `requires` (Section 1).
 `.prompt` file with its text at a Git ref (default `origin/main`, otherwise the
 most recent tag) and fails when `@version` did not move by at least what the
 changes require. The interface of a prompt or chain is its parameters (name, type,
-optional or not), its output type, and, for a prompt, the file's `@model`.
+optional or not), its output type, and, for a prompt, the file's `@model`; the
+file's interface also includes the name and structure of each declared type.
 
 | Change | Required bump |
 | --- | --- |
 | Required parameter added; parameter removed; parameter type changed; optional parameter made required | major |
 | Output type changed, including an enum gaining or losing a value; output struct field removed, retyped, made optional or required; required output field added | major |
 | `@model` changed; prompt or chain removed; prompt replaced by a chain of the same name | major |
-| Declared type removed or renamed; declared type no prompt or chain uses changed | major |
-| Optional parameter added; required parameter made optional; optional output field added; prompt or chain added; declared type added | minor |
+| Declared type removed or renamed; declared type changed by the output rules above (enum value added or removed, field removed, retyped, made optional or required, required field added) | major |
+| Optional parameter added; required parameter made optional; optional output field added; prompt or chain added; declared type added; optional field added to a declared struct | minor |
 | Message text changed; `@temperature` or `@max_tokens` changed; chain steps changed | patch |
 | Whitespace, comments, declaration order, parameter order | none |
 
@@ -262,7 +263,9 @@ nested struct is minor and is reported with a dotted path (`inner.b`). A prompt'
 parameters and output are compared by structure, so its own contract does not
 change when `type Category` becomes `type Kind` with the same values; but the
 generated code exports each declared type under its name, so the rename is
-reported as `type 'Category' removed` (major) and `type 'Kind' added`. Below 1.0.0 the check reads bumps as `^` does: at
+reported as `type 'Category' removed` (major) and `type 'Kind' added`. A changed
+type is reported on the type itself, and also on each prompt whose contract
+changes with it. Below 1.0.0 the check reads bumps as `^` does: at
 0.0.z every bump counts as breaking; at 0.y.z a minor bump (`0.2.x → 0.3.0`)
 counts as breaking and a patch bump as compatible. A lower version fails. From a
 pre-release, a later pre-release or the release itself (`2.0.0-rc.1 → 2.0.0-rc.2`)

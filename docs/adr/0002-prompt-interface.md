@@ -8,7 +8,8 @@
 `semver-check` must decide, for each change to a `.prompt` file, whether it breaks
 consumers (major), extends them compatibly (minor) or only changes behaviour behind
 the same contract (patch). The project decision is that the interface is the
-parameters (names, types, optionality), the output schema and the target model.
+parameters (names, types, optionality), the output schema and the target model,
+plus, since the 2026-11-03 amendment, the declared type names.
 
 ## Decision
 
@@ -23,8 +24,10 @@ parameters (names, types, optionality), the output schema and the target model.
   model of their own).
 - **Declared type names** (amendment): the generated TypeScript and Python export
   every `type` under its name, so consumers import it. A declared type removed or
-  renamed is major, one added is minor. A changed type is reported on the prompts
-  and chains that use it; a changed type that none uses is major on its own.
+  renamed is major, one added is minor, and a changed type is judged by the
+  output rule below, since consumers read it the same way. The type's change is
+  reported even when a prompt's diff also shows it: a prompt can reach the type
+  only in the new version, or through another type, and then shows nothing.
 - **Body**, not interface: a prompt's sections, a chain's steps and return
   expression, compared without source positions; plus `@temperature` and
   `@max_tokens`. Any difference is patch.

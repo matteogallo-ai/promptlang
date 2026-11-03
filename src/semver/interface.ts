@@ -10,6 +10,7 @@ import type {
   PromptDeclaration,
   TypeExpression,
 } from "../ast/nodes";
+import { buildTypeRegistry } from "../compiler/code-generator";
 
 export type Level = "major" | "minor" | "patch";
 
@@ -101,7 +102,7 @@ function positionless(value: unknown): string {
 }
 
 function callables(program: Program): Map<string, Callable> {
-  const types = declaredTypes(program);
+  const types = buildTypeRegistry(program);
   const params = (ps: Parameter[]) =>
     new Map(
       ps.map((p) => [
@@ -164,104 +165,78 @@ function diffParams(name: string, base: Callable, cur: Callable, push: (c: Chang
 /**
  * Output rule: the schema is what consumers read and what the model must
  * produce, so any change is major except adding optional struct fields.
+ * `subject` names what is compared in the messages: a prompt's output, or a
+ * declared type, which consumers read the same way.
  */
 function diffOutput(
-  name: string,
+  name: string | undefined,
   base: Shape,
   cur: Shape,
   push: (c: Change) => void,
-  prefix = ""
+  prefix = "",
+  subject: { whole: string; field: string } = { whole: "output type", field: "output field" }
 ): void {
   if (render(base) === render(cur)) return;
+  const at = (c: Omit<Change, "declaration">): Change =>
+    name === undefined ? c : { ...c, declaration: name };
   if (base.kind !== "struct" || cur.kind !== "struct") {
-    const what = prefix === "" ? "output type" : `output field '${prefix.slice(0, -1)}' type`;
-    push({
-      level: "major",
-      declaration: name,
-      description: `${what} changed: ${render(base)} → ${render(cur)}`,
-    });
+    const what = prefix === "" ? subject.whole : `${subject.field} '${prefix.slice(0, -1)}' type`;
+    push(at({ level: "major", description: `${what} changed: ${render(base)} → ${render(cur)}` }));
     return;
   }
   for (const [f, b] of Object.entries(base.fields)) {
     const c = cur.fields[f];
     const path = `${prefix}${f}`;
     if (!c) {
-      push({ level: "major", declaration: name, description: `output field '${path}' removed` });
+      push(at({ level: "major", description: `${subject.field} '${path}' removed` }));
       continue;
     }
     if (c.optional !== b.optional)
-      push({
-        level: "major",
-        declaration: name,
-        description: `output field '${path}' became ${c.optional ? "optional" : "required"}`,
-      });
+      push(
+        at({
+          level: "major",
+          description: `${subject.field} '${path}' became ${c.optional ? "optional" : "required"}`,
+        })
+      );
     // A nested struct is judged field by field, so adding an optional field inside it stays minor.
-    diffOutput(name, b.type, c.type, push, `${path}.`);
+    diffOutput(name, b.type, c.type, push, `${path}.`, subject);
   }
   for (const [f, c] of Object.entries(cur.fields)) {
     if (f in base.fields) continue;
     const path = `${prefix}${f}`;
     push(
-      c.optional
-        ? {
-            level: "minor",
-            declaration: name,
-            description: `optional output field '${path}' added`,
-          }
-        : {
-            level: "major",
-            declaration: name,
-            description: `required output field '${path}' added`,
-          }
+      at(
+        c.optional
+          ? { level: "minor", description: `optional ${subject.field} '${path}' added` }
+          : { level: "major", description: `required ${subject.field} '${path}' added` }
+      )
     );
   }
-}
-
-function declaredTypes(program: Program): Map<string, TypeExpression> {
-  const types = new Map<string, TypeExpression>();
-  for (const d of program.declarations)
-    if (d.kind === "TypeDeclaration") types.set(d.name, d.definition);
-  return types;
-}
-
-/** Names of the declared types a prompt's or chain's parameters or output reach. */
-function typesUsedByCallables(program: Program, types: Map<string, TypeExpression>): Set<string> {
-  const used = new Set<string>();
-  const visit = (t: TypeExpression): void => {
-    if (t.kind === "StructType") for (const f of t.fields) visit(f.type);
-    if (t.kind !== "TypeReference" || used.has(t.name)) return;
-    used.add(t.name);
-    const target = types.get(t.name);
-    if (target) visit(target);
-  };
-  for (const d of program.declarations) {
-    if (d.kind !== "PromptDeclaration" && d.kind !== "ChainDeclaration") continue;
-    for (const p of d.parameters) visit(p.type);
-    visit(d.returnType);
-  }
-  return used;
 }
 
 /**
  * The generated TypeScript and Python export each declared type under its own
  * name, so a consumer can import it: removing or renaming one breaks that import
- * even when every prompt's contract is structurally the same. A changed type
- * that some prompt or chain uses is reported on that prompt or chain instead.
+ * even when every prompt's contract is structurally the same. A changed type is
+ * judged like an output, as consumers read it the same way. It is reported even
+ * when a prompt's diff also shows it: a prompt may reach the type only now, or
+ * through another path, and then shows nothing.
  */
 function diffTypes(base: Program, current: Program, push: (c: Change) => void): void {
-  const b = declaredTypes(base);
-  const c = declaredTypes(current);
-  const usedNow = typesUsedByCallables(current, c);
+  const b = buildTypeRegistry(base);
+  const c = buildTypeRegistry(current);
   for (const [name, def] of b) {
     const now = c.get(name);
     if (!now) {
       push({ level: "major", description: `type '${name}' removed` });
       continue;
     }
-    const before = render(shapeOf(def, b));
-    const after = render(shapeOf(now, c));
-    if (before !== after && !usedNow.has(name))
-      push({ level: "major", description: `type '${name}' changed: ${before} → ${after}` });
+    // Seeded with its own name, a recursive type is compared once, not unrolled into itself.
+    const own = () => new Set([name]);
+    diffOutput(undefined, shapeOf(def, b, own()), shapeOf(now, c, own()), push, "", {
+      whole: `type '${name}'`,
+      field: `type '${name}' field`,
+    });
   }
   for (const name of c.keys())
     if (!b.has(name)) push({ level: "minor", description: `type '${name}' added` });

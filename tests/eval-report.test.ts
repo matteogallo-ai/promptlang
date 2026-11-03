@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   errorRate,
+  flagAllBaseline,
   latestRecord,
   renderPerformance,
   renderSlo,
@@ -85,5 +86,14 @@ describe("eval-report edge cases", () => {
 
   test("a missing runs/live directory means no record", async () => {
     expect(await latestRecord(join(tmpdir(), "promptlang-no-such-dir"))).toBeNull();
+  });
+
+  // A precision figure means little without what a linter that reports everything would score.
+  test("the report-everything baseline: every designed defect found, every clean case flagged", async () => {
+    const labels = await Bun.file("evals/linter/labels.json").json();
+    const b = flagAllBaseline(labels);
+    expect(b.overall.recall).toMatchObject({ k: 45, n: 45 });
+    expect(b.overall.precision).toMatchObject({ k: 45, n: 60 * labels.categories.length });
+    expect(b.clean_false_alarm).toMatchObject({ k: 15, n: 15 });
   });
 });

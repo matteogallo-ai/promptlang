@@ -36,7 +36,8 @@ PromptLang treats prompts as first-class typed code:
   the model name per provider (`modelMap`), and never falls back on a bad key
 - **AI-powered linter**: `analyze --ai` sends each prompt to Claude for a semantic
   review; measured on a labelled corpus, it finds almost every designed defect but
-  most of its findings are false alarms (precision about 20%)
+  most of its findings are false alarms (precision about 20%, against 12.5% for
+  a linter that reports every category)
 - **No third-party runtime dependencies**: Bun + `fetch` + your own API keys
 
 Not delivered, and labelled as such everywhere in this repository (see
@@ -107,20 +108,25 @@ const category = await classify_ticket({ ticket: "..." }, client);
 
 ## Comparison
 
-Each PromptLang cell is checked against [`docs/CLAIMS.md`](docs/CLAIMS.md) by the
-`claims` CI job. The other columns reflect the maintainer's reading of those
-tools' public documentation and are not tested here.
+Each cell is checked against [`docs/CLAIMS.md`](docs/CLAIMS.md) by the `claims` CI job.
 
-| Feature                          | LangChain | LangSmith | W&B Weave | **PromptLang** |
-| -------------------------------- | :-------: | :-------: | :-------: | :------------: |
-| Typed I/O                        |    ❌     |    ❌     |    ❌     |       ✅       |
-| Native tests                     |    ❌     |   SaaS    |   SaaS    | ✅ (mock or live; no evals) |
-| SemVer for prompts               |    ❌     |    ❌     |    ❌     |       ✅       |
-| AI-powered linter                |    ❌     |    ❌     |    ❌     | ✅ (measured; precision ~20%) |
-| Multi-provider fallback          |  Partial  |    ❌     |    ❌     | ✅ (per-provider model map) |
-| Compile to TypeScript **and** Python | ❌     |    ❌     |    ❌     |       ✅       |
-| Static analysis (SonarQube-style)|    ❌     |    ❌     |    ❌     |       ✅       |
-| Open source, zero SaaS           |    ✅     |    ❌     |    ❌     |       ✅       |
+| Feature                              | PromptLang |
+| ------------------------------------ | :--------: |
+| Typed I/O                            | ✅ |
+| Native tests                         | ✅ (mock or live; no evals) |
+| SemVer for prompts                   | ✅ |
+| AI-powered linter                    | ✅ (measured; precision ~20%, baseline 12.5%) |
+| Multi-provider fallback              | ✅ (per-provider model map) |
+| Compile to TypeScript **and** Python | ✅ |
+| Static analysis (SonarQube-style)    | ✅ |
+| Open source, zero SaaS               | ✅ |
+
+Other tools are not scored here: nothing in this repository tests them, and an
+earlier version of this table marked as missing features they have. Several
+overlap with this list: LangChain returns typed outputs (`with_structured_output`)
+and falls back across models (`with_fallbacks`); LangSmith and W&B Weave version
+prompts and run evaluations as hosted services. Check their documentation for what
+they offer today.
 
 ---
 
@@ -221,8 +227,12 @@ It looks for six kinds of defect that static rules cannot see:
 `claude-haiku-5-5`: it finds almost every designed defect (recall 44/45 and
 45/45 over two runs) but reports about four categories per prompt, so most of
 its findings are false alarms (precision 20%, 95% CI 15–26%) and it flags every
-clean prompt (15/15). Read its findings as leads to check, not as defects; the
-six static rules of `promptlang analyze` do not depend on the model.
+clean prompt (15/15). Reporting every category on every prompt would find all 45
+defects at 12.5% precision (95% CI 9.5–16.3%), so recall alone says little; the
+precision gain over that baseline is modest. The labels are set by construction;
+their human check (`evals/linter/human-review/`) has no answers recorded. Read its findings as leads to check,
+not as defects; the six static rules of `promptlang analyze` do not depend on the
+model.
 
 ### Usage
 

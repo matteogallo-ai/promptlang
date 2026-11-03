@@ -14,6 +14,8 @@ import {
 } from "../scripts/eval-report";
 import type { EvalRecord } from "../scripts/linter-eval";
 
+const LABELS = await Bun.file("evals/linter/labels.json").json();
+
 const record = (over: Partial<EvalRecord>): EvalRecord =>
   ({
     date: "2026-11-02T00:00:00.000Z",
@@ -73,13 +75,13 @@ describe("eval-report edge cases", () => {
     const r = record({ complete: false } as Partial<EvalRecord>);
     expect(renderSlo({ name: "linter-eval-x.json", record: r })).toContain("Interrupted run");
     expect(
-      renderPerformance({ name: "linter-eval-x.json", record: { ...r, metrics: [] } })
+      renderPerformance({ name: "linter-eval-x.json", record: { ...r, metrics: [] } }, LABELS)
     ).toContain("Interrupted run");
   });
 
   test("a record with no scored repeat renders a sentence, not a crash", () => {
     const r = record({ metrics: [] } as Partial<EvalRecord>);
-    expect(renderPerformance({ name: "linter-eval-x.json", record: r })).toContain(
+    expect(renderPerformance({ name: "linter-eval-x.json", record: r }, LABELS)).toContain(
       "no repeat was scored"
     );
   });
@@ -95,5 +97,17 @@ describe("eval-report edge cases", () => {
     expect(b.overall.recall).toMatchObject({ k: 45, n: 45 });
     expect(b.overall.precision).toMatchObject({ k: 45, n: 60 * labels.categories.length });
     expect(b.clean_false_alarm).toMatchObject({ k: 15, n: 15 });
+  });
+
+  // The labels file can move to a new corpus version before a new run is recorded.
+  test("the baseline is shown only for the corpus the run was scored on", async () => {
+    const labels = await Bun.file("evals/linter/labels.json").json();
+    const latest = await latestRecord();
+    if (!latest) throw new Error("no committed linter eval record");
+    const r = { ...latest.record, corpus: { ...latest.record.corpus, version: "0.0.1" } };
+    const text = renderPerformance({ name: latest.name, record: r }, labels);
+    expect(text).toContain(
+      `| Baseline: report every category | n/a: labels are corpus ${labels.version}, the run corpus 0.0.1 | n/a | n/a | n/a |`
+    );
   });
 });

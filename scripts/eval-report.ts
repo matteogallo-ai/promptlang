@@ -80,7 +80,7 @@ export function flagAllBaseline(labels: Labels): Score {
 
 export function renderPerformance(
   latest: { name: string; record: EvalRecord } | null,
-  labels?: Labels
+  labels: Labels
 ): string {
   if (!latest)
     return "Not measured: no linter eval record is committed under `runs/live/`. The corpus and the scoring are tested; their numbers on a fake client are not a quality measure.";
@@ -97,12 +97,15 @@ export function renderPerformance(
     lines.push(
       `| ${m.repeat} | ${cell(m.test.overall.precision)} | ${cell(m.test.overall.recall)} | ${cell(m.test.clean_false_alarm)} | ${m.test.failed.length} |`
     );
-  if (labels) {
+  if (labels.version === record.corpus.version) {
     const b = flagAllBaseline(labels);
     lines.push(
       `| Baseline: report every category | ${cell(b.overall.precision)} | ${cell(b.overall.recall)} | ${cell(b.clean_false_alarm)} | n/a |`
     );
-  }
+  } else
+    lines.push(
+      `| Baseline: report every category | n/a: labels are corpus ${labels.version}, the run corpus ${record.corpus.version} | n/a | n/a | n/a |`
+    );
   lines.push(
     "",
     "| Category (repeat 1) | Precision | Recall |",

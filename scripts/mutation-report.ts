@@ -7,6 +7,7 @@
  * Run by `bun run mutation` after `stryker run`.
  */
 import { readdirSync } from "node:fs";
+import { Glob } from "bun";
 import { join } from "node:path";
 
 interface Mutant {
@@ -100,10 +101,21 @@ export function survivors(report: Report): Survivor[] {
     );
 }
 
-/** The `src/<dir>` entries no positive mutate pattern starts in. */
+/**
+ * The `src/<dir>` entries whose files no mutate pattern selects, judged on a
+ * sample file `src/<dir>/x.ts`: the last pattern matching it decides, as in
+ * Stryker, where a `!` pattern excludes.
+ */
 export function unmutated(dirs: readonly string[], mutate: readonly string[]): string[] {
-  const reached = mutate.filter((g) => !g.startsWith("!"));
-  return dirs.map((d) => `src/${d}`).filter((d) => !reached.some((g) => g.startsWith(`${d}/`)));
+  const selected = (file: string) => {
+    let chosen = false;
+    for (const g of mutate) {
+      const negated = g.startsWith("!");
+      if (new Glob(negated ? g.slice(1) : g).match(file)) chosen = !negated;
+    }
+    return chosen;
+  };
+  return dirs.map((d) => `src/${d}`).filter((d) => !selected(`${d}/x.ts`));
 }
 
 function row(f: FileScore): string {

@@ -121,12 +121,11 @@ Each cell is checked against [`docs/CLAIMS.md`](docs/CLAIMS.md) by the `claims` 
 | Static analysis (SonarQube-style)    | ✅ |
 | Open source, zero SaaS               | ✅ |
 
-Other tools are not scored here: nothing in this repository tests them, and an
-earlier version of this table marked as missing features they have. Several
+Other tools are not scored here: nothing in this repository tests them. Several
 overlap with this list: LangChain returns typed outputs (`with_structured_output`)
 and falls back across models (`with_fallbacks`); LangSmith and W&B Weave version
-prompts and run evaluations as hosted services. Check their documentation for what
-they offer today.
+prompts and run evaluations, mainly as hosted services (both offer self-hosting).
+Check their documentation for what they offer today.
 
 ---
 
@@ -230,9 +229,9 @@ its findings are false alarms (precision 20%, 95% CI 15–26%) and it flags ever
 clean prompt (15/15). Reporting every category on every prompt would find all 45
 defects at 12.5% precision (95% CI 9.5–16.3%), so recall alone says little; the
 precision gain over that baseline is modest. The labels are set by construction;
-their human check (`evals/linter/human-review/`) has no answers recorded. Read its findings as leads to check,
-not as defects; the six static rules of `promptlang analyze` do not depend on the
-model.
+their human check (`evals/linter/human-review/`) has no answers recorded. Read its
+findings as leads to check, not as defects; the six static rules of
+`promptlang analyze` do not depend on the model.
 
 ### Usage
 

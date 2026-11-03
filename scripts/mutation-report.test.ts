@@ -53,5 +53,8 @@ describe("mutation-report", () => {
       "src/runtime",
     ]);
     expect(unmutated(["lexer"], ["!src/lexer/**/*.ts"])).toEqual(["src/lexer"]);
+    expect(unmutated(["compiler", "lexer"], ["src/**/*.ts"])).toEqual([]);
+    expect(unmutated(["compiler", "lexer"], ["src/{compiler,cli}/**/*.ts"])).toEqual(["src/lexer"]);
+    expect(unmutated(["lexer"], ["src/**/*.ts", "!src/lexer/**"])).toEqual(["src/lexer"]);
   });
 });

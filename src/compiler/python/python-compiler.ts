@@ -6,20 +6,20 @@ import type {
   ChainDeclaration,
 } from "../../ast/nodes";
 import {
-  buildPythonTypeRegistry,
   buildCallableRegistryForPython,
   generatePythonTypeDeclaration,
   generatePythonPromptDeclaration,
   generatePythonChain,
   type CompiledPythonMetadata,
 } from "./python-code-generator";
+import { buildTypeRegistry } from "../code-generator";
+import { CompilerError } from "../errors";
 import pkg from "../../../package.json";
-import { structParamNames } from "../code-generator";
-import { extractTemplateVars } from "../template-compiler";
 
 /** Compiles a PromptLang Program to a Python source string. */
 export function compilePython(program: Program, sourceFile: string): string {
   checkTestReferences(program);
+  refuseGeneratedPrefix(program);
   const timestamp = new Date().toISOString();
   const parts: string[] = [];
 
@@ -45,21 +45,13 @@ export function compilePython(program: Program, sourceFile: string): string {
   if (typingImports.length > 0) {
     parts.push(`from typing import ${typingImports.join(", ")}`);
   }
-  const registry = buildPythonTypeRegistry(program);
-  const insertsJson = program.declarations.some((d) => {
-    if (d.kind !== "PromptDeclaration") return false;
-    const json = structParamNames(d.parameters, registry);
-    return d.sections.some(
-      (s) =>
-        s.kind === "MessageSection" &&
-        s.content.isTemplate &&
-        extractTemplateVars(s.content.value).some((v) => json.has(v))
-    );
-  });
-  if (insertsJson) parts.push("import json as _promptlang_json");
-  parts.push(`from .promptlang_runtime import PromptClient, PromptRequest`);
+  parts.push("import json as _promptlang_json");
+  parts.push(
+    `from .promptlang_runtime import PromptClient, PromptRequest, parse_output as _promptlang_parse_output`
+  );
   parts.push("");
 
+  const registry = buildTypeRegistry(program);
   const callableRegistry = buildCallableRegistryForPython(program);
   const meta = extractPythonMetadata(program);
 
@@ -137,4 +129,22 @@ function hasStructOrParams(program: Program): boolean {
     if (d.kind === "ChainDeclaration") return true;
     return false;
   });
+}
+
+const ROLE = {
+  TypeDeclaration: "type",
+  PromptDeclaration: "prompt",
+  ChainDeclaration: "chain",
+} as const;
+
+/** The generated module names its own helpers `_promptlang_...`; a user name there would replace one. */
+function refuseGeneratedPrefix(program: Program): void {
+  for (const d of program.declarations) {
+    if (d.kind in ROLE && "name" in d && d.name.startsWith("_promptlang_"))
+      throw new CompilerError(
+        `'${d.name}' cannot name a ${ROLE[d.kind as keyof typeof ROLE]}: names starting with _promptlang_ are reserved for generated code`,
+        d.line,
+        d.column
+      );
+  }
 }

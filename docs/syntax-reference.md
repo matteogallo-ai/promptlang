@@ -131,13 +131,29 @@ prompt classify_ticket(ticket: string) -> Category {
 
 ### Generated output handling
 
-| Output type | Generated code does |
+The generated function passes the trimmed response text to `parseOutput`
+(`parse_output` in Python) with a schema derived from the declared type, and raises
+`InvalidOutputError` when the answer does not conform (in Python, a `ValueError`
+subclass). Its `errors` list every mismatch as `path: problem`; its message names
+them without quoting the answer, which is on `output`: values are described by
+their kind, and fields the type does not declare are counted, not named. At most 10
+errors are kept, each cut to 500 characters. Both languages apply the same rules and
+produce the same messages, except at the edges: each strips the answer with its own
+whitespace rule (`trim()`, `str.strip()`), which differ on a few control and format
+characters.
+
+| Output type | Accepted answer |
 | --- | --- |
-| `string` | returns the trimmed response text |
-| `number` | `Number(raw)`; throws if the result is `NaN` |
-| `boolean` | accepts `true` / `false` (case-insensitive); throws otherwise |
-| enum | throws unless the trimmed text is one of the members |
-| struct | `JSON.parse` (`json.loads` in Python) and a cast; field types are **not** validated |
+| `string` | any text |
+| `number` | decimal notation (`42`, `-1.5e3`), finite; not `0x10` or `Infinity` |
+| `boolean` | `true` / `false`, case-insensitive |
+| enum | one of the members, exactly |
+| `date` | a real calendar day as `YYYY-MM-DD` (`2024-02-30` is refused) |
+| struct | JSON, one surrounding code fence allowed; every field checked at every depth, required fields present, no field the type does not declare |
+
+A field whose type is imported from another file is not checked. Python follows a
+recursive type to a few hundred levels and TypeScript to several thousand, less when
+the call is already deep in the stack; an answer nested deeper is refused with `output: nested too deeply to check`.
 
 ---
 

@@ -20,6 +20,6 @@ export function warnAboutTemperature(program: Program, file: string): void {
   const temperature = program.metadata.find((m) => m.kind === "TemperatureMetadata");
   if (!temperature || !model?.value.startsWith("claude-")) return;
   console.warn(
-    `  [warn]    ${file}:${temperature.line}:${temperature.column}: @temperature is not sent to Anthropic (API version 2026-10-21 rejects it); it applies to OpenAI and Ollama only`
+    `  [warn]    ${file}:${temperature.line}:${temperature.column}: @temperature is not sent to Anthropic (API version 2026-10-21 rejects it); it applies to OpenAI and Ollama only, and OpenAI reasoning models (gpt-5, o-series) refuse any value but 1`
   );
 }

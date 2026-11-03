@@ -20,6 +20,7 @@ import type { AnalysisContext } from "../src/analyzer/analyzer";
 import { tokenize } from "../src/lexer/lexer";
 import { parse } from "../src/parser/parser";
 import type { PromptClient } from "../src/runtime/client";
+import { IncompleteResponseError } from "../src/runtime/errors";
 import {
   AnthropicClient,
   DEFAULT_ANTHROPIC_VERSION,
@@ -179,8 +180,11 @@ export async function evaluate(
             calls.push({
               ...timed,
               latency_ms: Math.round(performance.now() - t0),
-              input_tokens: 0,
-              output_tokens: 0,
+              // A cut or refused answer was billed; other failures report nothing.
+              input_tokens:
+                error instanceof IncompleteResponseError ? (error.usage?.input_tokens ?? 0) : 0,
+              output_tokens:
+                error instanceof IncompleteResponseError ? (error.usage?.output_tokens ?? 0) : 0,
               error: error instanceof Error ? error.name : typeof error,
             });
             throw error;

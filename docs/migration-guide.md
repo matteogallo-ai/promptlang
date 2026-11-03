@@ -1,5 +1,14 @@
 # Migration Guide
 
+## Unreleased (after 2.0.0)
+
+- **Incomplete answers raise `IncompleteResponseError`** (TypeScript and Python
+  runtimes): an answer cut at `max_tokens`, refused, stopped early or with no
+  text. Before, the text was returned as a success; an OpenAI `content: null`
+  read as `""`. Catch it where you handled empty or truncated output; its
+  `reason` says which case, and `usage` what was billed. `RoutingClient` does not
+  fall back on it.
+
 ## 1.2.0 → 2.0.0
 
 These changes break existing setups, hence the major version; the full list is in

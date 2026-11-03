@@ -89,13 +89,4 @@ sys.stdout.write(json.dumps([r["messages"][0]["content"] for r in sent]))
       await rm(dir, { recursive: true, force: true });
     }
   });
-
-  // A module without one stays as it was, and an unused import would be flagged by linters.
-  test("Python imports json only where a struct parameter is inserted", () => {
-    const unused = `@version "1.0.0"\ntype Ctx = struct { a: string }\nprompt p(c: Ctx) -> string {\n  user: "x"\n}\n`;
-    expect(compilePython(parse(tokenize(unused)), "p.prompt")).not.toContain("import json");
-    expect(compilePython(parse(tokenize(SOURCE)), "reply.prompt")).toContain(
-      "import json as _promptlang_json"
-    );
-  });
 });

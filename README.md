@@ -22,7 +22,8 @@ in production, you find out from a customer complaint.
 
 PromptLang treats prompts as first-class typed code:
 
-- **Typed I/O**: typed inputs and outputs; the generated TypeScript type-checks under `strict`
+- **Typed I/O**: typed inputs and outputs; the generated TypeScript type-checks under `strict`,
+  and the generated code (TypeScript and Python) checks each answer against its declared type
 - **Compile to TypeScript and Python** from the same source of truth
 - **Static analysis (SonarQube-style)**: six deterministic rules (missing tests, unbounded
   templates, prompt-injection risk, token cost, chain complexity, duplicates)
@@ -285,8 +286,9 @@ asyncio.run(main())
 Requires Python 3.11+ (generated files import `typing.NotRequired`) and `httpx` for real API calls (`pip install httpx`).
 `promptlang_runtime.py` checks what the TypeScript runtime checks on a response: an
 empty key is refused, HTTP errors raise `AuthenticationError`, `RateLimitError`,
-`InvalidRequestError` or `ServerError`, and a malformed response raises
-`InvalidResponseError` (all subclasses of `PromptClientError`). It sends Anthropic API
+`InvalidRequestError` or `ServerError`, a malformed response raises
+`InvalidResponseError`, and an answer cut at `@max_tokens`, refused or empty raises
+`IncompleteResponseError` (all subclasses of `PromptClientError`). It sends Anthropic API
 version 2026-10-21, without `temperature`. Unlike the TypeScript runtime, it does not
 retry, and a timeout or a connection failure raises `httpx`'s own exception.
 The `MockClient` works with no dependencies for local testing.
@@ -390,7 +392,11 @@ const category = await classify_ticket({ ticket: "..." }, client);
 The generated code puts the file's `@model` in every request. Give each provider
 that uses other names a `modelMap` from that model to its own; a provider whose map
 has no entry for the requested model is skipped rather than sent a name it cannot
-serve. An `AuthenticationError` stops the routing at once.
+serve. Routing moves on only when a provider could not serve the request (5xx, rate
+limit, timeout, network error, 404, malformed body). A bad key, an incomplete answer,
+a 400 (the request itself is wrong, so another provider would receive the user's
+data for nothing) and any error that is not a `PromptClientError` stop it at once. A
+timed-out request may still be billed by the provider that timed out.
 
 ```typescript
 import { AnthropicClient, OpenAIClient, RoutingClient } from "@promptlang/core/runtime";
@@ -409,6 +415,14 @@ const client = new RoutingClient({
 
 const category = await classify_ticket({ ticket: "..." }, client);
 ```
+
+`OpenAIClient` sends `max_tokens` as `max_completion_tokens`, which GPT-5 and the
+o-series require. Those models refuse any `temperature` but 1, so a prompt routed to
+them should not set `@temperature`; the provider's 400 surfaces as
+`InvalidRequestError`. `compile` warns about `@temperature` only next to a `claude-`
+model, where it is not sent at all. An OpenAI-compatible server reached through
+`baseURL` that does not read `max_completion_tokens` applies its own output limit
+instead.
 
 ---
 

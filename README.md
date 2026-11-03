@@ -35,7 +35,8 @@ PromptLang treats prompts as first-class typed code:
 - **Multi-provider fallback**: `RoutingClient` tries providers in order, translating
   the model name per provider (`modelMap`), and never falls back on a bad key
 - **AI-powered linter**: `analyze --ai` sends each prompt to Claude for a semantic
-  review; one live run is committed, its quality is not measured
+  review; measured on a labelled corpus, it finds almost every designed defect but
+  most of its findings are false alarms (precision about 20%)
 - **No third-party runtime dependencies**: Bun + `fetch` + your own API keys
 
 Not delivered, and labelled as such everywhere in this repository (see
@@ -115,7 +116,7 @@ tools' public documentation and are not tested here.
 | Typed I/O                        |    ❌     |    ❌     |    ❌     |       ✅       |
 | Native tests                     |    ❌     |   SaaS    |   SaaS    | ✅ (mock or live; no evals) |
 | SemVer for prompts               |    ❌     |    ❌     |    ❌     |       ✅       |
-| AI-powered linter                |    ❌     |    ❌     |    ❌     | ✅ (one live run; quality not measured) |
+| AI-powered linter                |    ❌     |    ❌     |    ❌     | ✅ (measured; precision ~20%) |
 | Multi-provider fallback          |  Partial  |    ❌     |    ❌     | ✅ (per-provider model map) |
 | Compile to TypeScript **and** Python | ❌     |    ❌     |    ❌     |       ✅       |
 | Static analysis (SonarQube-style)|    ❌     |    ❌     |    ❌     |       ✅       |
@@ -451,7 +452,7 @@ PromptLang is developed as a Bun workspace. The main package,
 
 | Package | Location | Version | Description |
 | --- | --- | --- | --- |
-| [`@promptlang/yaml-parser`](https://www.npmjs.com/package/@promptlang/yaml-parser) | `packages/yaml-parser/` | 1.0.0 (on npm since PromptLang v1.2.0) | Zero-dependency minimal YAML parser. Extracted from PromptLang core in v1.1.0 so sibling projects (like [Praxis](https://github.com/matteogallo-ai/praxis)) can reuse it via `bun add @promptlang/yaml-parser`. |
+| [`@promptlang/yaml-parser`](https://www.npmjs.com/package/@promptlang/yaml-parser) | `packages/yaml-parser/` | 1.0.1 (on npm since PromptLang v1.2.0) | Zero-dependency minimal YAML parser. Extracted from PromptLang core in v1.1.0 so sibling projects (like [Praxis](https://github.com/matteogallo-ai/praxis)) can reuse it via `bun add @promptlang/yaml-parser`. |
 
 Each package has its own `README.md`, `CHANGELOG.md`, and independent
 SemVer track.

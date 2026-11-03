@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **`RoutingClient` falls back only when a provider could not serve the
+  request** (outage, rate limit, timeout, network, 404, malformed body). A 400
+  and any error that is not a `PromptClientError` used to send the same request,
+  and the user's data, to the next provider; they are now thrown at once, like
+  `AuthenticationError`.
+
 ### Fixed
 - **`OpenAIClient` sends `max_completion_tokens`, not `max_tokens`** (TypeScript
   and Python). GPT-5 and the o-series, which the routing example falls back to,

@@ -280,7 +280,7 @@ All runtime errors extend `PromptClientError → Error`. Sub-classes:
 - `AnthropicClient` — POST `/v1/messages`; separates system messages into the top-level `system` field; max_tokens defaults to 1024.
 - `OpenAIClient` — POST `/v1/chat/completions`; messages forwarded unchanged; normalizes `prompt_tokens`/`completion_tokens` to `input_tokens`/`output_tokens`.
 - `OllamaClient` — POST `/api/chat`; no auth; maps `options.temperature` / `options.num_predict`; `stream: false`; pedagogical errors for ECONNREFUSED and 404.
-- `RoutingClient` — tries `primary`, then each `fallback` in order, each with an optional `modelMap` from the requested model to its own; `AuthenticationError` and `IncompleteResponseError` short-circuit without trying fallbacks; aggregates all errors in `AllProvidersFailedError`.
+- `RoutingClient` — tries `primary`, then each `fallback` in order, each with an optional `modelMap` from the requested model to its own; falls back only when a provider could not serve the request (`ServerError`, `RateLimitError`, `TimeoutError`, network errors, `NotFoundError`, `InvalidResponseError`, a missing model mapping). `AuthenticationError`, `IncompleteResponseError`, `InvalidRequestError` (a 400: the request itself is wrong) and any error that is not a `PromptClientError` (a bug) are thrown without trying fallbacks. A timed-out request may still be billed by the provider that timed out. All errors are aggregated in `AllProvidersFailedError`.
 
 All provider clients use a shared `withRetry` utility (exponential backoff, configurable `maxRetries` and `retryDelay`).
 

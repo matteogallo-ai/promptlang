@@ -13,7 +13,7 @@ export const sha256 = (data: string | Uint8Array) =>
 export async function listedChecksums(dir: string): Promise<Array<[hash: string, name: string]>> {
   const sums = await Bun.file(resolve(dir, "SHA256SUMS")).text();
   return sums
-    .split("\n")
+    .split(/\r?\n/)
     .filter(Boolean)
     .map((line) => {
       // shasum writes "<hash>  <name>", or "<hash> *<name>" in binary mode; names may hold spaces.

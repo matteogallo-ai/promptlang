@@ -13,6 +13,9 @@ no per-test coverage, so every mutant runs the whole command). This runs locally
 not in CI. Score = (killed + timeout) / (killed + timeout + survived + no coverage).
 Every surviving mutant is accounted for in [survivors.md](survivors.md).
 
+The score covers those files only. Not mutated: `src/analyzer`, `src/ast`, `src/cli`, `src/compiler`, `src/config`, `src/registry`, `src/runtime`, `src/testing`;
+their tests are not measured by this page.
+
 | File | Score % | Killed | Timeout | Survived | No coverage | Errors |
 | ---- | ------: | -----: | ------: | -------: | ----------: | -----: |
 | `src/lexer/errors.ts` | 100.00 | 2 | 0 | 0 | 0 | 0 |

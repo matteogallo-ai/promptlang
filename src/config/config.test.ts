@@ -6,6 +6,8 @@ import {
   ConfigParseError,
   CONFIG_DEFAULTS,
 } from "./config";
+import { SCRATCH } from "../../tests/support/scratch";
+import { join } from "node:path";
 
 const VALID_MIN = `name: my-project\nversion: 1.0.0\n`;
 
@@ -91,13 +93,13 @@ describe("config: defaults applied", () => {
 
 describe("config: file loading", () => {
   test("loadConfig throws when the file does not exist", async () => {
-    await expect(loadConfig("/tmp/does-not-exist-promptlang.yaml")).rejects.toThrow(
+    await expect(loadConfig(join(SCRATCH, "does-not-exist-promptlang.yaml"))).rejects.toThrow(
       ConfigValidationError
     );
   });
 
   test("loadConfig reads and parses a real file on disk", async () => {
-    const path = "/tmp/promptlang-config-test.yaml";
+    const path = join(SCRATCH, "promptlang-config-test.yaml");
     await Bun.write(path, VALID_MIN);
     const cfg = await loadConfig(path);
     expect(cfg.name).toBe("my-project");

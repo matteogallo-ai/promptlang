@@ -2,10 +2,11 @@ import { describe, expect, test } from "bun:test";
 import { mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { resolveFiles } from "./files";
+import { SCRATCH } from "../../tests/support/scratch";
 
 describe("resolveFiles", () => {
   test("keeps .prompt paths, scans directories recursively and dedupes", async () => {
-    const dir = "/tmp/promptlang-resolve-files";
+    const dir = join(SCRATCH, "promptlang-resolve-files");
     await rm(dir, { recursive: true, force: true });
     await mkdir(join(dir, "nested"), { recursive: true });
     await Bun.write(join(dir, "a.prompt"), "");

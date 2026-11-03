@@ -2,3 +2,4 @@
 production = false
 
 [test]
+preload = ["./tests/support/scratch-cleanup.ts"]

@@ -4,6 +4,7 @@ import {
   AuthenticationError,
   InvalidRequestError,
   NetworkError,
+  NotFoundError,
   type PromptClientError,
   RateLimitError,
   ServerError,
@@ -76,8 +77,11 @@ export abstract class BaseHttpClient implements PromptClient {
           parseRetryAfter(response.headers.get("retry-after"))
         );
       case 400:
-      case 404:
         return new InvalidRequestError(message, this.provider);
+      // Apart from the request, so routing tells a model or endpoint this
+      // provider lacks from a request no provider would accept.
+      case 404:
+        return new NotFoundError(message, this.provider);
       default:
         return new ServerError(response.status, message, this.provider);
     }

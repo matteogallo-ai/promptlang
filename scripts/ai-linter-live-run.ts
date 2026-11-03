@@ -22,7 +22,7 @@ import {
   AnthropicClient,
   DEFAULT_ANTHROPIC_VERSION,
 } from "../src/runtime/providers/anthropic-client";
-import { pricePerMTok } from "../src/testing/cost";
+import { callUsd, pricePerMTok } from "../src/testing/cost";
 
 export const BUDGET_USD = 0.05;
 const MODEL = AI_LINTER_MODEL;
@@ -60,6 +60,7 @@ export interface RunRecord {
   calls: Array<{ input_tokens: number; output_tokens: number }>;
   usage: { input_tokens: number; output_tokens: number };
   cost_usd: number;
+  /** The short-prompt card; each call in `cost_usd` is priced on the card its prompt selects. */
   price_usd_per_mtok: { input: number; output: number };
   issues: Array<{ file: string; rule: string; severity: string; message: string }>;
   /** "ok", or "provider-errors" when at least one call failed (see ai:request-failure issues). */
@@ -105,7 +106,8 @@ export async function run(
     estimate_usd: estimateLinterCost(contexts, MODEL).estimatedUsd,
     calls,
     usage,
-    cost_usd: (usage.input_tokens * inPrice + usage.output_tokens * outPrice) / 1e6,
+    // Priced call by call: a long-context rate applies to one call's prompt, not to the total.
+    cost_usd: calls.reduce((s, c) => s + callUsd(MODEL, c.input_tokens, c.output_tokens), 0),
     price_usd_per_mtok: { input: inPrice, output: outPrice },
     issues: issues.map((i) => ({
       file: i.file,

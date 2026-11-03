@@ -12,4 +12,4 @@ generated/
 runtime-generated/
 tmp-test-output/
 .stryker-tmp/
-reports/
+/reports/mutation/

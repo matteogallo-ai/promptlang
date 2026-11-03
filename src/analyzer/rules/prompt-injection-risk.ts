@@ -65,7 +65,9 @@ function insideTag(content: string, at: number): boolean {
     else if (open.includes(name!)) open.splice(open.lastIndexOf(name!));
   }
   const after = content.slice(at);
-  return open.some((name) => new RegExp(`</${name.replace(/[.]/g, "\\.")}\\s*>`).test(after));
+  // Closing tags are read with a fixed pattern: no name is built into a regex.
+  const closed = new Set([...after.matchAll(/<\/([A-Za-z_][\w.:-]*)\s*>/g)].map((m) => m[1]!));
+  return open.some((name) => closed.has(name));
 }
 
 /**

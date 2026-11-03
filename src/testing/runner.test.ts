@@ -59,7 +59,7 @@ describe("runTests in mock mode", () => {
     );
     expect(r?.failures).toEqual([
       "expect.ref matches: expected a string, got undefined",
-      'expect schema: output.total: expected number, got "120"',
+      "expect schema: output.total: expected number, got a string",
     ]);
   });
 

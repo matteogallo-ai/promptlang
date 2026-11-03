@@ -28,13 +28,16 @@ describe("schemaErrors", () => {
   });
 
   test("each kind of mismatch is reported with its path", () => {
-    expect(errors({ ...good, kind: "c" })).toEqual(['output.kind: expected one of a, b, got "c"']);
-    expect(errors({ ...good, n: "1" })).toEqual(['output.n: expected number, got "1"']);
+    // Messages say what a value is, never what it says: answers are untrusted and reach logs.
+    expect(errors({ ...good, kind: "c" })).toEqual([
+      "output.kind: expected one of a, b, got a string",
+    ]);
+    expect(errors({ ...good, n: "1" })).toEqual(["output.n: expected number, got a string"]);
     expect(errors({ ...good, n: Number.POSITIVE_INFINITY })).toEqual([
       "output.n: expected a finite number, got Infinity",
     ]);
     expect(errors({ ...good, on: "02/11/2026" })).toEqual([
-      'output.on: expected a YYYY-MM-DD date, got "02/11/2026"',
+      "output.on: expected a YYYY-MM-DD date, got a string",
     ]);
     expect(errors({ kind: "a", n: 1, on: "2026-11-02" })).toEqual([
       "output.ok: missing required field",
@@ -45,7 +48,7 @@ describe("schemaErrors", () => {
   test("non-objects, null and arrays are not structs", () => {
     expect(errors(null)).toEqual(["output: expected an object, got null"]);
     expect(errors([good])).toEqual(["output: expected an object, got an array"]);
-    expect(errors("x")).toEqual(['output: expected an object, got "x"']);
+    expect(errors("x")).toEqual(["output: expected an object, got a string"]);
   });
 
   test("an undeclared type cannot be checked and says so", () => {

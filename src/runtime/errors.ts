@@ -120,3 +120,21 @@ export class AllProvidersFailedError extends PromptClientError {
     this.errors = errors;
   }
 }
+
+/**
+ * The model answered, but not in the prompt's declared output type. Not a
+ * PromptClientError: the provider worked, and the answer is what failed, so a
+ * test reports it as a failure, not as a provider error. `errors` lists each
+ * mismatch by path; the message repeats them and never quotes the answer, which
+ * is untrusted and may hold user data. `output` keeps the answer for the caller.
+ */
+export class InvalidOutputError extends Error {
+  constructor(
+    readonly prompt: string,
+    readonly errors: readonly string[],
+    readonly output: string
+  ) {
+    super(`output of prompt '${prompt}' does not match its type: ${errors.join("; ")}`);
+    this.name = "InvalidOutputError";
+  }
+}

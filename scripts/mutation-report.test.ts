@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { summarize, survivors } from "./mutation-report";
+import { summarize, survivors, unmutated } from "./mutation-report";
 
 const at = (line: number, column = 1) => ({ start: { line, column } });
 
@@ -43,5 +43,15 @@ describe("mutation-report", () => {
       "src/a.ts:3:7 ConditionalExpression",
       "src/b.ts:9:1 StringLiteral",
     ]);
+  });
+
+  // The score must not read as a measure of code Stryker never touched.
+  test("names the source directories that no mutate pattern reaches", () => {
+    const mutate = ["src/lexer/**/*.ts", "src/parser/**/*.ts", "!**/*.test.ts"];
+    expect(unmutated(["compiler", "lexer", "parser", "runtime"], mutate)).toEqual([
+      "src/compiler",
+      "src/runtime",
+    ]);
+    expect(unmutated(["lexer"], ["!src/lexer/**/*.ts"])).toEqual(["src/lexer"]);
   });
 });

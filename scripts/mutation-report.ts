@@ -6,6 +6,7 @@
  * Usage: bun run scripts/mutation-report.ts [reports/mutation/mutation.json]
  * Run by `bun run mutation` after `stryker run`.
  */
+import { readdirSync } from "node:fs";
 import { join } from "node:path";
 
 interface Mutant {
@@ -99,6 +100,12 @@ export function survivors(report: Report): Survivor[] {
     );
 }
 
+/** The `src/<dir>` entries no positive mutate pattern starts in. */
+export function unmutated(dirs: readonly string[], mutate: readonly string[]): string[] {
+  const reached = mutate.filter((g) => !g.startsWith("!"));
+  return dirs.map((d) => `src/${d}`).filter((d) => !reached.some((g) => g.startsWith(`${d}/`)));
+}
+
 function row(f: FileScore): string {
   return `| \`${f.file}\` | ${f.score.toFixed(2)} | ${f.killed} | ${f.timeout} | ${f.survived} | ${f.noCoverage} | ${f.errors} |`;
 }
@@ -113,6 +120,11 @@ if (import.meta.main) {
   const config = await Bun.file(join(repoRoot, "stryker.config.json")).json();
   const { files, total } = summarize(report);
   const date = new Date().toISOString().slice(0, 10);
+  const srcDirs = readdirSync(join(repoRoot, "src"), { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name)
+    .sort();
+  const notMutated = unmutated(srcDirs, config.mutate);
 
   await Bun.write(
     join(repoRoot, "docs/mutation/summary.json"),
@@ -135,6 +147,9 @@ if (import.meta.main) {
       "no per-test coverage, so every mutant runs the whole command). This runs locally,",
       "not in CI. Score = (killed + timeout) / (killed + timeout + survived + no coverage).",
       "Every surviving mutant is accounted for in [survivors.md](survivors.md).",
+      "",
+      `The score covers those files only. Not mutated: \`${notMutated.join("`, `")}\`;`,
+      "their tests are not measured by this page.",
       "",
       "| File | Score % | Killed | Timeout | Survived | No coverage | Errors |",
       "| ---- | ------: | -----: | ------: | -------: | ----------: | -----: |",

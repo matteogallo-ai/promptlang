@@ -1,4 +1,11 @@
-import type { CallExpression, Program, PromptDeclaration, TestDeclaration } from "../ast/nodes";
+import type {
+  CallExpression,
+  Expression,
+  Program,
+  PromptDeclaration,
+  TestDeclaration,
+} from "../ast/nodes";
+import { extractTemplateVars } from "../compiler/template-compiler";
 
 /**
  * Standard Claude API prices in USD per million tokens (input, output), from
@@ -28,7 +35,7 @@ const DEFAULT_MAX_TOKENS = 1024;
  * Characters per token, deliberately low: English averages ~4, and recent
  * Claude tokenizers count ~30% more tokens for the same text.
  */
-const CHARS_PER_TOKEN = 3;
+export const CHARS_PER_TOKEN = 3;
 
 export interface CostEstimate {
   model: string;
@@ -42,14 +49,13 @@ export interface CostEstimate {
 export class UnpricedModelError extends Error {}
 
 /**
- * Prices `calls` requests to `model`: `inputChars` of text (÷ 3) plus
- * `extraInputTokens` already counted in tokens, and `maxOutputTokens` in all.
+ * Prices `calls` requests to `model`: `inputChars` of text (÷ 3) and
+ * `maxOutputTokens` in all.
  */
 export function priceEstimate(
   model: string,
   calls: number,
   inputChars: number,
-  extraInputTokens: number,
   maxOutputTokens: number
 ): CostEstimate {
   const price = pricePerMTok(model);
@@ -58,28 +64,106 @@ export function priceEstimate(
       `no price is recorded for model ${model} (priced: ${Object.keys(PRICES_USD_PER_MTOK).join(", ")})`
     );
   }
-  const inputTokens = Math.ceil(inputChars / CHARS_PER_TOKEN) + extraInputTokens;
+  const inputTokens = Math.ceil(inputChars / CHARS_PER_TOKEN);
   const estimatedUsd = (inputTokens * price[0] + maxOutputTokens * price[1]) / 1_000_000;
   return { model, calls, inputTokens, maxOutputTokens, estimatedUsd };
 }
 
-function argChars(call: CallExpression): number {
+/**
+ * Characters an earlier step's output is assumed to take per token when a later
+ * step inserts it. English runs at about 4; the cap measures that text in
+ * characters (÷ 3), so the estimate must not count it shorter than the cap will.
+ */
+const CARRIED_CHARS_PER_TOKEN = 6;
+
+/**
+ * A chain can insert a value its test did not give (an absent optional argument,
+ * a missing member: "undefined") or a struct output whole ("[object Object]"):
+ * no placeholder in a chain step is counted shorter than that.
+ */
+const ABSENT_OR_OBJECT_CHARS = "[object Object]".length;
+
+/** The text a literal argument is inserted as: numbers and booleans as String() writes them. */
+function literalText(a: CallExpression["arguments"][number]): string | null {
+  const v = a.kind === "NamedArgument" ? a.value : a;
+  switch (v.kind) {
+    case "StringLiteral":
+      return v.value;
+    case "NumberLiteral":
+    case "BooleanLiteral":
+      return String(v.value);
+    case "Identifier":
+      return v.name;
+    default:
+      return null;
+  }
+}
+
+/**
+ * Characters of one prompt's messages once the arguments are inserted, every
+ * `{{name}}` counted each time it appears. A direct call inserts its own
+ * arguments by name. A chain step can insert a chain argument, a literal of the
+ * step or an earlier step's output, so each placeholder counts as the longest of
+ * those. It has to be an upper bound: the cap refuses a call longer than estimated.
+ */
+function renderedChars(
+  call: CallExpression,
+  prompt: PromptDeclaration,
+  step: { literals: number[]; earlierSteps: number; maxTokens: number } | null
+): number {
+  const byName = new Map<string, number>();
+  call.arguments.forEach((a, i) => {
+    const value = literalText(a);
+    if (value === null) return;
+    const name = a.kind === "NamedArgument" ? a.name : prompt.parameters[i]?.name;
+    if (name) byName.set(name, value.length);
+  });
+  const longest = Math.max(
+    step ? ABSENT_OR_OBJECT_CHARS : 0,
+    ...call.arguments.map((a) => literalText(a)?.length ?? 0),
+    ...(step?.literals ?? []),
+    step && step.earlierSteps > 0 ? step.maxTokens * CARRIED_CHARS_PER_TOKEN : 0
+  );
   let n = 0;
-  for (const a of call.arguments) {
-    const v = a.kind === "NamedArgument" ? a.value : a;
-    if (v.kind === "StringLiteral") n += v.value.length;
+  for (const s of prompt.sections) {
+    if (s.kind !== "MessageSection") continue;
+    n += s.content.value.length;
+    for (const name of extractTemplateVars(s.content.value))
+      n += (step ? undefined : byName.get(name)) ?? longest;
   }
   return n;
 }
 
-/** The prompts one call reaches: itself, or each prompt step of a chain. */
-function promptsReached(program: Program, callee: string): PromptDeclaration[] {
+/** The calls in `e`, arguments before the call that receives them, as the generated code runs them. */
+function callsIn(e: Expression | CallExpression["arguments"][number]): CallExpression[] {
+  const v = e.kind === "NamedArgument" ? e.value : e;
+  if (v.kind !== "CallExpression") return [];
+  return [...v.arguments.flatMap(callsIn), v];
+}
+
+/**
+ * The prompts one call reaches, in call order, each with the literal arguments
+ * of the calls on its way: itself, or every call in a chain's steps and return
+ * expression, nested ones included.
+ */
+function promptsReached(
+  program: Program,
+  callee: string
+): Array<{ prompt: PromptDeclaration; literals: number[] }> {
   for (const d of program.declarations) {
-    if (d.kind === "PromptDeclaration" && d.name === callee) return [d];
+    if (d.kind === "PromptDeclaration" && d.name === callee) return [{ prompt: d, literals: [] }];
     if (d.kind === "ChainDeclaration" && d.name === callee) {
-      return d.steps.flatMap((s) =>
-        s.expression.kind === "CallExpression" ? promptsReached(program, s.expression.callee) : []
-      );
+      const calls = [...d.steps.map((s) => s.expression), d.returnExpression].flatMap(callsIn);
+      return calls.flatMap((call) => {
+        const literals = call.arguments.flatMap((a) => {
+          const t = literalText(a);
+          return t === null ? [] : [t.length];
+        });
+        return promptsReached(program, call.callee).map((r) => ({
+          prompt: r.prompt,
+          literals: [...r.literals, ...literals],
+        }));
+      });
     }
   }
   return [];
@@ -103,19 +187,17 @@ export function estimateLiveCost(program: Program): CostEstimate | null {
 
   let calls = 0;
   let inputChars = 0;
-  // For chains, every earlier step's whole output is charged once to each later step's input;
-  // a step that interpolates an earlier output twice is still counted once.
-  let carriedTokens = 0;
   for (const t of tests) {
     const call = t.input as CallExpression;
     const reached = promptsReached(program, call.callee);
-    for (const [i, p] of reached.entries()) {
+    const direct = reached.length === 1 && reached[0]!.prompt.name === call.callee;
+    for (const [i, r] of reached.entries()) {
       calls++;
-      carriedTokens += i * perCallOutput;
-      inputChars += argChars(call);
-      for (const s of p.sections)
-        if (s.kind === "MessageSection") inputChars += s.content.value.length;
+      const step = direct
+        ? null
+        : { literals: r.literals, earlierSteps: i, maxTokens: perCallOutput };
+      inputChars += renderedChars(call, r.prompt, step);
     }
   }
-  return priceEstimate(model, calls, inputChars, carriedTokens, calls * perCallOutput);
+  return priceEstimate(model, calls, inputChars, calls * perCallOutput);
 }

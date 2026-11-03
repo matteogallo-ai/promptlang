@@ -16,13 +16,15 @@ import {
 } from "../runtime/errors";
 import type { PromptRequest, PromptResponse } from "../runtime/types";
 import { importCompiled } from "./load-compiled";
+import { BudgetExceededError } from "./budget";
 import { schemaErrors } from "./schema";
 
 /**
  * Why a call got no answer. `configuration`: the provider refused what was sent
- * (key, model, parameters), so retrying changes nothing until the file or the
- * key is fixed. `provider`: timeout, network, rate limit, server or a malformed
- * body, which a later retry can clear.
+ * (key, model, parameters), or the call would have passed the approved budget,
+ * so retrying changes nothing until the file, the key or the approval changes.
+ * `provider`: timeout, network, rate limit, server or a malformed body, which a
+ * later retry can clear.
  */
 export interface ProviderFailure {
   kind: "configuration" | "provider";
@@ -31,6 +33,7 @@ export interface ProviderFailure {
 
 function classify(error: PromptClientError): ProviderFailure {
   const configuration =
+    error instanceof BudgetExceededError ||
     error instanceof AuthenticationError ||
     error instanceof InvalidRequestError ||
     error instanceof NotFoundError;

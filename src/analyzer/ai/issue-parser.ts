@@ -11,9 +11,16 @@ interface RawAiIssue {
   confidence: "high" | "medium" | "low";
 }
 
+/** True when `x` is an issue the linter can report: it needs at least a string category. */
+function isRawIssue(x: unknown): x is RawAiIssue {
+  return typeof x === "object" && x !== null && typeof (x as RawAiIssue).category === "string";
+}
+
 /**
- * Parses the raw JSON string returned by the AI linter model into typed Issue objects.
- * Strips markdown fences if present. Returns a parse-failure issue on malformed JSON.
+ * Parses the raw JSON string returned by the AI linter model into typed Issue
+ * objects. Strips markdown fences if present. An answer that is not JSON, or is
+ * JSON without an `issues` array of issues, is a parse-failure issue: a wrong
+ * answer must not read as "no issues found".
  */
 export function parseAiResponse(raw: string, prompt: PromptDeclaration, file: string): Issue[] {
   const cleaned = raw
@@ -21,23 +28,27 @@ export function parseAiResponse(raw: string, prompt: PromptDeclaration, file: st
     .replace(/^```json\s*/i, "")
     .replace(/\s*```$/i, "");
 
-  let parsed: { issues?: RawAiIssue[] };
-  try {
-    parsed = JSON.parse(cleaned) as { issues?: RawAiIssue[] };
-  } catch {
-    return [
-      {
-        severity: "info",
-        rule: "ai:parse-failure",
-        file,
-        line: prompt.line,
-        column: prompt.column,
-        message: `AI linter response could not be parsed as JSON for prompt '${prompt.name}'. This may indicate an API issue.`,
-      },
-    ];
-  }
+  const failure = (why: string): Issue[] => [
+    {
+      // A warning, like a request failure: the prompt was not linted.
+      severity: "warning",
+      rule: "ai:parse-failure",
+      file,
+      line: prompt.line,
+      column: prompt.column,
+      message: `AI linter response for prompt '${prompt.name}' ${why}. This may indicate an API issue.`,
+    },
+  ];
 
-  if (!parsed.issues || !Array.isArray(parsed.issues)) return [];
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch {
+    return failure("could not be parsed as JSON");
+  }
+  const issues = (parsed as { issues?: unknown } | null)?.issues;
+  if (!Array.isArray(issues) || !issues.every(isRawIssue))
+    return failure("is JSON but not an object with an array of issues");
 
   const severityMap: Record<string, "warning" | "info"> = {
     high: "warning",
@@ -45,7 +56,7 @@ export function parseAiResponse(raw: string, prompt: PromptDeclaration, file: st
     low: "info",
   };
 
-  return parsed.issues.map((rawIssue) => ({
+  return issues.map((rawIssue) => ({
     severity: severityMap[rawIssue.confidence] ?? "info",
     rule: `ai:${rawIssue.category.toLowerCase().replace(/_/g, "-")}`,
     file,

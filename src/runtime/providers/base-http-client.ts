@@ -109,11 +109,30 @@ export abstract class BaseHttpClient implements PromptClient {
       if (error.name === "AbortError") {
         throw new TimeoutError(`Request timed out after ${this.timeout}ms`, this.provider);
       }
-      throw this.networkError(error);
+      throw redacted(this.networkError(error), spec.headers);
     } finally {
       clearTimeout(timeoutId);
     }
-    if (!response.ok) throw await this.errorFor(response, request);
+    if (!response.ok) throw redacted(await this.errorFor(response, request), spec.headers);
     return this.parseResponse(await readJsonObject(response, this.provider), request);
   }
+}
+
+const CREDENTIAL_HEADER = /key|authorization|token/i;
+
+/**
+ * Removes the request's credentials from `error`. Its message quotes the
+ * provider's error body, which reaches terminals, CI logs and committed run
+ * records; a provider or a proxy that echoes the key must not leak it there.
+ */
+function redacted<E extends Error>(error: E, headers: Record<string, string>): E {
+  for (const [name, value] of Object.entries(headers)) {
+    if (!CREDENTIAL_HEADER.test(name)) continue;
+    const secret = value.replace(/^Bearer\s+/i, "");
+    // A short value would match ordinary words; real keys are far longer.
+    if (secret.length < 8) continue;
+    error.message = error.message.replaceAll(secret, "[redacted]");
+    if (error.stack) error.stack = error.stack.replaceAll(secret, "[redacted]");
+  }
+  return error;
 }

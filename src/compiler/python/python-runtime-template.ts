@@ -156,7 +156,7 @@ class InvalidOutputError(ValueError):
 
 
 _ISO_DATE = re.compile("[0-9]{4}-[0-9]{2}-[0-9]{2}")
-_DECIMAL = re.compile("[+-]?([0-9]+[.]?[0-9]*|[.][0-9]+)([eE][+-]?[0-9]+)?")
+_DECIMAL = re.compile("[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)([eE][+-]?[0-9]+)?")
 _FENCED = re.compile(chr(96) * 3 + "[A-Za-z0-9_-]*\\r?\\n(.*)\\r?\\n" + chr(96) * 3, re.DOTALL)
 _MAX_ERRORS = 10
 _MAX_ERROR_LENGTH = 500

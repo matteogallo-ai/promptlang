@@ -167,6 +167,14 @@ describe("generated code validates the model's output against the declared type"
     expect((await failure("chain_of", raw)).errors).toEqual(["output: nested too deeply to check"]);
   });
 
+  test("a long run of digits that is not a number is refused in linear time", async () => {
+    const started = performance.now();
+    expect((await failure("count", `${"9".repeat(200_000)}x`)).errors).toEqual([
+      "output: expected number, got a string",
+    ]);
+    expect(performance.now() - started).toBeLessThan(1000);
+  });
+
   test("a number is read from decimal notation only, a date must be a real day", async () => {
     expect(await run("count", "-1.5e3")).toBe(-1500);
     expect((await failure("count", "0x10")).errors).toEqual([
@@ -232,6 +240,8 @@ const CASES: Array<[keyof Module, string]> = [
   // Python's json.loads refuses integers over 4300 digits unless told how to read them.
   ["invoice", `{"amount": 1${"0".repeat(5_000)}, "vendor": "A"}`],
   ["count", `1${"0".repeat(5_000)}`],
+  // Digits that are not a number: an ambiguous pattern took quadratic time on them.
+  ["count", `${"9".repeat(200_000)}x`],
   // Two names that differ only by case must not share a generated constant.
   ["a", "7"],
   ["A", "7"],

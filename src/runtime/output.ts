@@ -21,8 +21,12 @@ export interface OutputSpec {
 }
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-/** Decimal notation only, as in Python: `Number` also reads `0x10`, `0b1` and `""`. */
-const DECIMAL = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+/**
+ * Decimal notation only, as in Python: `Number` also reads `0x10`, `0b1` and `""`.
+ * Unambiguous (a fraction only after a dot), so a long run of digits that is not
+ * a number fails in linear time.
+ */
+const DECIMAL = /^[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$/;
 
 /**
  * A real calendar day: `Date.parse` alone reads 2024-02-30 as March 1st. Year

@@ -17,11 +17,11 @@ describe("runs/live artefacts", () => {
     expect(files.filter((f) => !listed.includes(f))).toEqual([]);
   });
 
-  test("file names with spaces and binary-mode markers are read whole; a malformed line throws", async () => {
+  test("file names with spaces, binary-mode markers and CRLF endings are read whole; a malformed line throws", async () => {
     const t = await mkdtemp(join(tmpdir(), "promptlang-sums-"));
     try {
       const h = "0".repeat(64);
-      await Bun.write(join(t, "SHA256SUMS"), `${h}  a b.json\n${h} *c.json\n`);
+      await Bun.write(join(t, "SHA256SUMS"), `${h}  a b.json\r\n${h} *c.json\n`);
       expect(await listedChecksums(t)).toEqual([
         [h, "a b.json"],
         [h, "c.json"],

@@ -93,4 +93,45 @@ describe.skipIf(typeof Bun.YAML === "undefined")("GitHub Actions workflows", () 
     );
     expect(workflowViolations("d.yml", list)).toEqual(["d.yml: uses pull_request_target"]);
   });
+
+  test("a GitHub Release ships the attestation bundle of an attest-build-provenance step", () => {
+    const attest = (a = "attest-build-provenance") =>
+      `      - uses: actions/${a}@${SHA} # v4.2.2\n`;
+    const job = (script: string, needs = "j") =>
+      `  r:\n    needs: ${needs}\n    runs-on: ubuntu-latest\n    steps:\n      - run: ${script}\n`;
+    const create = `gh release create "$T" a.tgz a.tgz.sigstore.json`;
+    const noAttest = (f: string) =>
+      `${f}: job r: makes a GitHub Release, but neither it nor a job it needs runs actions/attest-build-provenance`;
+    const noBundle = (f: string) =>
+      `${f}: job r: a gh release script does not attach the .sigstore.json attestation bundle`;
+
+    expect(workflowViolations("ok.yml", wf(`    steps:\n${attest()}${job(create)}`))).toEqual([]);
+    expect(
+      workflowViolations("list.yml", wf(`    steps:\n${attest("attest")}${job(create, "[x, j]")}`))
+    ).toEqual([]);
+    const sameJob = `    steps: []\n  r:\n    runs-on: ubuntu-latest\n    steps:\n${attest()}      - run: ${create}\n`;
+    expect(workflowViolations("same.yml", wf(sameJob))).toEqual([]);
+
+    expect(workflowViolations("a.yml", wf(`    steps: []\n${job(create)}`))).toEqual([
+      noAttest("a.yml"),
+    ]);
+    expect(
+      workflowViolations("m.yml", wf(`    steps:\n${attest()}${job(create, "gone")}`))
+    ).toEqual([noAttest("m.yml")]);
+    expect(
+      workflowViolations(
+        "b.yml",
+        wf(`    steps:\n${attest()}${job('gh  release create "$T" a.tgz')}`)
+      )
+    ).toEqual([noBundle("b.yml")]);
+    // The bundle named in another step does not count for the step that uploads.
+    const elsewhere = job(`gh release upload "$T" a.tgz\n      - run: echo a.tgz.sigstore.json`);
+    expect(workflowViolations("c.yml", wf(`    steps:\n${attest()}${elsewhere}`))).toEqual([
+      noBundle("c.yml"),
+    ]);
+    const continued = job('|\n          gh release \\\n            create "$T" a.tgz');
+    expect(workflowViolations("d.yml", wf(`    steps:\n${attest()}${continued}`))).toEqual([
+      noBundle("d.yml"),
+    ]);
+  });
 });

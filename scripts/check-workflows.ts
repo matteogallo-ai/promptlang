@@ -14,6 +14,50 @@ interface Job {
   uses?: unknown;
   steps?: unknown;
   permissions?: unknown;
+  needs?: unknown;
+}
+
+const ATTEST = /^actions\/attest(-build-provenance)?@/;
+
+function runScripts(job: Job): string[] {
+  if (!Array.isArray(job.steps)) return [];
+  return job.steps.map((s) => (typeof s?.run === "string" ? s.run : ""));
+}
+
+// Line continuations and runs of spaces are joined, so `gh  release \` + newline +
+// `create` is still seen.
+const GH_RELEASE = /\bgh\s+release\s+(create|upload)\b/;
+
+/**
+ * A `run:` script calling `gh release create` or `gh release upload` must itself
+ * name a `.sigstore.json` file, and its job, or a job it lists directly in
+ * `needs`, must have an attestation step. An unsigned release counts 0 in
+ * Scorecard's Signed-Releases average, and a user could not verify the tarball.
+ * This reads the script text: releases made by other actions or through
+ * `gh api` are not recognised, and an attestation step's `if:` is not evaluated.
+ */
+function unsignedReleases(file: string, jobs: Record<string, Job>): string[] {
+  const out: string[] = [];
+  for (const [name, job] of Object.entries(jobs)) {
+    const releasing = runScripts(job)
+      .map((r) => r.replace(/\\\n/g, " "))
+      .filter((r) => GH_RELEASE.test(r));
+    if (releasing.length === 0) continue;
+    const needs =
+      typeof job.needs === "string" ? [job.needs] : Array.isArray(job.needs) ? job.needs : [];
+    const attested = [name, ...needs].some((n) =>
+      actionRefs(jobs[n] ?? {}).some((ref) => ATTEST.test(ref))
+    );
+    if (!attested)
+      out.push(
+        `${file}: job ${name}: makes a GitHub Release, but neither it nor a job it needs runs actions/attest-build-provenance`
+      );
+    if (releasing.some((r) => !r.includes(".sigstore.json")))
+      out.push(
+        `${file}: job ${name}: a gh release script does not attach the .sigstore.json attestation bundle`
+      );
+  }
+  return out;
 }
 
 function actionRefs(job: Job): string[] {
@@ -66,7 +110,8 @@ function commentedWrites(lines: string[]): Map<string, boolean> {
  * - the workflow-level token is `contents: read`, or the stricter `{}`;
  * - a job never gets `write-all`, and every job-level `write` sits in a block-style
  *   `permissions:` with its own comment line right above it saying why;
- * - no `pull_request_target`, which runs with secrets on code from forks.
+ * - no `pull_request_target`, which runs with secrets on code from forks;
+ * - no `gh release create` without a signed attestation bundle (see unsignedReleases).
  */
 export function workflowViolations(file: string, text: string): string[] {
   const out: string[] = [];
@@ -98,5 +143,6 @@ export function workflowViolations(file: string, text: string): string[] {
   const on = doc.on;
   const events = typeof on === "string" ? [on] : Array.isArray(on) ? on : Object.keys(on ?? {});
   if (events.includes("pull_request_target")) out.push(`${file}: uses pull_request_target`);
+  out.push(...unsignedReleases(file, Object.fromEntries(jobs)));
   return out;
 }

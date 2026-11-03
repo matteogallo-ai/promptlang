@@ -157,7 +157,9 @@ class InvalidOutputError(ValueError):
 
 _ISO_DATE = re.compile("[0-9]{4}-[0-9]{2}-[0-9]{2}")
 _DECIMAL = re.compile("[+-]?([0-9]+[.]?[0-9]*|[.][0-9]+)([eE][+-]?[0-9]+)?")
-_FENCED = re.compile(chr(96) * 3 + "[A-Za-z0-9_-]*\\n(.*)\\n" + chr(96) * 3, re.DOTALL)
+_FENCED = re.compile(chr(96) * 3 + "[A-Za-z0-9_-]*\\r?\\n(.*)\\r?\\n" + chr(96) * 3, re.DOTALL)
+_MAX_ERRORS = 10
+_MAX_ERROR_LENGTH = 500
 _TOO_DEEP = "output: nested too deeply to check"
 
 
@@ -197,10 +199,14 @@ def output_errors(value: object, schema: dict, defs: dict, path: str = "output")
     if kind == "date":
         return [] if _is_date(value) else [f"{path}: expected a YYYY-MM-DD date, got {_describe(value)}"]
     if kind == "number":
-        if isinstance(value, float) and not math.isfinite(value):
-            return [f"{path}: expected a finite number, got {value}"]
-        ok = isinstance(value, (int, float)) and not isinstance(value, bool)
-        return [] if ok else [f"{path}: expected number, got {_describe(value)}"]
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            return [f"{path}: expected number, got {_describe(value)}"]
+        # TypeScript reads 1e400 or a 400-digit integer as Infinity; refuse both here too.
+        try:
+            finite = math.isfinite(float(value))
+        except OverflowError:
+            finite = False
+        return [] if finite else [f"{path}: expected a finite number, got a non-finite number"]
     if kind in ("string", "boolean"):
         ok = isinstance(value, str if kind == "string" else bool)
         return [] if ok else [f"{path}: expected {kind}, got {_describe(value)}"]
@@ -218,7 +224,10 @@ def output_errors(value: object, schema: dict, defs: dict, path: str = "output")
                 errors.extend(output_errors(value[name], field["type"], defs, f"{path}.{name}"))
             elif not field["optional"]:
                 errors.append(f"{path}.{name}: missing required field")
-        errors.extend(f"{path}.{key}: field not in the declared type" for key in value if key not in fields)
+        # Counted, not named: a field name comes from the model and could forge or flood a log line.
+        extra = sum(1 for key in value if key not in fields)
+        if extra:
+            errors.append(f"{path}: {extra} field{'' if extra == 1 else 's'} not in the declared type")
         return errors
     if kind == "ref":
         target = defs.get(schema["name"])
@@ -275,8 +284,15 @@ def parse_output(prompt: str, raw: str, spec: dict) -> Any:
         # that answer is rejected like any other, not surfaced as a crash.
         errors = [_TOO_DEEP]
     if errors:
-        raise InvalidOutputError(prompt, errors, raw)
+        raise InvalidOutputError(prompt, _bounded(errors), raw)
     return value
+
+
+def _bounded(errors: list[str]) -> list[str]:
+    """At most _MAX_ERRORS errors of at most _MAX_ERROR_LENGTH characters, as in TypeScript."""
+    shown = [e if len(e) <= _MAX_ERROR_LENGTH else e[:250] + "\u2026" + e[-249:] for e in errors[:_MAX_ERRORS]]
+    rest = len(errors) - len(shown)
+    return shown + [f"and {rest} more"] if rest > 0 else shown
 
 
 # ---- Client interface ----

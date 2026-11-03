@@ -39,7 +39,7 @@ export function outputSpec(
 ): OutputSpec {
   const defs: Record<string, OutputSchema> = {};
   const visit = (s: OutputSchema): void => {
-    if (s.kind === "ref" && !(s.name in defs)) {
+    if (s.kind === "ref" && !Object.hasOwn(defs, s.name)) {
       defs[s.name] = outputSchema(registry.get(s.name)!, registry);
       visit(defs[s.name]!);
     } else if (s.kind === "struct") for (const f of Object.values(s.fields)) visit(f.type);

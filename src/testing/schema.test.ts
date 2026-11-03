@@ -34,7 +34,7 @@ describe("schemaErrors", () => {
     ]);
     expect(errors({ ...good, n: "1" })).toEqual(["output.n: expected number, got a string"]);
     expect(errors({ ...good, n: Number.POSITIVE_INFINITY })).toEqual([
-      "output.n: expected a finite number, got Infinity",
+      "output.n: expected a finite number, got a non-finite number",
     ]);
     expect(errors({ ...good, on: "02/11/2026" })).toEqual([
       "output.on: expected a YYYY-MM-DD date, got a string",
@@ -42,7 +42,7 @@ describe("schemaErrors", () => {
     expect(errors({ kind: "a", n: 1, on: "2026-11-02" })).toEqual([
       "output.ok: missing required field",
     ]);
-    expect(errors({ ...good, extra: 1 })).toEqual(["output.extra: field not in the declared type"]);
+    expect(errors({ ...good, extra: 1 })).toEqual(["output: 1 field not in the declared type"]);
   });
 
   test("non-objects, null and arrays are not structs", () => {

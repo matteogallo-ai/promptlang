@@ -43,8 +43,10 @@ export function compilePython(program: Program, sourceFile: string): string {
   if (typingImports.length > 0) {
     parts.push(`from typing import ${typingImports.join(", ")}`);
   }
-  parts.push("import json as _json");
-  parts.push(`from .promptlang_runtime import PromptClient, PromptRequest, parse_output`);
+  parts.push("import json as _promptlang_json");
+  parts.push(
+    `from .promptlang_runtime import PromptClient, PromptRequest, parse_output as _promptlang_parse_output`
+  );
   parts.push("");
 
   const registry = buildTypeRegistry(program);

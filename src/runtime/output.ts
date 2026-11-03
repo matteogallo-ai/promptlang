@@ -24,9 +24,12 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 /** Decimal notation only, as in Python: `Number` also reads `0x10`, `0b1` and `""`. */
 const DECIMAL = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
 
-/** A real calendar day: `Date.parse` alone reads 2024-02-30 as March 1st. */
+/**
+ * A real calendar day: `Date.parse` alone reads 2024-02-30 as March 1st. Year
+ * 0000 is refused, as Python's `date` starts at year 1.
+ */
 function isDate(value: unknown): boolean {
-  if (typeof value !== "string" || !ISO_DATE.test(value)) return false;
+  if (typeof value !== "string" || !ISO_DATE.test(value) || value.startsWith("0000")) return false;
   const time = Date.parse(value);
   return !Number.isNaN(time) && new Date(time).toISOString().slice(0, 10) === value;
 }
@@ -58,8 +61,9 @@ export function outputErrors(
     case "date":
       return isDate(value) ? [] : [`${path}: expected a YYYY-MM-DD date, got ${describe(value)}`];
     case "number":
+      // JSON reads 1e400 or a 400-digit integer as Infinity.
       if (typeof value === "number" && !Number.isFinite(value))
-        return [`${path}: expected a finite number, got ${value}`];
+        return [`${path}: expected a finite number, got a non-finite number`];
       return typeof value === "number" ? [] : [`${path}: expected number, got ${describe(value)}`];
     case "string":
     case "boolean":
@@ -76,17 +80,19 @@ export function outputErrors(
       const record = value as Record<string, unknown>;
       const errors: string[] = [];
       for (const [name, field] of Object.entries(schema.fields)) {
-        if (record[name] === undefined) {
-          if (!field.optional) errors.push(`${path}.${name}: missing required field`);
-        } else errors.push(...outputErrors(record[name], field.type, defs, `${path}.${name}`));
+        if (Object.hasOwn(record, name))
+          errors.push(...outputErrors(record[name], field.type, defs, `${path}.${name}`));
+        else if (!field.optional) errors.push(`${path}.${name}: missing required field`);
       }
-      for (const key of Object.keys(record))
-        if (!Object.hasOwn(schema.fields, key))
-          errors.push(`${path}.${key}: field not in the declared type`);
+      // Counted, not named: a field name comes from the model and could forge or
+      // flood a log line.
+      const extra = Object.keys(record).filter((k) => !Object.hasOwn(schema.fields, k)).length;
+      if (extra > 0)
+        errors.push(`${path}: ${extra} field${extra === 1 ? "" : "s"} not in the declared type`);
       return errors;
     }
     case "ref": {
-      const target = defs[schema.name];
+      const target = Object.hasOwn(defs, schema.name) ? defs[schema.name] : undefined;
       return target
         ? outputErrors(value, target, defs, path)
         : [`${path}: type '${schema.name}' is not declared in this file, cannot check it`];
@@ -99,7 +105,7 @@ export function outputErrors(
 function resolve(schema: OutputSchema, defs: OutputSpec["defs"]): OutputSchema {
   const seen = new Set<string>();
   let s = schema;
-  while (s.kind === "ref" && !seen.has(s.name) && defs[s.name]) {
+  while (s.kind === "ref" && !seen.has(s.name) && Object.hasOwn(defs, s.name)) {
     seen.add(s.name);
     s = defs[s.name]!;
   }
@@ -108,7 +114,7 @@ function resolve(schema: OutputSchema, defs: OutputSpec["defs"]): OutputSchema {
 
 /** The body of a single surrounding Markdown code fence, or the text unchanged. */
 function unfenced(raw: string): string {
-  const m = /^```[\w-]*\n([\s\S]*)\n```$/.exec(raw);
+  const m = /^```[\w-]*\r?\n([\s\S]*)\r?\n```$/.exec(raw);
   return m ? m[1]! : raw;
 }
 
@@ -144,6 +150,21 @@ export function parseOutput(prompt: string, raw: string, spec: OutputSpec): unkn
     if (!(error instanceof RangeError)) throw error;
     errors = ["output: nested too deeply to check"];
   }
-  if (errors.length > 0) throw new InvalidOutputError(prompt, errors, raw);
+  if (errors.length > 0) throw new InvalidOutputError(prompt, bounded(errors), raw);
   return value;
+}
+
+const MAX_ERRORS = 10;
+const MAX_ERROR_LENGTH = 500;
+
+/**
+ * At most MAX_ERRORS errors of at most MAX_ERROR_LENGTH characters: an answer
+ * can nest a recursive type thousands of levels deep, and the error reaches logs.
+ */
+function bounded(errors: readonly string[]): string[] {
+  const shown = errors
+    .slice(0, MAX_ERRORS)
+    .map((e) => (e.length > MAX_ERROR_LENGTH ? `${e.slice(0, 250)}…${e.slice(-249)}` : e));
+  const rest = errors.length - shown.length;
+  return rest > 0 ? [...shown, `and ${rest} more`] : shown;
 }

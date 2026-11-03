@@ -141,9 +141,11 @@ describe("Python compiler — prompt declarations", () => {
 type Invoice = struct { amount: number }
 prompt extract() -> Invoice { user: "test" }`);
     expect(out).toContain(
-      "from .promptlang_runtime import PromptClient, PromptRequest, parse_output"
+      "from .promptlang_runtime import PromptClient, PromptRequest, parse_output as _promptlang_parse_output"
     );
-    const literal = /^EXTRACT_OUTPUT = _json\.loads\((".*")\)$/m.exec(out)?.[1];
+    const literal = /^_PROMPTLANG_EXTRACT_OUTPUT = _promptlang_json\.loads\((".*")\)$/m.exec(
+      out
+    )?.[1];
     expect(JSON.parse(JSON.parse(literal!))).toEqual({
       root: { kind: "ref", name: "Invoice" },
       defs: {
@@ -153,7 +155,9 @@ prompt extract() -> Invoice { user: "test" }`);
         },
       },
     });
-    expect(out).toContain('    return parse_output("extract", raw, EXTRACT_OUTPUT)');
+    expect(out).toContain(
+      '    return _promptlang_parse_output("extract", raw, _PROMPTLANG_EXTRACT_OUTPUT)'
+    );
   });
 
   test("template {{var}} becomes f-string with input['var']", () => {

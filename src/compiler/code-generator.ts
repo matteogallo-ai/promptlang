@@ -82,9 +82,10 @@ export function generatePromptDeclaration(
   // Meta const
   parts.push(generateMetaConst(name, meta));
   parts.push("");
-  // What parseOutput checks the answer against: the declared output type, as data.
+  // What the answer is checked against: the declared output type, as data. Names
+  // the generated code adds hold a `$`, which no PromptLang identifier can.
   parts.push(
-    `const ${name}_output: OutputSpec = ${JSON.stringify(outputSpec(returnType, registry))};`
+    `const ${name}$output: $OutputSpec = ${JSON.stringify(outputSpec(returnType, registry))};`
   );
   parts.push("");
 
@@ -134,7 +135,7 @@ export function generatePromptDeclaration(
   parts.push("");
 
   parts.push(
-    `  return parseOutput(${JSON.stringify(name)}, raw, ${name}_output) as ${returnTsType};`
+    `  return $parseOutput(${JSON.stringify(name)}, raw, ${name}$output) as ${returnTsType};`
   );
   parts.push("}");
 

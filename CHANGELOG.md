@@ -7,27 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Generated code checks every answer against its declared type** (breaking for
+  code that relied on the old behaviour). Answers that used to pass now raise
+  `InvalidOutputError`: a struct with a field the type does not declare, a field
+  of the wrong type at any depth, a `number` not in decimal notation (`0x10`), a
+  `date` that is not a real day (`2024-02-30`). The error has `prompt`, `errors`
+  (at most 10, each at most 500 characters) and `output`; its message names the
+  mismatches and never quotes the answer. In Python it subclasses `ValueError`,
+  which the generated code raised before.
+- **Generated TypeScript imports `parseOutput` from `@promptlang/core/runtime` as
+  a value**, so it runs only with a runtime release that exports it. Before, it
+  imported types only.
+- **`expect schema` uses the same check**, so its messages give the kind of the
+  wrong value (`got a string`) instead of quoting it, and count undeclared fields
+  instead of naming them. `promptlang test` reports a mock outside the type as a
+  failure before the test's assertions run.
+
 ### Fixed
-- **Generated TypeScript checks struct outputs; it no longer casts them.** A
-  struct answer was `JSON.parse`d and cast, so `{"amount": "not a number",
-  "hacked": true}` came back typed as `ExtractedInvoice`. Every answer now goes
-  through `parseOutput` (`@promptlang/core/runtime`) against the declared type:
-  each field's type, required fields present, no undeclared field, at any depth,
-  recursive types included; one surrounding code fence is accepted. A mismatch
-  raises `InvalidOutputError` (`prompt`, `errors`, `output`), not a bare `Error`,
-  and its message no longer quotes the model's answer. `expect schema` applies
-  the same check. Visible changes: an answer with an extra field now fails, and
-  `promptlang test` reports a mock outside the type as a failure before its
-  assertions run.
-- **Generated Python applies the same check.** Each prompt calls
-  `parse_output` from `promptlang_runtime.py`, with the same rules and messages
-  as TypeScript; `InvalidOutputError` subclasses `ValueError`, which the
-  generated code raised before. A struct answer is no longer returned unchecked.
+- **Struct outputs are no longer cast unchecked.** Generated TypeScript
+  `JSON.parse`d and cast the answer, and generated Python returned `json.loads`'
+  result, so `{"amount": "not a number", "hacked": true}` came back typed as
+  `ExtractedInvoice`. Both now call `parseOutput` / `parse_output` with the same
+  rules and messages; one surrounding code fence is accepted.
 - **Answers that cannot be checked are refused, not crashes.** A recursive type
   nested past the call stack raised `RangeError` (TypeScript) or
   `RecursionError` (Python); it is now an `InvalidOutputError`.
-- **`number` accepts decimal notation only, and `date` a real calendar day.**
-  TypeScript read `0x10` as 16 and `2024-02-30` as a date.
 
 ## [2.0.0] - 2026-11-03
 

@@ -197,11 +197,12 @@ describe("compile — header", () => {
     expect(out).toContain(`from "@promptlang/core/runtime"`);
   });
 
-  test("imports parseOutput as a value and the rest as types", () => {
+  // `$` keeps the imported names apart from any prompt or type the file declares.
+  test("imports parseOutput as a value and the rest as types, under names with a $", () => {
     const ast = parseSource(`prompt hello() -> string { user: "hi" output: string }`);
     const out = compile(ast, "x.prompt");
     expect(out).toContain(
-      `import { type OutputSpec, parseOutput, type PromptClient, type PromptRequest } from "@promptlang/core/runtime";`
+      `import { type OutputSpec as $OutputSpec, parseOutput as $parseOutput, type PromptClient, type PromptRequest } from "@promptlang/core/runtime";`
     );
   });
 });
@@ -330,9 +331,9 @@ describe("compile — prompt declarations", () => {
     `;
     const out = compile(parseSource(src), "x.prompt");
     expect(out).toContain(
-      `const classify_output: OutputSpec = {"root":{"kind":"ref","name":"Cat"},"defs":{"Cat":{"kind":"enum","values":["bug","other"]}}};`
+      `const classify$output: $OutputSpec = {"root":{"kind":"ref","name":"Cat"},"defs":{"Cat":{"kind":"enum","values":["bug","other"]}}};`
     );
-    expect(out).toContain(`return parseOutput("classify", raw, classify_output) as Cat;`);
+    expect(out).toContain(`return $parseOutput("classify", raw, classify$output) as Cat;`);
   });
 
   test("struct return type is checked field by field, not cast", () => {
@@ -350,8 +351,8 @@ describe("compile — prompt declarations", () => {
   test("primitive return types go through parseOutput too", () => {
     for (const t of ["string", "number", "boolean"]) {
       const out = compile(parseSource(`prompt f() -> ${t} { user: "x" output: ${t} }`), "x.prompt");
-      expect(out).toContain(`const f_output: OutputSpec = {"root":{"kind":"${t}"},"defs":{}};`);
-      expect(out).toContain(`return parseOutput("f", raw, f_output) as ${t};`);
+      expect(out).toContain(`const f$output: $OutputSpec = {"root":{"kind":"${t}"},"defs":{}};`);
+      expect(out).toContain(`return $parseOutput("f", raw, f$output) as ${t};`);
     }
   });
 });
@@ -404,7 +405,7 @@ describe("compile — classify-ticket.prompt (integration)", () => {
     const ast = parse(tokenize(source));
     const out = compile(ast, "classify-ticket.prompt");
     expect(out).toContain(
-      `parseOutput("classify_ticket", raw, classify_ticket_output) as Category`
+      `$parseOutput("classify_ticket", raw, classify_ticket$output) as Category`
     );
   });
 
@@ -433,7 +434,7 @@ describe("compile — classify-ticket.prompt (integration)", () => {
     const ast = parse(tokenize(source));
     const out = compile(ast, "extract-invoice.prompt");
     expect(out).toContain(
-      `parseOutput("extract_invoice", raw, extract_invoice_output) as ExtractedInvoice`
+      `$parseOutput("extract_invoice", raw, extract_invoice$output) as ExtractedInvoice`
     );
   });
 });

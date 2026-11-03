@@ -90,13 +90,14 @@ export function generatePythonPromptDeclaration(
   const returnPyType = mapPythonType(returnType);
   const paramNames = new Set(parameters.map((p) => p.name));
   const metaConstName = `${name.toUpperCase()}_META`;
-  const outputConstName = `${name.toUpperCase()}_OUTPUT`;
+  // Private, with a prefix the user is unlikely to write, so `import *` skips it.
+  const outputConstName = `_PROMPTLANG_${name.toUpperCase()}_OUTPUT`;
 
   const parts: string[] = [];
 
   // The declared output type, as parse_output checks it.
   const spec = JSON.stringify(outputSpec(returnType, registry));
-  parts.push(`${outputConstName} = _json.loads(${JSON.stringify(spec)})`);
+  parts.push(`${outputConstName} = _promptlang_json.loads(${JSON.stringify(spec)})`);
   parts.push("");
 
   // Meta constant
@@ -162,7 +163,7 @@ export function generatePythonPromptDeclaration(
   parts.push(`    raw = response["content"].strip()`);
   parts.push("");
 
-  parts.push(`    return parse_output("${name}", raw, ${outputConstName})`);
+  parts.push(`    return _promptlang_parse_output("${name}", raw, ${outputConstName})`);
 
   return parts.join("\n");
 }

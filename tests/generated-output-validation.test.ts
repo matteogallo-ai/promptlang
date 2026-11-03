@@ -39,14 +39,40 @@ prompt chain_of(x: string) -> Node {
 prompt due(x: string) -> date {
   user: "<t>{{x}}</t>"
 }
+prompt parseOutput(x: string) -> number {
+  user: "<t>{{x}}</t>"
+}
+prompt parse_output(x: string) -> number {
+  user: "<t>{{x}}</t>"
+}
+prompt count_output(x: string) -> number {
+  user: "<t>{{x}}</t>"
+}
+prompt _json(x: string) -> Invoice {
+  user: "<t>{{x}}</t>"
+}
 `;
 
 type Call = (input: { x: string }, client: MockClient) => Promise<unknown>;
-type Module = Record<"invoice" | "kind" | "count" | "flag" | "chain_of" | "due", Call>;
+// The last four are named after what the generated code imports or declares.
+type Module = Record<
+  | "invoice"
+  | "kind"
+  | "count"
+  | "flag"
+  | "chain_of"
+  | "due"
+  | "parseOutput"
+  | "parse_output"
+  | "count_output"
+  | "_json",
+  Call
+>;
 
 const program = parse(tokenize(SOURCE));
 const mod = importCompiled<Module>(compile(program, "out.prompt"));
 
+const NESTED_50 = `${'{"v": 1, "next": '.repeat(50)}{"v": "x"}${"}".repeat(50)}`;
 const DEEP = `${'{"v": 1, "next": '.repeat(100_000)}{"v": 1}${"}".repeat(100_000)}`;
 
 async function run(name: keyof Module, output: string): Promise<unknown> {
@@ -73,7 +99,7 @@ describe("generated code validates the model's output against the declared type"
     expect(e.prompt).toBe("invoice");
     expect(e.errors).toEqual([
       "output.amount: expected number, got a string",
-      "output.hacked: field not in the declared type",
+      "output: 1 field not in the declared type",
     ]);
   });
 
@@ -100,9 +126,31 @@ describe("generated code validates the model's output against the declared type"
 
   test("a recursive type is checked at every depth", async () => {
     expect(await run("chain_of", '{"v": 1, "next": {"v": 2}}')).toEqual({ v: 1, next: { v: 2 } });
-    expect((await failure("chain_of", '{"v": 1, "next": {"v": "two"}}')).errors).toEqual([
-      "output.next.v: expected number, got a string",
+    expect((await failure("chain_of", NESTED_50)).errors).toEqual([
+      `output${".next".repeat(50)}.v: expected number, got a string`,
     ]);
+  });
+
+  // A field name comes from the model: in a message it could forge a log line or fill the log.
+  test("an undeclared field is counted, never named, and the message stays short", async () => {
+    const e = await failure(
+      "invoice",
+      `{"amount": 1, "vendor": "A", "x\\nFORGED": 1, "${"k".repeat(10_000)}": 2}`
+    );
+    expect(e.errors).toEqual(["output: 2 fields not in the declared type"]);
+  });
+
+  // A recursive type lets one answer produce an error per level, each path longer than the last.
+  test("an InvalidOutputError holds at most 10 errors of at most 500 characters", async () => {
+    const wrongAtEveryLevel = `${'{"v": "x", "next": '.repeat(30)}{"v": "x"}${"}".repeat(30)}`;
+    const many = await failure("chain_of", wrongAtEveryLevel);
+    expect(many.errors).toHaveLength(11);
+    expect(many.errors.at(-1)).toBe("and 21 more");
+    const deep = `${'{"v": 1, "next": '.repeat(200)}{"v": "x"}${"}".repeat(200)}`;
+    const [long] = (await failure("chain_of", deep)).errors;
+    expect(long).toHaveLength(500);
+    expect(long).toStartWith("output.next.next");
+    expect(long).toEndWith(".next.v: expected number, got a string");
   });
 
   // A hostile answer can nest a recursive type deeper than the call stack.
@@ -161,6 +209,18 @@ const CASES: Array<[keyof Module, string]> = [
   ["due", "2024-02-29"],
   ["due", "2024-02-30"],
   ["due", "tomorrow"],
+  ["due", "0000-01-01"],
+  ["invoice", '{"amount": 1, "vendor": "A", "x\\nFORGED": 1}'],
+  ["invoice", `{"amount": 1${"0".repeat(400)}, "vendor": "A"}`],
+  ["invoice", '{"amount": 1e400, "vendor": "A"}'],
+  ["invoice", '```json\r\n{"amount": 1, "vendor": "A"}\r\n```'],
+  ["chain_of", NESTED_50],
+  ["chain_of", `${'{"v": "x", "next": '.repeat(30)}{"v": "x"}${"}".repeat(30)}`],
+  ["chain_of", `${'{"v": 1, "next": '.repeat(200)}{"v": "x"}${"}".repeat(200)}`],
+  ["parseOutput", "7"],
+  ["parse_output", "7"],
+  ["count_output", "7"],
+  ["_json", '{"amount": 1, "vendor": "A"}'],
 ];
 
 type Outcome = { value: unknown } | { errors: string[]; message: string };

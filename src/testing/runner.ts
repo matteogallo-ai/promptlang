@@ -189,8 +189,8 @@ async function runOne(
     if (error instanceof InvalidOutputError) {
       return result(error.errors.map((m) => `${call.callee} output does not match its type: ${m}`));
     }
-    // Whatever else the prompt raises (an enum value outside the type, malformed
-    // JSON) is the test's verdict, recorded with its message, not a runner crash.
+    // Whatever else the prompt raises is the test's verdict, recorded with its
+    // message, not a runner crash.
     return result([
       `${call.callee} threw: ${error instanceof Error ? error.message : String(error)}`,
     ]);

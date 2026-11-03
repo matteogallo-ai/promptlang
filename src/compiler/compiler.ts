@@ -19,7 +19,7 @@ export function compile(program: Program, sourceFile: string): string {
   parts.push(`// Generated at: ${timestamp}`);
   parts.push("");
   parts.push(
-    `import { type OutputSpec, parseOutput, type PromptClient, type PromptRequest } from "@promptlang/core/runtime";`
+    `import { type OutputSpec as $OutputSpec, parseOutput as $parseOutput, type PromptClient, type PromptRequest } from "@promptlang/core/runtime";`
   );
   parts.push("");
 

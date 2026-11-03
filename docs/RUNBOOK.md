@@ -39,7 +39,10 @@ configuration error, not an outage").
 
 *Response:* do not retry: the same call fails the same way. Check the key in the
 console, the `model:` of the prompt against `src/testing/cost.ts`, and
-`anthropic_version`. Error messages never contain the key, so a CI log can be
+`anthropic_version`. `analyze --ai` behaves differently: without a key it prints
+the static results only and exits 0 (with `--json`, silently: `ai_issues` is
+empty), and a rejected request is an `ai:request-failure` warning; in CI, check
+that `ai_issues` is not empty and use `--strict`. Error messages never contain the key, so a CI log can be
 shared (`src/runtime/providers/secrets.test.ts` "the API key never appears in an
 error message").
 
@@ -58,6 +61,9 @@ spends more than estimated, and the cap refuses the first call after the
 overrun. The overrun is at most what the calls in flight cost beyond their
 estimate.
 
+With `analyze --ai` a refused call is an `ai:request-failure` warning whose
+message starts `budget:`; the command exits 0 unless `--strict`.
+
 *Response:* read the usage reported by `--json`; do not raise a cap to make a run
 pass without a new estimate and a new approval.
 
@@ -69,7 +75,8 @@ pass without a new estimate and a new approval.
 (`src/testing/runner.test.ts` "the generated code's own validation is the
 verdict when it throws"). AI linter: an `ai:parse-failure` warning for the prompt
 (`src/analyzer/ai/issue-parser.test.ts` "returns parse-failure issue on
-malformed JSON"); the eval script records that case as no verdict, not as a
+malformed JSON", "valid JSON of the wrong shape is a parse failure, never an empty
+result"), which `--strict` turns into exit 1; the eval script records that case as no verdict, not as a
 clean result.
 
 *Response:* this is a result, not an outage: the prompt or its declared return
@@ -83,7 +90,9 @@ measures how often it happens.
 *Symptom:* `promptlang check` prints `failed integrity check` and exits 1: an
 installed `.prompt` file differs from the SHA-256 recorded at install
 (`src/registry/integrity.test.ts` "verifyIntegrity flags a file whose contents
-changed after recording", "verifyIntegrity flags a file that has been deleted").
+changed after recording", "verifyIntegrity flags a file that has been deleted";
+the CLI's message and exit code come from `src/cli/commands/check.ts` and have no
+test of their own).
 
 *Response:* treat it as a change you did not make. `git diff` the file; if the
 change is wanted, reinstall to record the new hash; otherwise restore it.

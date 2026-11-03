@@ -16,8 +16,8 @@ linter eval record.
   prompts usually misses one, and the result can no longer be read as complete.
 - **Mean cost per call ≤ $0.001.** Half of the worst case the estimate charges
   (4096 output tokens ≈ $0.0020 plus the input), which is what an answer of a
-  normal length costs. No call can exceed its worst case: the approved estimate
-  is a cap (`src/testing/budget.ts`).
+  normal length costs. The approved estimate is a cap
+  (`src/testing/budget.ts`); its limits are in [ADR 0004](adr/0004-spending-cap.md).
 
 ## Measured
 

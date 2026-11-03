@@ -6,7 +6,10 @@
  *
  * <repository> replaces the GitHub URL in the clone (CI passes its own checkout,
  * so a pull request is tested before it is on GitHub's default branch); without
- * it the command clones from GitHub. Exits with the command's status.
+ * it the command clones from GitHub. The command then does `cd promptlang`, and
+ * `git clone <path>` names the copy after the path's last component, so the
+ * source directory must be named promptlang (on GitHub Actions it is). Exits
+ * with the command's status.
  */
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";

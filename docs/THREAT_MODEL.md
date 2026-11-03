@@ -45,9 +45,11 @@ not measured; only the escaping is.
 *Where:* the API key, in error messages that reach terminals, CI logs and the
 committed records under `runs/live/`.
 
-*Mitigation:* the TypeScript clients and the Python runtime replace the key with
-`[redacted]` in every error built from a provider response or a network failure.
-Nothing in PromptLang logs request bodies.
+*Mitigation:* the TypeScript clients replace the key with `[redacted]` in every
+error built from a provider response or a network failure; the Python runtime does
+the same for errors built from a provider response (its timeouts and connection
+failures are httpx exceptions, which do not quote request headers). Nothing in
+PromptLang logs request bodies.
 
 *Tests:* `src/runtime/providers/secrets.test.ts` ("the API key never appears in an
 error message", Anthropic and OpenAI, HTTP 400/401/429/500 and network errors);
@@ -63,7 +65,7 @@ outputs. The prompts' content itself is sent to the provider by design.
 
 *Mitigation:* no third-party runtime dependency; every GitHub Action pinned by
 commit SHA; read-only workflow tokens; CodeQL and OSV-Scanner on every pull
-request; npm provenance and a signed attestation on releases.
+request; packages are published with npm provenance (`release.yml`).
 
 *Tests:* `tests/stability.test.ts` "no third-party runtime dependencies (only
 first-party @promptlang/* allowed)"; `tests/workflows.test.ts` "every workflow pins
@@ -88,8 +90,9 @@ linter; (3) prompt text written into generated source code.
    `src/compiler/compiler.test.ts` "enum return type generates validation",
    "struct return type generates JSON.parse validation".
 2. A linter answer that is not the expected JSON becomes an `ai:parse-failure`
-   issue, never an empty result: `src/analyzer/ai/issue-parser.test.ts` "returns
-   parse-failure issue on malformed JSON".
+   warning, never an empty result: `src/analyzer/ai/issue-parser.test.ts` "returns
+   parse-failure issue on malformed JSON", "valid JSON of the wrong shape is a parse
+   failure, never an empty result".
 3. Prompt text is escaped before it is written into a TypeScript template literal
    or a Python f-string, so a `.prompt` file cannot inject code into the generated
    module: `src/compiler/compiler.test.ts` "backticks in string are escaped",
@@ -120,8 +123,9 @@ There is no retrieval, embedding or vector store anywhere in PromptLang.
 *Where:* the AI linter's findings can be wrong (a false alarm) or missing.
 
 *Mitigation:* the six deterministic rules run first and do not depend on the
-model; AI findings are reported separately (`ai_issues` in `--json`) with the
-model's confidence; a failed call is reported as a failure, not as a clean result
+model; AI findings are reported separately (`ai_issues` in `--json`), the model's
+confidence setting their severity (low is `info`); a failed call or an answer that is
+not the expected JSON is reported as a failure, not as a clean result
 (`src/analyzer/ai/ai-linter.test.ts` "a failed request is reported as an issue,
 not dropped"). `scripts/linter-eval.ts` measures precision and recall on a
 labelled corpus; `docs/SYSTEM_CARD.md` states what has been measured and what has not.

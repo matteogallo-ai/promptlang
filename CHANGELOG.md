@@ -24,11 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - `compile --emit-tsconfig` no longer writes `baseUrl`, which TypeScript 7 rejects
-  (TS5102); the emitted tsconfig now compiles under TypeScript 5.x and 7. A
-  `--runtime-path` that is neither absolute nor starts with `./` or `../` is
-  written with a leading `./`, since `paths` entries without `baseUrl` must be
-  relative. A tsconfig emitted by an earlier version keeps `baseUrl`: re-run
-  `compile --emit-tsconfig`, or delete the line, before moving to TypeScript 7.
+  (TS5102). A `--runtime-path` that is neither absolute nor starts with `./` or
+  `../` (either separator) is written with a leading `./`, since `paths` entries
+  without `baseUrl` must be relative. A tsconfig emitted by an earlier version
+  keeps `baseUrl`: re-run `compile --emit-tsconfig` before moving to TypeScript 7
+  (deleting the line alone leaves a non-relative `paths` entry, TS5090).
 - The repository builds and type-checks with TypeScript 7 (`typescript` ^7.0.2).
 
 ## [2.0.0] - 2026-11-02

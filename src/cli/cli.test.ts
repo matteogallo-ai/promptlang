@@ -529,6 +529,43 @@ describe("compile --emit-tsconfig", () => {
     expect(content.compilerOptions).not.toHaveProperty("baseUrl");
   });
 
+  test("the console shows the paths entry as written to the tsconfig", async () => {
+    const { output, restore } = captureLog();
+    await main([
+      "bun",
+      "cli",
+      "compile",
+      "docs/examples/classify-ticket.prompt",
+      "--out",
+      EMIT_OUT,
+      "--emit-tsconfig",
+      "--runtime-path",
+      "node_modules/@promptlang/core/dist/runtime/index.js",
+    ]);
+    restore();
+    expect(output()).toContain("→ ./node_modules/@promptlang/core/dist/runtime/index.js");
+  });
+
+  test("--runtime-path with Windows separators counts as relative", async () => {
+    const restore = silenceAll();
+    await main([
+      "bun",
+      "cli",
+      "compile",
+      "docs/examples/classify-ticket.prompt",
+      "--out",
+      EMIT_OUT,
+      "--emit-tsconfig",
+      "--runtime-path",
+      "..\\src\\runtime\\index.ts",
+    ]);
+    restore();
+    const content = JSON.parse(await Bun.file(`${EMIT_OUT}/tsconfig.json`).text());
+    expect(content.compilerOptions.paths["@promptlang/core/runtime"][0]).toBe(
+      "..\\src\\runtime\\index.ts"
+    );
+  });
+
   test("--runtime-path keeps a path that is already relative or absolute", async () => {
     for (const given of ["../src/runtime/index.ts", "./rt/index.ts", "/abs/rt/index.ts"]) {
       const restore = silenceAll();

@@ -548,12 +548,16 @@ describe("compile — tsc integration (isolation, documented limitation)", () =>
       const generated = compile(ast, "classify-ticket.prompt");
 
       const dir = await mkdtemp(join(tmpdir(), "promptlang-isolation-"));
-      await writeFile(join(dir, "classify-ticket.ts"), generated);
-      await writeFile(join(dir, "tsconfig.json"), makeIsolationTsconfig());
-
-      // tsc writes errors to stdout (not stderr).
-      const { exitCode, stdout } = await runTsc(join(dir, "tsconfig.json"));
-      await rm(dir, { recursive: true, force: true });
+      let result: Awaited<ReturnType<typeof runTsc>>;
+      try {
+        await writeFile(join(dir, "classify-ticket.ts"), generated);
+        await writeFile(join(dir, "tsconfig.json"), makeIsolationTsconfig());
+        // tsc writes errors to stdout (not stderr).
+        result = await runTsc(join(dir, "tsconfig.json"));
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+      const { exitCode, stdout } = result;
 
       // Must fail with TS2307 — this is the documented expected behaviour.
       expect(exitCode).not.toBe(0);

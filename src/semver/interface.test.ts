@@ -91,7 +91,12 @@ describe("diffPrograms — major", () => {
 
   test("a named output type is compared by structure, not by name", () => {
     const base = `type T = enum { a, b }\n${PROMPT("x: string", "T")}`;
-    expect(diff(base, `type U = enum { b, a }\n${PROMPT("x: string", "U")}`)).toEqual([]);
+    // The prompt's contract is unchanged; the exported type name is not (see below).
+    expect(
+      diff(base, `type U = enum { b, a }\n${PROMPT("x: string", "U")}`).filter(
+        (c) => c.declaration === "p"
+      )
+    ).toEqual([]);
     expect(levels(base, `type T = enum { a }\n${PROMPT("x: string", "T")}`)[0]).toStartWith(
       "major: p: output type changed"
     );
@@ -252,6 +257,39 @@ describe("diffPrograms — boundaries", () => {
     const tree = (leaf: string) => `type T = struct { next?: T, v: ${leaf} }\n${PROMPT("x: T")}`;
     expect(levels(tree("string"), tree("number"))).toEqual([
       "major: p: parameter 'x' type changed: struct { next?: T, v: string } → struct { next?: T, v: number }",
+    ]);
+  });
+});
+
+// Generated TypeScript and Python export every declared type under its name, so
+// consumers import it: the name is interface, whatever its structure.
+describe("diffPrograms — declared types", () => {
+  test("renaming an exported type is major, though the prompt contract is unchanged", () => {
+    const base = `type Category = enum { a, b }\n${PROMPT("x: string", "Category")}`;
+    expect(levels(base, `type Kind = enum { a, b }\n${PROMPT("x: string", "Kind")}`)).toEqual([
+      "major: type 'Category' removed",
+      "minor: type 'Kind' added",
+    ]);
+  });
+
+  test("adding a type is minor; reordering its enum values is nothing", () => {
+    const base = `type T = enum { a, b }\n${PROMPT("x: string", "T")}`;
+    expect(
+      levels(base, `type T = enum { b, a }\ntype U = enum { c }\n${PROMPT("x: string", "T")}`)
+    ).toEqual(["minor: type 'U' added"]);
+  });
+
+  test("changing a type no prompt uses is still major: it is exported", () => {
+    const base = `type T = enum { a, b }\n${PROMPT("x: string")}`;
+    expect(levels(base, `type T = enum { a }\n${PROMPT("x: string")}`)).toEqual([
+      "major: type 'T' changed: enum { a, b } → enum { a }",
+    ]);
+  });
+
+  test("a change to a type a prompt uses is reported once, on the prompt", () => {
+    const base = `type T = enum { a, b }\n${PROMPT("x: string", "T")}`;
+    expect(levels(base, `type T = enum { a }\n${PROMPT("x: string", "T")}`)).toEqual([
+      "major: p: output type changed: enum { a, b } → enum { a }",
     ]);
   });
 });

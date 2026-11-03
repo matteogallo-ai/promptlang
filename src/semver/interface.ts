@@ -101,9 +101,7 @@ function positionless(value: unknown): string {
 }
 
 function callables(program: Program): Map<string, Callable> {
-  const types = new Map<string, TypeExpression>();
-  for (const d of program.declarations)
-    if (d.kind === "TypeDeclaration") types.set(d.name, d.definition);
+  const types = declaredTypes(program);
   const params = (ps: Parameter[]) =>
     new Map(
       ps.map((p) => [
@@ -219,6 +217,56 @@ function diffOutput(
   }
 }
 
+function declaredTypes(program: Program): Map<string, TypeExpression> {
+  const types = new Map<string, TypeExpression>();
+  for (const d of program.declarations)
+    if (d.kind === "TypeDeclaration") types.set(d.name, d.definition);
+  return types;
+}
+
+/** Names of the declared types a prompt's or chain's parameters or output reach. */
+function typesUsedByCallables(program: Program, types: Map<string, TypeExpression>): Set<string> {
+  const used = new Set<string>();
+  const visit = (t: TypeExpression): void => {
+    if (t.kind === "StructType") for (const f of t.fields) visit(f.type);
+    if (t.kind !== "TypeReference" || used.has(t.name)) return;
+    used.add(t.name);
+    const target = types.get(t.name);
+    if (target) visit(target);
+  };
+  for (const d of program.declarations) {
+    if (d.kind !== "PromptDeclaration" && d.kind !== "ChainDeclaration") continue;
+    for (const p of d.parameters) visit(p.type);
+    visit(d.returnType);
+  }
+  return used;
+}
+
+/**
+ * The generated TypeScript and Python export each declared type under its own
+ * name, so a consumer can import it: removing or renaming one breaks that import
+ * even when every prompt's contract is structurally the same. A changed type
+ * that some prompt or chain uses is reported on that prompt or chain instead.
+ */
+function diffTypes(base: Program, current: Program, push: (c: Change) => void): void {
+  const b = declaredTypes(base);
+  const c = declaredTypes(current);
+  const usedNow = typesUsedByCallables(current, c);
+  for (const [name, def] of b) {
+    const now = c.get(name);
+    if (!now) {
+      push({ level: "major", description: `type '${name}' removed` });
+      continue;
+    }
+    const before = render(shapeOf(def, b));
+    const after = render(shapeOf(now, c));
+    if (before !== after && !usedNow.has(name))
+      push({ level: "major", description: `type '${name}' changed: ${before} → ${after}` });
+  }
+  for (const name of c.keys())
+    if (!b.has(name)) push({ level: "minor", description: `type '${name}' added` });
+}
+
 /** Every interface and behaviour change between two versions of one file. */
 export function diffPrograms(base: Program, current: Program): Change[] {
   const changes: Change[] = [];
@@ -268,5 +316,6 @@ export function diffPrograms(base: Program, current: Program): Change[] {
   for (const [name, cc] of c) {
     if (!b.has(name)) push({ level: "minor", description: `${cc.kind} '${name}' added` });
   }
+  diffTypes(base, current, push);
   return changes;
 }

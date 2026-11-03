@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **`semver-check` treats declared type names as interface.** Renaming
+  `type Category` to `type Kind` with the same values passed as a patch, because
+  prompt contracts are compared by structure, yet the generated TypeScript and
+  Python export `Category` by name and every consumer importing it broke. A
+  declared type removed or renamed is now major, one added minor, and a changed
+  type that no prompt or chain uses is major (ADR 0002, amended).
+
 ## [2.0.0] - 2026-11-03
 
 Remediation after the 2026-11-02 external audit, and the first release of

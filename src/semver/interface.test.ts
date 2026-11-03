@@ -91,7 +91,12 @@ describe("diffPrograms — major", () => {
 
   test("a named output type is compared by structure, not by name", () => {
     const base = `type T = enum { a, b }\n${PROMPT("x: string", "T")}`;
-    expect(diff(base, `type U = enum { b, a }\n${PROMPT("x: string", "U")}`)).toEqual([]);
+    // The prompt's contract is unchanged; the exported type name is not (see below).
+    expect(
+      diff(base, `type U = enum { b, a }\n${PROMPT("x: string", "U")}`).filter(
+        (c) => c.declaration === "p"
+      )
+    ).toEqual([]);
     expect(levels(base, `type T = enum { a }\n${PROMPT("x: string", "T")}`)[0]).toStartWith(
       "major: p: output type changed"
     );
@@ -143,9 +148,11 @@ describe("diffPrograms — minor", () => {
       `type Inner = struct { ${inner} }\n${PROMPT("x: string", "struct { inner: Inner }")}`;
     expect(levels(out("a: string"), out("a: string, b?: string"))).toEqual([
       "minor: p: optional output field 'inner.b' added",
+      "minor: type 'Inner': optional field 'b' added",
     ]);
     expect(levels(out("a: string, b: string"), out("a: string"))).toEqual([
       "major: p: output field 'inner.b' removed",
+      "major: type 'Inner': field 'b' removed",
     ]);
   });
 
@@ -252,6 +259,90 @@ describe("diffPrograms — boundaries", () => {
     const tree = (leaf: string) => `type T = struct { next?: T, v: ${leaf} }\n${PROMPT("x: T")}`;
     expect(levels(tree("string"), tree("number"))).toEqual([
       "major: p: parameter 'x' type changed: struct { next?: T, v: string } → struct { next?: T, v: number }",
+      "major: type 'T': field 'v' type changed: string → number",
+    ]);
+  });
+});
+
+// Generated TypeScript and Python export every declared type under its name, so
+// consumers import it: the name is interface, whatever its structure.
+describe("diffPrograms — declared types", () => {
+  test("renaming an exported type is major, though the prompt contract is unchanged", () => {
+    const base = `type Category = enum { a, b }\n${PROMPT("x: string", "Category")}`;
+    expect(levels(base, `type Kind = enum { a, b }\n${PROMPT("x: string", "Kind")}`)).toEqual([
+      "major: type 'Category' removed",
+      "minor: type 'Kind' added",
+    ]);
+  });
+
+  test("adding a type is minor; reordering its enum values is nothing", () => {
+    const base = `type T = enum { a, b }\n${PROMPT("x: string", "T")}`;
+    expect(
+      levels(base, `type T = enum { b, a }\ntype U = enum { c }\n${PROMPT("x: string", "T")}`)
+    ).toEqual(["minor: type 'U' added"]);
+  });
+
+  test("changing a type no prompt uses is still major: it is exported", () => {
+    const base = `type T = enum { a, b }\n${PROMPT("x: string")}`;
+    expect(levels(base, `type T = enum { a }\n${PROMPT("x: string")}`)).toEqual([
+      "major: type 'T': definition changed: enum { a, b } → enum { a }",
+    ]);
+  });
+
+  // A prompt that reaches the type only now, or by another path, reports nothing
+  // itself, so the type's own change must carry the level.
+  const T2 = "type T = enum { a, b }\n";
+  const T1 = "type T = enum { a }\n";
+  const narrowed = "major: type 'T': definition changed: enum { a, b } → enum { a }";
+  const reached: Array<[string, string, string]> = [
+    [
+      "a prompt using it is added",
+      PROMPT("x: string"),
+      `${PROMPT("x: string")}prompt q(x: T) -> string {\n  user: "{{x}}"\n}\n`,
+    ],
+    [
+      "an optional parameter of that type is added",
+      PROMPT("x: string"),
+      PROMPT("x: string, y?: T"),
+    ],
+    [
+      "the output switches to it from a same-shaped type",
+      `type U = enum { a }\n${PROMPT("x: string", "U")}`,
+      `type U = enum { a }\n${PROMPT("x: string", "T")}`,
+    ],
+    [
+      "an optional output field of that type is added",
+      `type O = struct { s: string }\n${PROMPT("x: string", "O")}`,
+      `type O = struct { s: string, t?: T }\n${PROMPT("x: string", "O")}`,
+    ],
+  ];
+  for (const [name, base, current] of reached) {
+    test(`narrowing a type is major when ${name}`, () => {
+      expect(levels(T2 + base, T1 + current)).toContain(narrowed);
+    });
+  }
+
+  test("a type used by a prompt reports its change on the type and on the prompt", () => {
+    expect(levels(T2 + PROMPT("x: string", "T"), T1 + PROMPT("x: string", "T"))).toEqual([
+      "major: p: output type changed: enum { a, b } → enum { a }",
+      narrowed,
+    ]);
+  });
+
+  test("a type is judged like an output: an optional field added is minor", () => {
+    const base = `type S = struct { a: string }\n${PROMPT("x: string")}`;
+    expect(
+      levels(base, `type S = struct { a: string, b?: string }\n${PROMPT("x: string")}`)
+    ).toEqual(["minor: type 'S': optional field 'b' added"]);
+  });
+
+  test("a type reached through another declared type is compared through it", () => {
+    const file = (b: string) =>
+      `type B = ${b}\ntype A = struct { b: B }\n${PROMPT("x: string", "A")}`;
+    expect(levels(file("enum { x, y }"), file("enum { x }"))).toEqual([
+      "major: p: output field 'b' type changed: enum { x, y } → enum { x }",
+      "major: type 'B': definition changed: enum { x, y } → enum { x }",
+      "major: type 'A': field 'b' type changed: enum { x, y } → enum { x }",
     ]);
   });
 });

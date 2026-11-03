@@ -1,6 +1,6 @@
 # ADR 0002 — What counts as a prompt's interface
 
-- Status: accepted
+- Status: accepted, amended 2026-11-03 (declared type names)
 - Date: 2026-11-02
 
 ## Context
@@ -8,7 +8,8 @@
 `semver-check` must decide, for each change to a `.prompt` file, whether it breaks
 consumers (major), extends them compatibly (minor) or only changes behaviour behind
 the same contract (patch). The project decision is that the interface is the
-parameters (names, types, optionality), the output schema and the target model.
+parameters (names, types, optionality), the output schema and the target model,
+plus, since the 2026-11-03 amendment, the declared type names.
 
 ## Decision
 
@@ -21,6 +22,12 @@ parameters (names, types, optionality), the output schema and the target model.
   `type Kind = enum { b, a }` are the same output.
 - **Target model**: the file's `@model`, attached to each prompt (chains have no
   model of their own).
+- **Declared type names** (amendment): the generated TypeScript and Python export
+  every `type` under its name, so consumers import it. A declared type removed or
+  renamed is major, one added is minor, and a changed type is judged by the
+  output rule below, since consumers read it the same way. The type's change is
+  reported even when a prompt's diff also shows it: a prompt can reach the type
+  only in the new version, or through another type, and then shows nothing.
 - **Body**, not interface: a prompt's sections, a chain's steps and return
   expression, compared without source positions; plus `@temperature` and
   `@max_tokens`. Any difference is patch.
@@ -47,6 +54,15 @@ parameters (names, types, optionality), the output schema and the target model.
 - `output:` sections are not read by the code generators, so changing one is patch.
 - Types the file references but does not declare (imported types) are compared by
   name only.
+
+## Amendment 2026-11-03
+
+The first version compared types by structure only, so renaming `Category` to
+`Kind` read as no interface change and a patch release passed, while every
+consumer importing `Category` failed to build (audit F1, finding C6). Prompt
+contracts are still compared by structure; the names are compared separately
+because they are a second, backend-independent surface: both code generators
+export them.
 
 ## Rejected
 

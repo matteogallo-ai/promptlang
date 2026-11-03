@@ -61,8 +61,8 @@ export class OpenAIClient extends BaseHttpClient {
       messages: request.messages,
     };
     if (request.temperature !== undefined) body.temperature = request.temperature;
-    // GPT-5 and the o-series refuse max_tokens with a 400; max_completion_tokens is
-    // what every current chat model reads.
+    // GPT-5 and the o-series refuse max_tokens with a 400; OpenAI's API reference
+    // marks max_tokens deprecated in favour of max_completion_tokens.
     if (request.max_tokens !== undefined) body.max_completion_tokens = request.max_tokens;
     const headers: Record<string, string> = {
       Authorization: `Bearer ${this.apiKey}`,

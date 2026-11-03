@@ -301,7 +301,7 @@ class OpenAIClient(PromptClient):
         if "temperature" in request:
             payload["temperature"] = request["temperature"]
         if "max_tokens" in request:
-            # GPT-5 and the o-series refuse max_tokens; every current chat model reads this one.
+            # GPT-5 and the o-series refuse max_tokens; OpenAI marks it deprecated for this one.
             payload["max_completion_tokens"] = request["max_tokens"]
 
         headers = {

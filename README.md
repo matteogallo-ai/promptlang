@@ -418,7 +418,10 @@ const category = await classify_ticket({ ticket: "..." }, client);
 `OpenAIClient` sends `max_tokens` as `max_completion_tokens`, which GPT-5 and the
 o-series require. Those models refuse any `temperature` but 1, so a prompt routed to
 them should not set `@temperature`; the provider's 400 surfaces as
-`InvalidRequestError`.
+`InvalidRequestError`. `compile` warns about `@temperature` only next to a `claude-`
+model, where it is not sent at all. An OpenAI-compatible server reached through
+`baseURL` that does not read `max_completion_tokens` applies its own output limit
+instead.
 
 ---
 

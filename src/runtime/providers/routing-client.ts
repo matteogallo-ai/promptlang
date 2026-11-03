@@ -48,13 +48,13 @@ function label(i: number): string {
 
 /**
  * Whether the next provider may get the request after this error: only when
- * this provider could not serve it (outage, rate limit, timeout, network,
- * unknown model, malformed body). A timeout may still be billed by the first
- * provider; availability is what a fallback is for. These stop the routing:
- * a wrong key; an incomplete answer (see IncompleteResponseError); a 400, where
- * the request itself is wrong and another provider would get the user's data
- * for nothing; and any error that is not a PromptClientError, which is a bug,
- * not an outage.
+ * this provider could not serve it (outage, rate limit, timeout, network, a
+ * 404 for a model or endpoint it lacks, malformed body). A timeout may still be
+ * billed by the first provider; availability is what a fallback is for. These
+ * stop the routing: a wrong key; an incomplete answer (see
+ * IncompleteResponseError); a 400, where the request itself is wrong and
+ * another provider would get the user's data for nothing; and any error that
+ * is not a PromptClientError, which is a bug, not an outage.
  */
 function fallsBack(error: unknown): error is PromptClientError {
   return (
@@ -100,7 +100,6 @@ export class RoutingClient implements PromptClient {
           errors.push(err);
         }
       }
-      // Notify about the switch before trying the next provider.
       if (i + 1 < this.entries.length) this.onFallback?.(errors.at(-1)!, i);
     }
 

@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and any error that is not a `PromptClientError` used to send the same request,
   and the user's data, to the next provider; they are now thrown at once, like
   `AuthenticationError`.
+- **A 404 from `AnthropicClient` or `OpenAIClient` raises `NotFoundError`**, as
+  `OllamaClient` already did, instead of `InvalidRequestError`, so a model or
+  endpoint one provider lacks falls back while a malformed request does not.
+  Code that catches `InvalidRequestError` for a 404 catches `NotFoundError`.
 
 ### Fixed
 - **`OpenAIClient` sends `max_completion_tokens`, not `max_tokens`** (TypeScript

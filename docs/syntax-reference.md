@@ -126,19 +126,25 @@ prompt classify_ticket(ticket: string) -> Category {
 
 ### Generated output handling
 
-TypeScript: the generated function passes the trimmed response text to `parseOutput`
-(`@promptlang/core/runtime`) with a schema derived from the declared type, and throws
-`InvalidOutputError` when the answer does not conform. Its `errors` list every mismatch
-as `path: problem`; its message names them without quoting the answer.
+The generated function passes the trimmed response text to `parseOutput`
+(`parse_output` in Python) with a schema derived from the declared type, and raises
+`InvalidOutputError` when the answer does not conform (in Python, a `ValueError`
+subclass). Its `errors` list every mismatch as `path: problem`; its message names
+them without quoting the answer, which is on `output`. Both languages apply the
+same rules and produce the same messages.
 
-| Output type | TypeScript | Python |
-| --- | --- | --- |
-| `string` | the trimmed text | the trimmed text |
-| `number` | `Number(raw)`; `InvalidOutputError` unless finite | `float(raw)`; `ValueError` otherwise |
-| `boolean` | `true` / `false`, case-insensitive; `InvalidOutputError` otherwise | same, `ValueError` |
-| enum | `InvalidOutputError` unless the text is a member | `ValueError` unless a member |
-| `date` | `InvalidOutputError` unless `YYYY-MM-DD` | the text, unchecked |
-| struct | JSON (one surrounding code fence allowed), checked field by field at every depth; a field the type does not declare is a mismatch | `json.loads`; field types are **not** validated |
+| Output type | Accepted answer |
+| --- | --- |
+| `string` | any text |
+| `number` | decimal notation (`42`, `-1.5e3`), finite; not `0x10` or `Infinity` |
+| `boolean` | `true` / `false`, case-insensitive |
+| enum | one of the members, exactly |
+| `date` | a real calendar day as `YYYY-MM-DD` (`2024-02-30` is refused) |
+| struct | JSON, one surrounding code fence allowed; every field checked at every depth, required fields present, no field the type does not declare |
+
+A field whose type is imported from another file is not checked. Python follows a
+recursive type to about 490 levels and TypeScript (Bun) to about 14,000; an answer
+nested deeper is refused with `output: nested too deeply to check`.
 
 ---
 

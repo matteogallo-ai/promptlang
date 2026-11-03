@@ -19,6 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the same check. Visible changes: an answer with an extra field now fails, and
   `promptlang test` reports a mock outside the type as a failure before its
   assertions run.
+- **Generated Python applies the same check.** Each prompt calls
+  `parse_output` from `promptlang_runtime.py`, with the same rules and messages
+  as TypeScript; `InvalidOutputError` subclasses `ValueError`, which the
+  generated code raised before. A struct answer is no longer returned unchecked.
+- **Answers that cannot be checked are refused, not crashes.** A recursive type
+  nested past the call stack raised `RangeError` (TypeScript) or
+  `RecursionError` (Python); it is now an `InvalidOutputError`.
+- **`number` accepts decimal notation only, and `date` a real calendar day.**
+  TypeScript read `0x10` as 16 and `2024-02-30` as a date.
 
 ## [2.0.0] - 2026-11-03
 

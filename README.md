@@ -505,6 +505,24 @@ What the maintainer does:
 
 I design the specifications and acceptance criteria. A coding agent implements; an independent reviewer agent and a separate orchestrating model audit every delivery against written standards (docs/ENGINEERING_STANDARDS.md). I make the calls, and since November 2026 nothing merges until I pass a comprehension check on the changed code.
 
+Design decisions are recorded in [`docs/adr/`](docs/adr/).
+
+### What I'd do differently
+
+- **Write the claims table first.** The audit found headline features marked ✅
+  with no code behind them. A README line backed by a named test from the start
+  (`docs/CLAIMS.md`) would have made that impossible instead of caught late.
+- **Small commits from the first day.** Up to v1.2.0 each milestone is one large
+  commit, which nobody can review; the 400-line limit came after.
+- **Measure the model-backed feature before calling it a feature.** The AI linter
+  shipped tested on fake clients, with one live run on five prompts and no measure
+  of its findings; a labelled corpus with precision,
+  recall and intervals (`evals/linter/`) is what says whether it works.
+- **Put a cap in code before the first paid call,** not an estimate and a promise
+  ([ADR 0004](docs/adr/0004-spending-cap.md)).
+- **Require a comprehension check from the start.** Code I did not write and
+  cannot explain is code I cannot maintain.
+
 ---
 
 ## Contributing

@@ -452,7 +452,7 @@ PromptLang is developed as a Bun workspace. The main package,
 
 | Package | Location | Version | Description |
 | --- | --- | --- | --- |
-| [`@promptlang/yaml-parser`](https://www.npmjs.com/package/@promptlang/yaml-parser) | `packages/yaml-parser/` | 1.0.1 (on npm since PromptLang v1.2.0) | Zero-dependency minimal YAML parser. Extracted from PromptLang core in v1.1.0 so sibling projects (like [Praxis](https://github.com/matteogallo-ai/praxis)) can reuse it via `bun add @promptlang/yaml-parser`. |
+| [`@promptlang/yaml-parser`](https://www.npmjs.com/package/@promptlang/yaml-parser) | `packages/yaml-parser/` | 1.0.1 (1.0.0 on npm since PromptLang v1.2.0) | Zero-dependency minimal YAML parser. Extracted from PromptLang core in v1.1.0 so sibling projects (like [Praxis](https://github.com/matteogallo-ai/praxis)) can reuse it via `bun add @promptlang/yaml-parser`. |
 
 Each package has its own `README.md`, `CHANGELOG.md`, and independent
 SemVer track.

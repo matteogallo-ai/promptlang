@@ -226,7 +226,8 @@ with its message.
   failed (any `PromptClientError`) and left a test without a verdict, `2` usage
   error, missing key, unpriced model, or a declined estimate. On exit 3 each such test
   reads `configuration error` (authentication, a request the provider rejects such
-  as a `@max_tokens` it refuses, an unknown model: fix the file or the key) or
+  as a `@max_tokens` it refuses, an unknown model, or a call that would pass the
+  approved estimate and is not sent: fix the file, the key or the approval) or
   `provider failure` (timeout, network, rate limit, server overload, malformed
   response: retry later); `--json` carries it as `providerError: { kind, message }`
   with `kind` `"configuration"` or `"provider"`.

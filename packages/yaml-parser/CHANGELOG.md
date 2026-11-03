@@ -61,4 +61,5 @@ Initial release. Extracted verbatim from PromptLang core
   happens here first; downstream consumers (PromptLang, Praxis) pick it
   up via SemVer.
 
+[1.0.1]: https://github.com/matteogallo-ai/promptlang/tree/v2.0.0/packages/yaml-parser
 [1.0.0]: https://github.com/matteogallo-ai/promptlang/tree/main/packages/yaml-parser

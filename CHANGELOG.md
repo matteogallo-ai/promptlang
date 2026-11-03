@@ -77,10 +77,6 @@ ways, each of which SemVer reserves for a major version:
 - The published package is built: ESM for Node ≥ 20 and Bun, with `.d.ts`
   declarations; `@promptlang/yaml-parser` is bundled in, so `@promptlang/core` has no
   runtime dependency. The CLI needs Bun ≥ 1.2.20.
-- The `test --live` cost estimate is an upper bound on what the spending cap
-  measures: it counts every call a chain makes (steps, return expression and
-  nested calls), values passed as numbers, booleans and enum members, and the
-  output of an earlier step inserted into a later one.
 - `analyze --ai`: a linter answer that is valid JSON of the wrong shape, or an
   issue without a string category, is an `ai:parse-failure` warning instead of
   "no issues".
@@ -117,7 +113,11 @@ ways, each of which SemVer reserves for a major version:
   and exits 1 when `@version` was not bumped enough. CI runs it on `docs/examples`.
 - `promptlang test <paths> [--json] [--live [--yes]]`: runs `test` blocks against the
   generated TypeScript, replaying `mock:` responses by default; `--live` calls
-  Anthropic after printing an approximate cost estimate and getting approval.
+  Anthropic after printing a cost estimate and getting approval. The estimate
+  counts every call a chain makes (steps, return expression and nested calls),
+  values passed as numbers, booleans and enum members, and an earlier step's
+  output inserted into a later one, assumed at most 6 characters per token; a
+  longer answer makes the cap refuse the later call rather than overspend.
 - `RoutingClient` accepts `{ client, modelMap }` entries, so an Anthropic → OpenAI
   fallback sends OpenAI its own model name; a provider with no mapping for the
   requested model is skipped.
@@ -153,8 +153,8 @@ ways, each of which SemVer reserves for a major version:
 - `analyze --ai` and `test --live` enforce the approved estimate as a spending
   cap: a call whose estimated worst case would pass the approved total is not
   sent. `test --live` reports the test as a configuration error with no verdict
-  (exit 3); `analyze --ai` reports the prompt as `ai:request-failure`. A model
-  without a price is refused before any call, as the same budget error.
+  (exit 3); `analyze --ai` reports the prompt as `ai:request-failure`.
+  `test --live` refuses a model without a price before any call (exit 2).
 - The AI linter is measured: `scripts/linter-eval.ts` runs it on `evals/linter/`
   (120 labelled cases, corpus 1.1.0), scores precision and recall with Wilson
   intervals, and writes an immutable record to `runs/live/` (checked by

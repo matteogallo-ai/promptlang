@@ -231,6 +231,7 @@ describe("prompt-injection-risk: what encloses each placeholder", () => {
     ["]] closing before the input", `  user: "[[a]] {{x}} ]]"`],
     ["a code fence closed before the input", '  user: "```\\nrules\\n```\\n{{x}}\\n```"'],
     ["a tag closed before the input, reopened after", `  user: "<d>a</d> {{x}} </d>"`],
+    ["mis-nested tags: the outer one closed first", `  user: "<a><b></a>{{x}}</b>"`],
     ["the same placeholder once enclosed and once not", `  user: "<d>{{x}}</d> and {{x}}"`],
   ];
   for (const [name, body] of flagged) {
@@ -264,6 +265,11 @@ describe("prompt-injection-risk: what encloses each placeholder", () => {
     ["a recursive alias", "x: A", "type A = B\ntype B = A\n"],
     // Python inserts a dict's repr, so its text fields reach the prompt verbatim.
     ["a struct with a text field", "x: Note", "type Note = struct { body: string }\n"],
+    [
+      "a struct whose field is an alias cycle",
+      "x: S",
+      "type S = struct { a: A }\ntype A = B\ntype B = A\n",
+    ],
   ];
   for (const [name, params, types] of textTypes) {
     test(`flags ${name}`, () => {
@@ -282,6 +288,10 @@ describe("prompt-injection-risk: what encloses each placeholder", () => {
     ).toEqual([]);
     expect(
       issuesFor("s: S", `  user: "Use {{s}}"`, "type S = struct { n: number, k: enum { a } }\n")
+    ).toEqual([]);
+    // The cycle runs through the struct, so it adds no field that could hold text.
+    expect(
+      issuesFor("s: S", `  user: "Use {{s}}"`, "type S = struct { n: number, me?: S }\n")
     ).toEqual([]);
   });
 

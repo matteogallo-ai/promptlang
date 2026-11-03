@@ -7,14 +7,16 @@ import { templatePlaceholders } from "../../compiler/template-compiler";
  * enums cannot, provided the caller's type checker holds them to their type:
  * nothing checks them at run time. `date` is a string nobody validates. A struct
  * carries text when any field does: Python inserts its repr, fields included. A
- * type the file does not declare, or an alias cycle, is treated as text, since
- * nothing here can rule it out; a cycle through a struct adds no new field.
+ * type the file does not declare, or a cycle of aliases, is treated as text,
+ * since nothing here can rule it out. A cycle through a struct adds no field, so
+ * it is judged by the fields already seen. `aliases` holds the names followed
+ * since the last struct: meeting one again is an alias cycle.
  */
 function carriesText(
   type: TypeExpression,
   program: Program,
-  seen = new Set<string>(),
-  inStruct = false
+  seen: ReadonlySet<string> = new Set(),
+  aliases: ReadonlySet<string> = new Set()
 ): boolean {
   switch (type.kind) {
     case "PrimitiveType":
@@ -22,14 +24,20 @@ function carriesText(
     case "EnumType":
       return false;
     case "StructType":
-      return type.fields.some((f) => carriesText(f.type, program, seen, true));
+      return type.fields.some((f) => carriesText(f.type, program, seen, new Set()));
     case "TypeReference": {
-      if (seen.has(type.name)) return !inStruct;
+      if (aliases.has(type.name)) return true;
+      if (seen.has(type.name)) return false;
       const d = program.declarations.find(
         (x) => x.kind === "TypeDeclaration" && x.name === type.name
       );
       if (d?.kind !== "TypeDeclaration") return true;
-      return carriesText(d.definition, program, new Set([...seen, type.name]), inStruct);
+      return carriesText(
+        d.definition,
+        program,
+        new Set([...seen, type.name]),
+        new Set([...aliases, type.name])
+      );
     }
   }
 }

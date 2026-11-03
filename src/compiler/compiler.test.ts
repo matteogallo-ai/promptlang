@@ -1,6 +1,7 @@
 import { describe, test, expect, afterAll } from "bun:test";
 import { runTsc, subprocessTest } from "../../tests/support/subprocess";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { tokenize } from "../lexer/lexer";
 import { parse } from "../parser/parser";
@@ -462,7 +463,6 @@ function makeExplicitTsconfig(runtimeRelPath: string): string {
         noUnusedLocals: false,
         noUnusedParameters: false,
         skipLibCheck: true,
-        baseUrl: ".",
         paths: { "@promptlang/core/runtime": [runtimeRelPath] },
       },
       include: ["*.ts"],
@@ -472,17 +472,16 @@ function makeExplicitTsconfig(runtimeRelPath: string): string {
   );
 }
 
+// The project sits outside this repository (see the isolation test), so "bundler"
+// resolution cannot reach the repository's own package.json `exports`, which is
+// what an external consumer without @promptlang/core installed experiences.
 function makeIsolationTsconfig(): string {
-  // Uses moduleResolution "node" (no `exports` field support) to simulate a
-  // user who has NOT installed promptlang via npm. With "bundler" resolution,
-  // tsc would find the package via the self-referencing exports field in the
-  // local package.json — which is NOT what an external consumer experiences.
   return JSON.stringify(
     {
       compilerOptions: {
         target: "ESNext",
         module: "ESNext",
-        moduleResolution: "node",
+        moduleResolution: "bundler",
         strict: true,
         noUnusedLocals: false,
         noUnusedParameters: false,
@@ -548,12 +547,13 @@ describe("compile — tsc integration (isolation, documented limitation)", () =>
       const ast = parse(tokenize(source));
       const generated = compile(ast, "classify-ticket.prompt");
 
-      await mkdir(TMP_DIR, { recursive: true });
-      await writeFile(join(TMP_DIR, "classify-ticket.ts"), generated);
-      await writeFile(join(TMP_DIR, "tsconfig.json"), makeIsolationTsconfig());
+      const dir = await mkdtemp(join(tmpdir(), "promptlang-isolation-"));
+      await writeFile(join(dir, "classify-ticket.ts"), generated);
+      await writeFile(join(dir, "tsconfig.json"), makeIsolationTsconfig());
 
       // tsc writes errors to stdout (not stderr).
-      const { exitCode, stdout } = await runTsc(join(TMP_DIR, "tsconfig.json"));
+      const { exitCode, stdout } = await runTsc(join(dir, "tsconfig.json"));
+      await rm(dir, { recursive: true, force: true });
 
       // Must fail with TS2307 — this is the documented expected behaviour.
       expect(exitCode).not.toBe(0);

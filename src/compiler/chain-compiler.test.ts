@@ -597,7 +597,6 @@ describe("chain — integration: summarize-and-translate.prompt", () => {
               noUnusedLocals: false,
               noUnusedParameters: false,
               skipLibCheck: true,
-              baseUrl: ".",
               paths: { "@promptlang/core/runtime": [RUNTIME_REL] },
             },
             include: ["*.ts"],

@@ -16,7 +16,7 @@ import {
 } from "../../config/config";
 import { YamlParseError } from "@promptlang/yaml-parser";
 import { mkdir } from "node:fs/promises";
-import { join, basename, relative, resolve } from "node:path";
+import { join, basename, isAbsolute, relative, resolve } from "node:path";
 
 const TARGETS = ["typescript", "python"] as const;
 type Target = (typeof TARGETS)[number];
@@ -212,6 +212,13 @@ function computeDefaultRuntimePath(outDir: string): string {
   return relative(outDirAbs, runtimeAbs);
 }
 
+// Without baseUrl (removed in TypeScript 7), a paths entry resolves from the
+// tsconfig's directory and must start with "./" or "../" (TS5090 otherwise).
+function asPathsEntry(path: string): string {
+  if (isAbsolute(path) || path.startsWith("./") || path.startsWith("../")) return path;
+  return `./${path}`;
+}
+
 function buildTsconfig(runtimePath: string): string {
   return `${JSON.stringify(
     {
@@ -223,9 +230,8 @@ function buildTsconfig(runtimePath: string): string {
         noImplicitAny: true,
         esModuleInterop: true,
         skipLibCheck: true,
-        baseUrl: ".",
         paths: {
-          "@promptlang/core/runtime": [runtimePath],
+          "@promptlang/core/runtime": [asPathsEntry(runtimePath)],
         },
       },
       include: ["./*.ts"],

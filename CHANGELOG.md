@@ -7,7 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **`RoutingClient` falls back only when a provider could not serve the
+  request** (outage, rate limit, timeout, network, 404, malformed body). A 400
+  and any error that is not a `PromptClientError` used to send the same request,
+  and the user's data, to the next provider; they are now thrown at once, like
+  `AuthenticationError`.
+- **A 404 from `AnthropicClient` or `OpenAIClient` raises `NotFoundError`**, as
+  `OllamaClient` already did, instead of `InvalidRequestError`, so a model or
+  endpoint one provider lacks falls back while a malformed request does not.
+  Code that catches `InvalidRequestError` for a 404 catches `NotFoundError`.
+
 ### Fixed
+- **`OpenAIClient` sends `max_completion_tokens`, not `max_tokens`** (TypeScript
+  and Python). GPT-5 and the o-series, which the routing example falls back to,
+  answer `max_tokens` with a 400. The `@temperature` warning now says those
+  models refuse any value but 1.
 - **An incomplete answer is an error, not a result.** The TypeScript and Python
   runtimes returned whatever text a 2xx body held, so an answer cut at
   `max_tokens` (or a thinking-only body with no text), a refusal, or an empty

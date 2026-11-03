@@ -391,7 +391,11 @@ const category = await classify_ticket({ ticket: "..." }, client);
 The generated code puts the file's `@model` in every request. Give each provider
 that uses other names a `modelMap` from that model to its own; a provider whose map
 has no entry for the requested model is skipped rather than sent a name it cannot
-serve. An `AuthenticationError` stops the routing at once.
+serve. Routing moves on only when a provider could not serve the request (5xx, rate
+limit, timeout, network error, 404, malformed body). A bad key, an incomplete answer,
+a 400 (the request itself is wrong, so another provider would receive the user's
+data for nothing) and any error that is not a `PromptClientError` stop it at once. A
+timed-out request may still be billed by the provider that timed out.
 
 ```typescript
 import { AnthropicClient, OpenAIClient, RoutingClient } from "@promptlang/core/runtime";
@@ -410,6 +414,14 @@ const client = new RoutingClient({
 
 const category = await classify_ticket({ ticket: "..." }, client);
 ```
+
+`OpenAIClient` sends `max_tokens` as `max_completion_tokens`, which GPT-5 and the
+o-series require. Those models refuse any `temperature` but 1, so a prompt routed to
+them should not set `@temperature`; the provider's 400 surfaces as
+`InvalidRequestError`. `compile` warns about `@temperature` only next to a `claude-`
+model, where it is not sent at all. An OpenAI-compatible server reached through
+`baseURL` that does not read `max_completion_tokens` applies its own output limit
+instead.
 
 ---
 

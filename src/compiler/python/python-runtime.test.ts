@@ -88,6 +88,7 @@ out = {
     "openai_echoes_key": outcome(lambda: rt.OpenAIClient(SECRET), 500,
                                  json.dumps({"error": {"message": "upstream rejected Bearer " + SECRET}})),
     "openai_ok": outcome(openai, 200, OPENAI_OK),
+    "openai_sent": httpx.SENT[-1]["json"],
     "openai_no_choices": outcome(openai, 200, json.dumps({"usage": {"prompt_tokens": 1, "completion_tokens": 1}})),
     "openai_null_content": outcome(openai, 200, json.dumps({"choices": [{"message": {"content": None}}],
                                                             "usage": {"prompt_tokens": 1, "completion_tokens": 1}})),
@@ -184,6 +185,18 @@ describe("Python runtime guards", () => {
     expect(results.openai_echoes_key).toMatchObject({
       error: "ServerError",
       message: "upstream rejected Bearer [redacted]",
+    });
+  });
+
+  test("OpenAI: sends max_tokens as max_completion_tokens", () => {
+    expect(results.openai_sent).toEqual({
+      model: "m",
+      messages: [
+        { role: "system", content: "S" },
+        { role: "user", content: "Hi" },
+      ],
+      temperature: 0.2,
+      max_completion_tokens: 64,
     });
   });
 

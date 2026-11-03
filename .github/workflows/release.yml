@@ -43,6 +43,25 @@ jobs:
         with:
           node-version: "lts/*"
           registry-url: "https://registry.npmjs.org"
+      # npm trusted publishing (OIDC) needs npm >= 11.5.1 and Node >= 22.14.0; "lts/*"
+      # moves, so the versions are printed and checked before anything is packed.
+      - name: Node and npm meet the trusted-publishing minimums
+        run: |
+          node --version
+          npm --version
+          node -e '
+            const atLeast = (v, min) => {
+              const a = v.replace(/^v/, "").split(".").map(Number);
+              const b = min.split(".").map(Number);
+              for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i] > b[i];
+              return true;
+            };
+            const npm = require("node:child_process").execSync("npm --version").toString().trim();
+            const bad = [];
+            if (!atLeast(process.version, "22.14.0")) bad.push(`Node ${process.version} < 22.14.0`);
+            if (!atLeast(npm, "11.5.1")) bad.push(`npm ${npm} < 11.5.1`);
+            if (bad.length) { console.error(bad.join("; ")); process.exit(1); }
+          '
       - run: bun install --frozen-lockfile
 
       - name: The tag names the version in package.json

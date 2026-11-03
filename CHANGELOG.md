@@ -11,11 +11,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `promptlang --version`, the same as `promptlang version`.
 
 ### Changed
+- **`compile` refuses outputs that would overwrite each other, and writes
+  nothing then** (breaking for folders that compiled before). Two files with the
+  same name in different folders compiled to one output file: the last won,
+  `index.ts` exported it twice, exit 0. `compile` now exits 1, before writing
+  any file, valid ones included, when two sources would produce the same file
+  (case ignored) or a file compile writes itself, or when two modules would
+  export the same name (`sentiment` in two files, or `FooBarInput` from
+  `foo_bar` and `fooBar`). Such files compile into different `--out` folders.
+- **Python output files are renamed** to importable module names:
+  `sentiment.v2.prompt` → `sentiment_v2.py` (`__init__.py` imported it as a
+  package `sentiment`), `2x.prompt` → `_2x.py`, `class.prompt` → `class_.py`.
+- **More names are compile errors**: reserved words where the generated code
+  binds the name (`prompt delete`, a step `if`, a Python parameter `class`),
+  any name with `-`, a Python name starting with `__`, a type, prompt or chain
+  named after what the generated module imports (`PromptClient`, `Promise`,
+  Python's `TypedDict`, `str`...), a TypeScript prompt or chain named
+  `globalThis` or `undefined`, a step, prompt or chain named
+  `client`, a step named after a prompt of the file, a parameter of its chain or
+  an earlier step, and two declarations generating the same name (a type
+  `FooInput` beside a prompt `foo`, Python enums `Foo` and `foo`). Each compiled to a
+  module that does not parse or type-check, or that silently shadowed a name,
+  with exit 0.
+- **Generated headers no longer carry a `Generated at` timestamp**, so the same
+  source and PromptLang version give the same bytes.
 - **`prompt-injection-risk` warns in more places.** It now reads `system:` and
   `assistant:` sections, and `date` and text-bearing struct parameters, so a file
   that passed `analyze --strict` can now exit 1: for example a `{{tone}}` string
   parameter in a system prompt. Remedy: declare a value from a fixed list as an
   `enum`, or enclose the input in a delimiter pair.
+
 
 - **Generated code checks every answer against its declared type** (breaking for
   code that relied on the old behaviour). Answers that used to pass now raise
@@ -44,6 +69,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Code that catches `InvalidRequestError` for a 404 catches `NotFoundError`.
 
 ### Fixed
+- **The source path in generated headers and Python docstrings is escaped.** A
+  newline, U+2028 or U+2029 in a file name ended the `//` comment and let the
+  rest of the name run as code. Python docstrings name the source file instead
+  of `<prompt>.prompt`.
+- The `--help` example and the benchmark compile `docs/examples/*.prompt`:
+  the folder also holds the demo's two versions of one prompt, which are
+  alternatives and do not compile together.
 - **`prompt-injection-risk` checks what encloses each input.** It accepted a
   section with any `---` or `<tag>` anywhere (`Answer in <b>bold</b>. Here is:
   {{x}}` passed), and never looked at `system:` sections. It now flags each text

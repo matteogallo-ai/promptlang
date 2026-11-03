@@ -67,7 +67,7 @@ Examples:
   promptlang compile
   promptlang parse docs/examples/classify-ticket.prompt
   promptlang analyze docs/examples/
-  promptlang compile docs/examples/ --out ./generated --emit-tsconfig
+  promptlang compile "docs/examples/*.prompt" --out ./generated --emit-tsconfig
   promptlang semver-check docs/examples/ --base main
   promptlang test docs/examples/
 `.trim();

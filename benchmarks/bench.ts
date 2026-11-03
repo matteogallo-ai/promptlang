@@ -62,7 +62,7 @@ function cliTable(outDir: string): string[] {
     ["parse", "docs/examples/classify-ticket.prompt"],
     ["analyze", "docs/examples/"],
     ["compile", "docs/examples/classify-ticket.prompt", "--out", outDir],
-    ["compile", "docs/examples/", "--out", outDir, "--target", "python"],
+    ["compile", "docs/examples/*.prompt", "--out", outDir, "--target", "python"],
   ];
   const rows = ["| Command | Median | Min | Max |", "| --- | ---: | ---: | ---: |"];
   for (const args of commands) {

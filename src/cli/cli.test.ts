@@ -108,6 +108,17 @@ describe("version", () => {
     expect(code).toBe(0);
     expect(output()).toContain("github.com");
   });
+
+  test("'--version' prints the same as 'version'", async () => {
+    const asCommand = captureLog();
+    await main(["bun", "cli", "version"]);
+    asCommand.restore();
+    const asFlag = captureLog();
+    const code = await main(["bun", "cli", "--version"]);
+    asFlag.restore();
+    expect(code).toBe(0);
+    expect(asFlag.output()).toBe(asCommand.output());
+  });
 });
 
 // ---------------------------------------------------------------------------

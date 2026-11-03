@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `promptlang --version`, the same as `promptlang version`.
+
 ## [2.0.0] - 2026-11-03
 
 Remediation after the 2026-11-02 external audit, and the first release of

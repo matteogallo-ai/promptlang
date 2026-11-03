@@ -341,7 +341,9 @@ bun run cli compile
 
 Once the registry is populated (`.promptlang/manifest.json` + `integrity.json`),
 `promptlang check` verifies that no imported prompt has been silently modified
-since it was last resolved. See [`docs/yaml-support.md`](docs/yaml-support.md)
+since it was last resolved. `compile` does not read `integrity.json`, so a prompt
+you are editing compiles without a new `install`; in CI, run `check` before
+`compile` to make a modified prompt fail the build. See [`docs/yaml-support.md`](docs/yaml-support.md)
 for the exact YAML subset supported.
 
 ---

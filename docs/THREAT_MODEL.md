@@ -32,10 +32,14 @@ is wrapped in untrusted_prompt delimiters", "the system prompt marks delimited t
 as untrusted data, not instructions", "adversarial: a prompt cannot close the
 delimiter and inject linter instructions".
 
-*In users' prompts:* the static rule `prompt-injection-risk` flags a user template
-that interpolates input without delimiters: `src/analyzer/analyzer.test.ts`
-"detects prompt-injection-risk on an undelimited user template". PromptLang cannot
-make a user's prompt injection-proof; the rule points at the most common gap.
+*In users' prompts:* the static rule `prompt-injection-risk` flags a text
+parameter inserted, in any role, outside a delimiter pair that encloses it:
+`src/analyzer/analyzer.test.ts` "detects prompt-injection-risk on an undelimited
+user template", and the flagged cases "an unrelated tag earlier in the text" and
+"a string parameter in a system section".
+PromptLang cannot make a user's prompt injection-proof; the rule points at the
+most common gap. It does not escape values: an input that contains the closing
+delimiter (`</ticket>`) still closes it, and generated code inserts it as is.
 
 *Not covered:* the effectiveness of the delimiters against a determined attacker is
 not measured; only the escaping is.

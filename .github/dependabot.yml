@@ -1,4 +1,6 @@
-# Weekly, grouped version updates: one PR per ecosystem per week.
+# Weekly, grouped version updates: one PR per ecosystem per week for minor and
+# patch bumps. A major bump gets its own PR, so a breaking release (TypeScript 7
+# drops `baseUrl`) cannot hold back the safe updates grouped with it.
 # Dependabot does not open security updates for Bun; vulnerabilities in bun.lock
 # are caught by the OSV-Scanner job in ci.yml instead.
 version: 2
@@ -11,6 +13,7 @@ updates:
     groups:
       bun-dependencies:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
 
   # Actions are pinned by SHA; Dependabot updates the SHA and the version comment.
   - package-ecosystem: "github-actions"
@@ -20,3 +23,4 @@ updates:
     groups:
       github-actions:
         patterns: ["*"]
+        update-types: ["minor", "patch"]

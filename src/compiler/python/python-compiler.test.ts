@@ -4,6 +4,8 @@ import { getPythonRuntimeSource } from "./python-runtime-template";
 import { tokenize } from "../../lexer/lexer";
 import { parse } from "../../parser/parser";
 import { mkdir, writeFile, rm } from "node:fs/promises";
+import { join } from "node:path";
+import { SCRATCH } from "../../../tests/support/scratch";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -277,7 +279,7 @@ test.if(pythonAvailable)("generated Python parses with ast.parse (classify-ticke
   const generated = compilePython(ast, "classify-ticket.prompt");
   const runtime = getPythonRuntimeSource();
 
-  const tmpDir = "/tmp/promptlang-python-test";
+  const tmpDir = join(SCRATCH, "promptlang-python-test");
   await mkdir(tmpDir, { recursive: true });
   await writeFile(`${tmpDir}/classify_ticket.py`, generated);
   await writeFile(`${tmpDir}/promptlang_runtime.py`, runtime);
@@ -319,7 +321,7 @@ test.if(pythonAvailable)(
     const ast = parse(tokenize(source));
     const generated = compilePython(ast, "extract-invoice.prompt");
 
-    const tmpDir = "/tmp/promptlang-python-invoice-test";
+    const tmpDir = join(SCRATCH, "promptlang-python-invoice-test");
     await mkdir(tmpDir, { recursive: true });
     await writeFile(`${tmpDir}/extract_invoice.py`, generated);
     await writeFile(`${tmpDir}/promptlang_runtime.py`, getPythonRuntimeSource());

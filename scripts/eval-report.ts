@@ -11,8 +11,8 @@
  */
 import { readdir } from "node:fs/promises";
 import { resolve } from "node:path";
-import type { EvalRecord } from "./linter-eval";
-import { type Rate, wilson } from "./linter-eval-metrics";
+import type { EvalRecord, Labels } from "./linter-eval";
+import { type Rate, type Score, scoreCases, wilson } from "./linter-eval-metrics";
 
 const ROOT = resolve(import.meta.dir, "..");
 const LIVE = resolve(ROOT, "runs/live");
@@ -66,7 +66,22 @@ export function renderSlo(latest: { name: string; record: EvalRecord } | null): 
   ].join("\n");
 }
 
-export function renderPerformance(latest: { name: string; record: EvalRecord } | null): string {
+/**
+ * What a linter that reports every category on every test case would score:
+ * the floor a measured precision has to beat to mean anything.
+ */
+export function flagAllBaseline(labels: Labels): Score {
+  const test = labels.cases.filter((c) => c.split === "test");
+  return scoreCases(
+    test.map((c) => ({ id: c.id, defects: c.defects, predicted: labels.categories })),
+    labels.categories
+  );
+}
+
+export function renderPerformance(
+  latest: { name: string; record: EvalRecord } | null,
+  labels: Labels
+): string {
   if (!latest)
     return "Not measured: no linter eval record is committed under `runs/live/`. The corpus and the scoring are tested; their numbers on a fake client are not a quality measure.";
   const { name, record } = latest;
@@ -81,6 +96,15 @@ export function renderPerformance(latest: { name: string; record: EvalRecord } |
   for (const m of record.metrics)
     lines.push(
       `| ${m.repeat} | ${cell(m.test.overall.precision)} | ${cell(m.test.overall.recall)} | ${cell(m.test.clean_false_alarm)} | ${m.test.failed.length} |`
+    );
+  if (labels.version === record.corpus.version) {
+    const b = flagAllBaseline(labels);
+    lines.push(
+      `| Baseline: report every category | ${cell(b.overall.precision)} | ${cell(b.overall.recall)} | ${cell(b.clean_false_alarm)} | n/a |`
+    );
+  } else
+    lines.push(
+      `| Baseline: report every category | n/a: labels are corpus ${labels.version}, the run corpus ${record.corpus.version} | n/a | n/a | n/a |`
     );
   lines.push(
     "",
@@ -97,6 +121,10 @@ const BLOCKS = [
   { doc: "docs/SYSTEM_CARD.md", render: renderPerformance },
 ] as const;
 
+async function corpusLabels(): Promise<Labels> {
+  return (await Bun.file(resolve(ROOT, "evals/linter/labels.json")).json()) as Labels;
+}
+
 /** Replaces the text between `<!-- measured:start -->` and `<!-- measured:end -->`. */
 export function withBlock(text: string, block: string): string {
   const re = /(<!-- measured:start -->\n)[\s\S]*?(\n<!-- measured:end -->)/;
@@ -107,18 +135,20 @@ export function withBlock(text: string, block: string): string {
 /** The docs whose measured block differs from what the latest record renders. */
 export async function staleDocs(): Promise<string[]> {
   const latest = await latestRecord();
+  const labels = await corpusLabels();
   const stale: string[] = [];
   for (const { doc, render } of BLOCKS) {
     const text = await Bun.file(resolve(ROOT, doc)).text();
-    if (withBlock(text, render(latest)) !== text) stale.push(doc);
+    if (withBlock(text, render(latest, labels)) !== text) stale.push(doc);
   }
   return stale;
 }
 
 if (import.meta.main) {
   const latest = await latestRecord();
+  const labels = await corpusLabels();
   for (const { doc, render } of BLOCKS) {
-    const block = render(latest);
+    const block = render(latest, labels);
     if (process.argv.includes("--write")) {
       const path = resolve(ROOT, doc);
       await Bun.write(path, withBlock(await Bun.file(path).text(), block));

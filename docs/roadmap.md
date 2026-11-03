@@ -59,13 +59,6 @@ Release history is in [`CHANGELOG.md`](../CHANGELOG.md).
 
 ---
 
-## In progress
-
-- [ ] **npm publication** of `@promptlang/core` (ESM build, type declarations, Node
-      consumer test)
-
----
-
 ## Not implemented, not scheduled
 
 - `eval` blocks: parsed, not executed (`compile` and `test` warn)

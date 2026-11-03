@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `promptlang --version`, the same as `promptlang version`.
+
 ### Changed
 - **`prompt-injection-risk` warns in more places.** It now reads `system:` and
   `assistant:` sections, and `date` and text-bearing struct parameters, so a file

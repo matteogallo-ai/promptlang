@@ -107,6 +107,30 @@ export class InvalidResponseError extends PromptClientError {
   }
 }
 
+/**
+ * A well-formed 2xx body that is not a complete answer: cut at the output limit,
+ * refused, stopped for another reason, or carrying no text. Never retried and
+ * never sent to a RoutingClient fallback: a cut answer is cut again at the same
+ * limit, and a refusal must not be routed around. `usage` is what the provider
+ * billed for the call, when it reported it.
+ */
+export class IncompleteResponseError extends PromptClientError {
+  readonly reason: "max_tokens" | "refusal" | "unexpected_stop" | "empty";
+  readonly usage?: { input_tokens: number; output_tokens: number };
+
+  constructor(
+    message: string,
+    reason: IncompleteResponseError["reason"],
+    provider?: string,
+    usage?: IncompleteResponseError["usage"]
+  ) {
+    super(message, provider);
+    this.name = "IncompleteResponseError";
+    this.reason = reason;
+    this.usage = usage;
+  }
+}
+
 /** Thrown by RoutingClient when every configured provider fails. */
 export class AllProvidersFailedError extends PromptClientError {
   /** Errors thrown by each provider, in the order they were tried. */
@@ -118,5 +142,23 @@ export class AllProvidersFailedError extends PromptClientError {
     );
     this.name = "AllProvidersFailedError";
     this.errors = errors;
+  }
+}
+
+/**
+ * The model answered, but not in the prompt's declared output type. Not a
+ * PromptClientError: the provider worked, and the answer is what failed, so a
+ * test reports it as a failure, not as a provider error. `errors` lists each
+ * mismatch by path; the message repeats them and never quotes the answer, which
+ * is untrusted and may hold user data. `output` keeps the answer for the caller.
+ */
+export class InvalidOutputError extends Error {
+  constructor(
+    readonly prompt: string,
+    readonly errors: readonly string[],
+    readonly output: string
+  ) {
+    super(`output of prompt '${prompt}' does not match its type: ${errors.join("; ")}`);
+    this.name = "InvalidOutputError";
   }
 }

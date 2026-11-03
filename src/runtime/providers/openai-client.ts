@@ -1,6 +1,12 @@
 import type { PromptRequest, PromptResponse } from "../types";
 import { BaseHttpClient, type HttpRequestSpec } from "./base-http-client";
-import { invalidField, isRecord, requireApiKey } from "./response";
+import {
+  type StopKind,
+  invalidField,
+  isRecord,
+  requireApiKey,
+  requireCompleteAnswer,
+} from "./response";
 
 /** Options for configuring the OpenAIClient. */
 export interface OpenAIClientOptions {
@@ -16,6 +22,18 @@ export interface OpenAIClientOptions {
   retryDelay?: number;
   /** Optional OpenAI organization ID sent in the `OpenAI-Organization` header. */
   organization?: string;
+}
+
+/**
+ * `stop` is a finished answer; a body with no `finish_reason` is judged by its
+ * text alone. Any other value is an unexpected stop, including the non-standard
+ * values some OpenAI-compatible servers send on success.
+ */
+function openaiStop(raw: string): StopKind {
+  if (raw === "" || raw === "stop") return "complete";
+  if (raw === "length") return "max_tokens";
+  if (raw === "content_filter") return "refusal";
+  return "unexpected_stop";
 }
 
 /** HTTP client for the OpenAI Chat Completions API (`/v1/chat/completions`). */
@@ -43,7 +61,9 @@ export class OpenAIClient extends BaseHttpClient {
       messages: request.messages,
     };
     if (request.temperature !== undefined) body.temperature = request.temperature;
-    if (request.max_tokens !== undefined) body.max_tokens = request.max_tokens;
+    // GPT-5 and the o-series refuse max_tokens with a 400; OpenAI's API reference
+    // marks max_tokens deprecated in favour of max_completion_tokens.
+    if (request.max_tokens !== undefined) body.max_completion_tokens = request.max_tokens;
     const headers: Record<string, string> = {
       Authorization: `Bearer ${this.apiKey}`,
       "content-type": "application/json",
@@ -52,7 +72,7 @@ export class OpenAIClient extends BaseHttpClient {
     return { url: `${this.baseURL}/chat/completions`, headers, body };
   }
 
-  protected parseResponse(data: Record<string, unknown>): PromptResponse {
+  protected parseResponse(data: Record<string, unknown>, request: PromptRequest): PromptResponse {
     const choice = Array.isArray(data.choices) ? data.choices[0] : undefined;
     if (!isRecord(choice) || !isRecord(choice.message))
       invalidField("openai", "choices[0].message");
@@ -70,13 +90,21 @@ export class OpenAIClient extends BaseHttpClient {
     ) {
       invalidField("openai", "usage");
     }
-    return {
-      content,
-      usage: {
-        // OpenAI uses prompt_tokens / completion_tokens; we normalize to our interface.
-        input_tokens: usage.prompt_tokens,
-        output_tokens: usage.completion_tokens,
-      },
-    };
+    // OpenAI uses prompt_tokens / completion_tokens; we normalize to our interface.
+    const counts = { input_tokens: usage.prompt_tokens, output_tokens: usage.completion_tokens };
+    const finish = (choice as Record<string, unknown>).finish_reason;
+    const raw = typeof finish === "string" ? finish : "";
+    // A refusal can arrive in its own field with finish_reason "stop".
+    if (typeof message.refusal === "string" && message.refusal !== "")
+      requireCompleteAnswer(
+        "openai",
+        "refusal",
+        "message.refusal",
+        content,
+        request.max_tokens,
+        counts
+      );
+    requireCompleteAnswer("openai", openaiStop(raw), raw, content, request.max_tokens, counts);
+    return { content, usage: counts };
   }
 }

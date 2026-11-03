@@ -137,30 +137,38 @@ describe("Python compiler — prompt declarations", () => {
     expect(out).toContain(") -> str:");
   });
 
-  test("enum return type generates validation against _VALUES", () => {
-    const out = compile(`
-type Cat = enum { bug, feature }
-prompt classify() -> Cat { user: "test" }`);
-    expect(out).toContain("_CAT_VALUES");
-    expect(out).toContain("if raw not in");
+  // What the check does is run in tests/generated-output-validation.test.ts.
+  // The generated module names its own helpers with this prefix.
+  test("a name starting with _promptlang_ is a compile error", () => {
+    expect(() =>
+      compile(`@version "1.0.0"\nprompt _promptlang_json() -> string { user: "x" }`)
+    ).toThrow(
+      "'_promptlang_json' cannot name a prompt: names starting with _promptlang_ are reserved for generated code"
+    );
   });
 
-  test("struct return type generates JSON parse validation", () => {
+  test("a prompt checks its answer with parse_output against its declared type", () => {
     const out = compile(`
 type Invoice = struct { amount: number }
 prompt extract() -> Invoice { user: "test" }`);
-    expect(out).toContain("_json.loads(raw)");
-    expect(out).toContain("JSONDecodeError");
-  });
-
-  test("number return type generates float() conversion", () => {
-    const out = compile(`@version "1.0.0"\nprompt count() -> number { user: "test" }`);
-    expect(out).toContain("float(raw)");
-  });
-
-  test("boolean return type generates true/false check", () => {
-    const out = compile(`@version "1.0.0"\nprompt flag() -> boolean { user: "test" }`);
-    expect(out).toContain('lower not in ("true", "false")');
+    expect(out).toContain(
+      "from .promptlang_runtime import PromptClient, PromptRequest, parse_output as _promptlang_parse_output"
+    );
+    const literal = /^_promptlang_output_extract = _promptlang_json\.loads\((".*")\)$/m.exec(
+      out
+    )?.[1];
+    expect(JSON.parse(JSON.parse(literal!))).toEqual({
+      root: { kind: "ref", name: "Invoice" },
+      defs: {
+        Invoice: {
+          kind: "struct",
+          fields: { amount: { optional: false, type: { kind: "number" } } },
+        },
+      },
+    });
+    expect(out).toContain(
+      '    return _promptlang_parse_output("extract", raw, _promptlang_output_extract)'
+    );
   });
 
   test("template {{var}} becomes f-string with input['var']", () => {

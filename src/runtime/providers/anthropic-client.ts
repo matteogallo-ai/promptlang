@@ -1,6 +1,12 @@
 import type { PromptRequest, PromptResponse } from "../types";
 import { BaseHttpClient, type HttpRequestSpec } from "./base-http-client";
-import { invalidField, isRecord, requireApiKey } from "./response";
+import {
+  type StopKind,
+  invalidField,
+  isRecord,
+  requireApiKey,
+  requireCompleteAnswer,
+} from "./response";
 
 /** The `anthropic-version` header sent unless `apiVersion` overrides it. */
 export const DEFAULT_ANTHROPIC_VERSION = "2026-10-21";
@@ -26,7 +32,21 @@ export interface AnthropicClientOptions {
   apiVersion?: string;
 }
 
+/** `max_tokens` sent when the prompt has no `@max_tokens`; the Messages API requires one. */
+const DEFAULT_MAX_TOKENS = 1024;
+
 type AnthropicContentBlock = { type: string; text: string };
+
+/**
+ * `end_turn` and `stop_sequence` are finished answers. A body with no
+ * `stop_reason` (some proxies drop it) is judged by its text alone.
+ */
+function anthropicStop(raw: string): StopKind {
+  if (raw === "" || raw === "end_turn" || raw === "stop_sequence") return "complete";
+  if (raw === "max_tokens") return "max_tokens";
+  if (raw === "refusal") return "refusal";
+  return "unexpected_stop";
+}
 
 /** HTTP client for the Anthropic Messages API (`/v1/messages`). */
 export class AnthropicClient extends BaseHttpClient {
@@ -52,7 +72,7 @@ export class AnthropicClient extends BaseHttpClient {
     const body: Record<string, unknown> = {
       model: request.model,
       messages: request.messages.filter((m) => m.role !== "system"),
-      max_tokens: request.max_tokens ?? 1024,
+      max_tokens: request.max_tokens ?? DEFAULT_MAX_TOKENS,
     };
     if (systemMessages.length > 0) {
       body.system = systemMessages.map((m) => m.content).join("\n");
@@ -68,7 +88,7 @@ export class AnthropicClient extends BaseHttpClient {
     };
   }
 
-  protected parseResponse(data: Record<string, unknown>): PromptResponse {
+  protected parseResponse(data: Record<string, unknown>, request: PromptRequest): PromptResponse {
     if (!Array.isArray(data.content)) invalidField("anthropic", "content");
     const usage = data.usage;
     if (
@@ -85,9 +105,16 @@ export class AnthropicClient extends BaseHttpClient {
       )
       .map((block) => block.text)
       .join("");
-    return {
-      content: text,
-      usage: { input_tokens: usage.input_tokens, output_tokens: usage.output_tokens },
-    };
+    const raw = typeof data.stop_reason === "string" ? data.stop_reason : "";
+    const counts = { input_tokens: usage.input_tokens, output_tokens: usage.output_tokens };
+    requireCompleteAnswer(
+      "anthropic",
+      anthropicStop(raw),
+      raw,
+      text,
+      request.max_tokens ?? DEFAULT_MAX_TOKENS,
+      counts
+    );
+    return { content: text, usage: counts };
   }
 }

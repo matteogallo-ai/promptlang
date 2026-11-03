@@ -9,6 +9,10 @@ Do not edit manually — it will be overwritten on the next compile.
 
 from __future__ import annotations
 from abc import ABC, abstractmethod
+import json
+import math
+import re
+from datetime import date as _date
 from typing import Any, Literal, NoReturn, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -81,6 +85,26 @@ class InvalidResponseError(PromptClientError):
     """A 2xx body that is not JSON or lacks a documented field."""
 
 
+class IncompleteResponseError(PromptClientError):
+    """A well-formed 2xx body that is not a complete answer.
+
+    reason is "max_tokens", "refusal", "unexpected_stop" or "empty". Not retried:
+    a cut answer is cut again at the same limit, and a refusal must not be
+    routed around.
+    """
+
+    def __init__(self, message: str, reason: str, provider: str | None = None,
+                 usage: dict | None = None):
+        super().__init__(message, provider)
+        self.reason = reason
+        # What the provider billed for the call: a cut answer is billed in full.
+        self.usage = usage
+
+
+# max_tokens sent when the prompt has no @max_tokens; the Messages API requires one.
+DEFAULT_MAX_TOKENS = 1024
+
+
 def _require_api_key(api_key: object, client: str, env_var: str) -> str:
     if not isinstance(api_key, str) or api_key.strip() == "":
         raise ValueError(f"{client}: api_key is empty. Pass a key, e.g. from os.environ['{env_var}'].")
@@ -122,6 +146,47 @@ def _read_json_object(response: Any, provider: str) -> dict:
     return data
 
 
+def _require_complete_answer(provider: str, stop: str, decided_by: str, text: str,
+                             max_tokens: int | None, usage: dict) -> None:
+    # stop is "complete", "max_tokens", "refusal" or "unexpected_stop". decided_by
+    # comes from the provider, so it is capped; the model's text never enters the
+    # message: it is untrusted and may be long.
+    quoted = f"\`{decided_by[:64]}\`"
+    if stop == "max_tokens":
+        limit = "the provider default" if max_tokens is None else f"max_tokens {max_tokens}"
+        raise IncompleteResponseError(
+            f"{provider} stopped at the output limit ({limit}) before finishing the answer; raise @max_tokens on the prompt",
+            "max_tokens", provider, usage)
+    if stop == "refusal":
+        raise IncompleteResponseError(f"{provider} refused to answer ({quoted})", "refusal", provider, usage)
+    if stop == "unexpected_stop":
+        raise IncompleteResponseError(
+            f"{provider} stopped with {quoted} before giving a final answer", "unexpected_stop", provider, usage)
+    if text.strip() == "":
+        raise IncompleteResponseError(f"{provider} returned no text", "empty", provider, usage)
+
+
+def _anthropic_stop(raw: str) -> str:
+    # A body with no stop_reason (some proxies drop it) is judged by its text alone.
+    if raw in ("", "end_turn", "stop_sequence"):
+        return "complete"
+    if raw == "max_tokens":
+        return "max_tokens"
+    if raw == "refusal":
+        return "refusal"
+    return "unexpected_stop"
+
+
+def _openai_stop(raw: str) -> str:
+    if raw in ("", "stop"):
+        return "complete"
+    if raw == "length":
+        return "max_tokens"
+    if raw == "content_filter":
+        return "refusal"
+    return "unexpected_stop"
+
+
 def _invalid_field(provider: str, field: str) -> NoReturn:
     raise InvalidResponseError(
         f"{provider} response has an unexpected shape: \`{field}\` is missing or has the wrong type",
@@ -131,6 +196,170 @@ def _invalid_field(provider: str, field: str) -> NoReturn:
 
 def _is_count(value: object) -> bool:
     return isinstance(value, int) and not isinstance(value, bool)
+
+
+# ---- Output checking (same rules and messages as the TypeScript runtime) ----
+
+class InvalidOutputError(ValueError):
+    """The model's answer does not match the prompt's declared output type.
+
+    A ValueError, which generated code raised for a bad answer before this class
+    existed. The message names the mismatches and never quotes the answer: model
+    output is untrusted, may hold user data, and messages reach logs. The answer
+    is on \`output\`.
+    """
+
+    def __init__(self, prompt: str, errors: list[str], output: str):
+        super().__init__(f"output of prompt '{prompt}' does not match its type: " + "; ".join(errors))
+        self.prompt = prompt
+        self.errors = errors
+        self.output = output
+
+
+_ISO_DATE = re.compile("[0-9]{4}-[0-9]{2}-[0-9]{2}")
+_DECIMAL = re.compile("[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)([eE][+-]?[0-9]+)?")
+_FENCED = re.compile(chr(96) * 3 + "[A-Za-z0-9_-]*\\r?\\n(.*)\\r?\\n" + chr(96) * 3, re.DOTALL)
+_MAX_ERRORS = 10
+_MAX_ERROR_LENGTH = 500
+_TOO_DEEP = "output: nested too deeply to check"
+
+
+def _describe(value: object) -> str:
+    """What a value is, never the value itself (see InvalidOutputError)."""
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "a boolean"
+    if isinstance(value, (int, float)):
+        return "a number"
+    if isinstance(value, str):
+        return "a string"
+    if isinstance(value, list):
+        return "an array"
+    if isinstance(value, dict):
+        return "an object"
+    return "a " + type(value).__name__
+
+
+def _is_date(value: object) -> bool:
+    if not isinstance(value, str) or not _ISO_DATE.fullmatch(value):
+        return False
+    try:
+        _date.fromisoformat(value)
+    except ValueError:
+        return False
+    return True
+
+
+def output_errors(value: object, schema: dict, defs: dict, path: str = "output") -> list[str]:
+    """Every way \`value\` fails to conform, as "path: problem" strings; empty when it does.
+
+    Structs are closed: a field the type does not declare is a mismatch.
+    """
+    kind = schema["kind"]
+    if kind == "date":
+        return [] if _is_date(value) else [f"{path}: expected a YYYY-MM-DD date, got {_describe(value)}"]
+    if kind == "number":
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            return [f"{path}: expected number, got {_describe(value)}"]
+        # TypeScript reads 1e400 or a 400-digit integer as Infinity; refuse both here too.
+        try:
+            finite = math.isfinite(float(value))
+        except OverflowError:
+            finite = False
+        return [] if finite else [f"{path}: expected a finite number, got a non-finite number"]
+    if kind in ("string", "boolean"):
+        ok = isinstance(value, str if kind == "string" else bool)
+        return [] if ok else [f"{path}: expected {kind}, got {_describe(value)}"]
+    if kind == "enum":
+        if isinstance(value, str) and value in schema["values"]:
+            return []
+        return [f"{path}: expected one of {', '.join(schema['values'])}, got {_describe(value)}"]
+    if kind == "struct":
+        if not isinstance(value, dict):
+            return [f"{path}: expected an object, got {_describe(value)}"]
+        fields = schema["fields"]
+        errors: list[str] = []
+        for name, field in fields.items():
+            if name in value:
+                errors.extend(output_errors(value[name], field["type"], defs, f"{path}.{name}"))
+            elif not field["optional"]:
+                errors.append(f"{path}.{name}: missing required field")
+        # Counted, not named: a field name comes from the model and could forge or flood a log line.
+        extra = sum(1 for key in value if key not in fields)
+        if extra:
+            errors.append(f"{path}: {extra} field{'' if extra == 1 else 's'} not in the declared type")
+        return errors
+    if kind == "ref":
+        target = defs.get(schema["name"])
+        if target is None:
+            return [f"{path}: type '{schema['name']}' is not declared in this file, cannot check it"]
+        return output_errors(value, target, defs, path)
+    if kind == "unchecked":
+        return []
+    raise ValueError(f"unknown output schema kind {kind!r}")
+
+
+def _resolve(schema: dict, defs: dict) -> dict:
+    seen: set[str] = set()
+    while schema["kind"] == "ref" and schema["name"] not in seen and schema["name"] in defs:
+        seen.add(schema["name"])
+        schema = defs[schema["name"]]
+    return schema
+
+
+def _read_int(text: str) -> int | float:
+    # json.loads refuses integers over 4300 digits (int_max_str_digits); as a float
+    # such an integer is infinite, which output_errors refuses as TypeScript does.
+    return int(text) if len(text) <= 4000 else float(text)
+
+
+def _no_constant(name: str) -> NoReturn:
+    # JSON has no NaN or Infinity, but json.loads accepts them unless refused here.
+    raise ValueError(f"{name} is not JSON")
+
+
+def parse_output(prompt: str, raw: str, spec: dict) -> Any:
+    """Reads the model's (stripped) text as the declared output type, then checks it.
+
+    Text as is; numbers and booleans from their spelling; structs as JSON, one
+    surrounding code fence allowed. Raises InvalidOutputError when the answer
+    does not conform.
+    """
+    defs = spec["defs"]
+    root = _resolve(spec["root"], defs)
+    value: Any = raw
+    if root["kind"] == "number":
+        # An answer that is not a number stays text, so the error says what it got.
+        if _DECIMAL.fullmatch(raw) and math.isfinite(float(raw)):
+            value = float(raw)
+    elif root["kind"] == "boolean":
+        lower = raw.lower()
+        value = True if lower == "true" else False if lower == "false" else raw
+    elif root["kind"] == "struct":
+        fenced = _FENCED.fullmatch(raw)
+        try:
+            value = json.loads(fenced.group(1) if fenced else raw, parse_constant=_no_constant, parse_int=_read_int)
+        except ValueError:
+            raise InvalidOutputError(prompt, ["output: not valid JSON"], raw) from None
+        except RecursionError:
+            raise InvalidOutputError(prompt, [_TOO_DEEP], raw) from None
+    try:
+        errors = output_errors(value, root, defs)
+    except RecursionError:
+        # A recursive type lets a hostile answer nest deeper than the call stack;
+        # that answer is rejected like any other, not surfaced as a crash.
+        errors = [_TOO_DEEP]
+    if errors:
+        raise InvalidOutputError(prompt, _bounded(errors), raw)
+    return value
+
+
+def _bounded(errors: list[str]) -> list[str]:
+    """At most _MAX_ERRORS errors of at most _MAX_ERROR_LENGTH characters, as in TypeScript."""
+    shown = [e if len(e) <= _MAX_ERROR_LENGTH else e[:250] + "\u2026" + e[-249:] for e in errors[:_MAX_ERRORS]]
+    rest = len(errors) - len(shown)
+    return shown + [f"output: {rest} more mismatches"] if rest > 0 else shown
 
 
 # ---- Client interface ----
@@ -178,7 +407,7 @@ class AnthropicClient(PromptClient):
 
         payload: dict = {
             "model": request["model"],
-            "max_tokens": request.get("max_tokens", 1024),
+            "max_tokens": request.get("max_tokens", DEFAULT_MAX_TOKENS),
             "messages": user_msgs,
         }
         if system_msgs:
@@ -211,14 +440,11 @@ class AnthropicClient(PromptClient):
             for block in blocks
             if isinstance(block, dict) and block.get("type") == "text" and isinstance(block.get("text"), str)
         )
-
-        return {
-            "content": content,
-            "usage": {
-                "input_tokens": usage["input_tokens"],
-                "output_tokens": usage["output_tokens"],
-            },
-        }
+        counts = {"input_tokens": usage["input_tokens"], "output_tokens": usage["output_tokens"]}
+        raw = data.get("stop_reason") if isinstance(data.get("stop_reason"), str) else ""
+        _require_complete_answer("anthropic", _anthropic_stop(raw), raw, content,
+                                 request.get("max_tokens", DEFAULT_MAX_TOKENS), counts)
+        return {"content": content, "usage": counts}
 
 
 # ---- OpenAI provider ----
@@ -243,7 +469,8 @@ class OpenAIClient(PromptClient):
         if "temperature" in request:
             payload["temperature"] = request["temperature"]
         if "max_tokens" in request:
-            payload["max_tokens"] = request["max_tokens"]
+            # GPT-5 and the o-series refuse max_tokens; OpenAI marks it deprecated for this one.
+            payload["max_completion_tokens"] = request["max_tokens"]
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -270,13 +497,16 @@ class OpenAIClient(PromptClient):
         usage = data.get("usage")
         if not isinstance(usage, dict) or not _is_count(usage.get("prompt_tokens")) or not _is_count(usage.get("completion_tokens")):
             _invalid_field("openai", "usage")
-        return {
-            "content": content or "",
-            "usage": {
-                "input_tokens": usage["prompt_tokens"],
-                "output_tokens": usage["completion_tokens"],
-            },
-        }
+        content = content or ""
+        counts = {"input_tokens": usage["prompt_tokens"], "output_tokens": usage["completion_tokens"]}
+        refusal = choice["message"].get("refusal")
+        if isinstance(refusal, str) and refusal:
+            # A refusal can arrive in its own field with finish_reason "stop".
+            _require_complete_answer("openai", "refusal", "message.refusal", content, request.get("max_tokens"), counts)
+        finish = choice.get("finish_reason")
+        raw = finish if isinstance(finish, str) else ""
+        _require_complete_answer("openai", _openai_stop(raw), raw, content, request.get("max_tokens"), counts)
+        return {"content": content, "usage": counts}
 `;
 
 /** Returns the autonomous Python runtime source to be written alongside compiled files. */

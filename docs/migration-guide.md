@@ -18,7 +18,8 @@ from 3.0.0 needs the 3.0.0 runtime.
   the generated code binds the name (`prompt delete`, a Python parameter `class`),
   a `-` outside `@model`, a Python name starting with `__`, a Python type, prompt
   or chain starting with `_promptlang_`, a type, prompt or chain named after what the generated module imports
-  (`PromptClient`, `Promise`, Python's `TypedDict`, `str`...), a step, prompt or
+  (`PromptClient`, `Promise`, Python's `TypedDict`, `str`...), a TypeScript prompt
+  or chain named `globalThis` or `undefined`, a step, prompt or
   chain named `client`, and two declarations that generate the same name (a type
   `FooInput` beside a prompt `foo`). Rename the declaration; the list is in
   `docs/syntax-reference.md`.

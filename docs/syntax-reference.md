@@ -122,17 +122,38 @@ prompt classify_ticket(ticket: string) -> Category {
 - Strings are `"double-quoted"` (with `\n`, `\"` escapes) or `"""triple-quoted"""`.
   Triple-quoted content is sent as written, indentation included.
 - `{{name}}` interpolates a parameter. The static rule `unbounded-template` warns when
-  `name` is not a declared parameter.
+  `name` is not a declared parameter. A parameter whose type is a struct declared in
+  the same file (directly or through an alias) is inserted as compact JSON. Strings,
+  booleans, `null` and nesting are the same text in TypeScript and Python; numbers
+  are printed by each language (`3.0` in Python for a `float`, `3` in TypeScript).
+  A parameter whose type comes from an imported file is inserted as the target
+  language prints it.
 
 ### Generated output handling
 
-| Output type | Generated code does |
+The generated function passes the trimmed response text to `parseOutput`
+(`parse_output` in Python) with a schema derived from the declared type, and raises
+`InvalidOutputError` when the answer does not conform (in Python, a `ValueError`
+subclass). Its `errors` list every mismatch as `path: problem`; its message names
+them without quoting the answer, which is on `output`: values are described by
+their kind, and fields the type does not declare are counted, not named. At most 10
+errors are kept, each cut to 500 characters. Both languages apply the same rules and
+produce the same messages, except at the edges: each strips the answer with its own
+whitespace rule (`trim()`, `str.strip()`), which differ on a few control and format
+characters.
+
+| Output type | Accepted answer |
 | --- | --- |
-| `string` | returns the trimmed response text |
-| `number` | `Number(raw)`; throws if the result is `NaN` |
-| `boolean` | accepts `true` / `false` (case-insensitive); throws otherwise |
-| enum | throws unless the trimmed text is one of the members |
-| struct | `JSON.parse` (`json.loads` in Python) and a cast; field types are **not** validated |
+| `string` | any text |
+| `number` | decimal notation (`42`, `-1.5e3`), finite; not `0x10` or `Infinity` |
+| `boolean` | `true` / `false`, case-insensitive |
+| enum | one of the members, exactly |
+| `date` | a real calendar day as `YYYY-MM-DD` (`2024-02-30` is refused) |
+| struct | JSON, one surrounding code fence allowed; every field checked at every depth, required fields present, no field the type does not declare |
+
+A field whose type is imported from another file is not checked. Python follows a
+recursive type to a few hundred levels and TypeScript to several thousand, less when
+the call is already deep in the stack; an answer nested deeper is refused with `output: nested too deeply to check`.
 
 ---
 
@@ -218,7 +239,9 @@ with its message.
   `@model`, without retries. Before any call it prints an estimate per file (input ≈
   prompt and argument characters ÷ 3, plus, for a chain, every earlier step's full
   output; output = calls × `@max_tokens`, default 1024) priced
-  from a table of Claude models, and asks for confirmation; `--yes` approves without
+  from a table of Claude models, each call on the rate card its own prompt length
+  selects (Claude Haiku 5.5 bills five times its rate for a prompt over 100K
+  tokens), and asks for confirmation; `--yes` approves without
   asking and is required without a terminal. A model missing from the price table is
   refused. `mock:` is ignored.
 - `--json` prints `{ ok, mode, usage, files: [{ file, error?, results }] }`.

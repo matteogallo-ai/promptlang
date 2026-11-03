@@ -1,6 +1,13 @@
 import { describe, test, expect } from "bun:test";
 import { RoutingClient } from "./routing-client";
-import { AuthenticationError, AllProvidersFailedError } from "../errors";
+import {
+  AuthenticationError,
+  AllProvidersFailedError,
+  InvalidRequestError,
+  RateLimitError,
+  ServerError,
+  TimeoutError,
+} from "../errors";
 import type { PromptClient } from "../client";
 import type { PromptRequest, PromptResponse } from "../types";
 
@@ -16,7 +23,10 @@ function succeedingClient(content = "ok"): PromptClient {
   };
 }
 
-function failingClient(error: Error = new Error("provider failed")): PromptClient {
+/** An outage, the case fallbacks exist for. */
+const outage = (message: string) => new ServerError(503, message);
+
+function failingClient(error: Error = outage("provider failed")): PromptClient {
   return {
     async complete(): Promise<PromptResponse> {
       throw error;
@@ -120,7 +130,7 @@ describe("RoutingClient — AuthenticationError is never retried", () => {
 
 describe("RoutingClient — onFallback callback", () => {
   test("onFallback called with the error from primary and index 0", async () => {
-    const primaryError = new Error("primary timed out");
+    const primaryError = outage("primary timed out");
     const calls: Array<{ error: Error; index: number }> = [];
 
     const client = new RoutingClient({
@@ -139,8 +149,8 @@ describe("RoutingClient — onFallback callback", () => {
   test("onFallback called twice when two providers fail sequentially", async () => {
     const calls: number[] = [];
     const client = new RoutingClient({
-      primary: failingClient(new Error("primary failed")),
-      fallbacks: [failingClient(new Error("fallback0 failed")), succeedingClient("third")],
+      primary: failingClient(outage("primary failed")),
+      fallbacks: [failingClient(outage("fallback0 failed")), succeedingClient("third")],
       onFallback: (_, index) => calls.push(index),
     });
 
@@ -166,15 +176,15 @@ describe("RoutingClient — onFallback callback", () => {
 describe("RoutingClient — AllProvidersFailedError", () => {
   test("throws AllProvidersFailedError when all providers fail", async () => {
     const client = new RoutingClient({
-      primary: failingClient(new Error("p1")),
-      fallbacks: [failingClient(new Error("p2")), failingClient(new Error("p3"))],
+      primary: failingClient(outage("p1")),
+      fallbacks: [failingClient(outage("p2")), failingClient(outage("p3"))],
     });
     await expect(client.complete(BASE_REQUEST)).rejects.toBeInstanceOf(AllProvidersFailedError);
   });
 
   test("AllProvidersFailedError contains all individual errors", async () => {
-    const e1 = new Error("p1 failed");
-    const e2 = new Error("p2 failed");
+    const e1 = outage("p1 failed");
+    const e2 = outage("p2 failed");
     const client = new RoutingClient({
       primary: failingClient(e1),
       fallbacks: [failingClient(e2)],
@@ -186,9 +196,45 @@ describe("RoutingClient — AllProvidersFailedError", () => {
   });
 
   test("AllProvidersFailedError with primary only (no fallbacks)", async () => {
-    const client = new RoutingClient({ primary: failingClient(new Error("solo fail")) });
+    const client = new RoutingClient({ primary: failingClient(outage("solo fail")) });
     const err = await client.complete(BASE_REQUEST).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(AllProvidersFailedError);
     expect((err as AllProvidersFailedError).errors).toHaveLength(1);
+  });
+});
+
+describe("RoutingClient — which errors fall back", () => {
+  const routeAfter = async (error: Error) => {
+    let reached = false;
+    const client = new RoutingClient({
+      primary: failingClient(error),
+      fallbacks: [
+        {
+          async complete() {
+            reached = true;
+            return { content: "fallback" };
+          },
+        },
+      ],
+    });
+    const thrown = await client.complete(BASE_REQUEST).catch((e: unknown) => e);
+    return { reached, thrown };
+  };
+
+  test("an outage, a rate limit or a timeout falls back", async () => {
+    for (const e of [outage("down"), new RateLimitError(), new TimeoutError()])
+      expect((await routeAfter(e)).reached).toBe(true);
+  });
+
+  // The request itself is wrong: another provider would get the user's data for nothing.
+  test("a 400 from the provider is thrown, not sent to the next one", async () => {
+    const e = new InvalidRequestError("max_tokens: unsupported");
+    expect(await routeAfter(e)).toEqual({ reached: false, thrown: e });
+  });
+
+  // A bug in the caller or a client is not an outage.
+  test("an error that is not a PromptClientError is thrown at once", async () => {
+    const e = new TypeError("cannot read properties of undefined");
+    expect(await routeAfter(e)).toEqual({ reached: false, thrown: e });
   });
 });

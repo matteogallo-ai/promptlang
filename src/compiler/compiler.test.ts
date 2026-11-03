@@ -197,10 +197,13 @@ describe("compile — header", () => {
     expect(out).toContain(`from "@promptlang/core/runtime"`);
   });
 
-  test("import uses 'import type'", () => {
+  // `$` keeps the imported names apart from any prompt or type the file declares.
+  test("imports parseOutput as a value and the rest as types, under names with a $", () => {
     const ast = parseSource(`prompt hello() -> string { user: "hi" output: string }`);
     const out = compile(ast, "x.prompt");
-    expect(out).toContain("import type");
+    expect(out).toContain(
+      `import { type OutputSpec as $OutputSpec, parseOutput as $parseOutput, type PromptClient, type PromptRequest } from "@promptlang/core/runtime";`
+    );
   });
 });
 
@@ -211,12 +214,10 @@ describe("compile — types", () => {
     expect(out).toContain(`export type Status = "ok" | "error";`);
   });
 
-  test("enum type produces VALUES array", () => {
+  // The values are checked from the output spec; an unexported constant would be unused.
+  test("enum type emits no unexported values constant", () => {
     const ast = parseSource(`type Status = enum { ok, error }`);
-    const out = compile(ast, "x.prompt");
-    expect(out).toContain(`STATUS_VALUES`);
-    expect(out).toContain(`"ok"`);
-    expect(out).toContain(`"error"`);
+    expect(compile(ast, "x.prompt")).not.toContain("STATUS_VALUES");
   });
 
   test("struct type produces interface", () => {
@@ -329,30 +330,30 @@ describe("compile — prompt declarations", () => {
       prompt classify(t: string) -> Cat { user: "{{t}}" output: Cat }
     `;
     const out = compile(parseSource(src), "x.prompt");
-    expect(out).toContain("CAT_VALUES");
-    expect(out).toContain("includes(raw as Cat)");
+    expect(out).toContain(
+      `const classify$output: $OutputSpec = {"root":{"kind":"ref","name":"Cat"},"defs":{"Cat":{"kind":"enum","values":["bug","other"]}}};`
+    );
+    expect(out).toContain(`return $parseOutput("classify", raw, classify$output) as Cat;`);
   });
 
-  test("struct return type generates JSON.parse validation", () => {
+  test("struct return type is checked field by field, not cast", () => {
     const src = `
-      type Info = struct { name: string }
+      type Info = struct { name: string, age?: number }
       prompt get_info(q: string) -> Info { user: "{{q}}" output: Info }
     `;
     const out = compile(parseSource(src), "x.prompt");
-    expect(out).toContain("JSON.parse");
+    expect(out).toContain(
+      `"Info":{"kind":"struct","fields":{"name":{"optional":false,"type":{"kind":"string"}},"age":{"optional":true,"type":{"kind":"number"}}}}`
+    );
+    expect(out).not.toContain("parsed as Info");
   });
 
-  test("string return type returns raw directly", () => {
-    const src = `prompt f() -> string { user: "x" output: string }`;
-    const out = compile(parseSource(src), "x.prompt");
-    expect(out).toContain("return raw");
-  });
-
-  test("number return type generates numeric validation", () => {
-    const src = `prompt f() -> number { user: "x" output: number }`;
-    const out = compile(parseSource(src), "x.prompt");
-    expect(out).toContain("Number(raw)");
-    expect(out).toContain("isNaN");
+  test("primitive return types go through parseOutput too", () => {
+    for (const t of ["string", "number", "boolean"]) {
+      const out = compile(parseSource(`prompt f() -> ${t} { user: "x" output: ${t} }`), "x.prompt");
+      expect(out).toContain(`const f$output: $OutputSpec = {"root":{"kind":"${t}"},"defs":{}};`);
+      expect(out).toContain(`return $parseOutput("f", raw, f$output) as ${t};`);
+    }
   });
 });
 
@@ -399,11 +400,13 @@ describe("compile — classify-ticket.prompt (integration)", () => {
     expect(out).toContain("async function classify_ticket");
   });
 
-  test("output contains CATEGORY_VALUES for enum validation", async () => {
+  test("output checks the answer against Category", async () => {
     const source = await Bun.file("docs/examples/classify-ticket.prompt").text();
     const ast = parse(tokenize(source));
     const out = compile(ast, "classify-ticket.prompt");
-    expect(out).toContain("CATEGORY_VALUES");
+    expect(out).toContain(
+      `$parseOutput("classify_ticket", raw, classify_ticket$output) as Category`
+    );
   });
 
   test("output contains ticket interpolation", async () => {
@@ -426,11 +429,13 @@ describe("compile — classify-ticket.prompt (integration)", () => {
     expect(out).toContain("interface ExtractedInvoice");
   });
 
-  test("extract-invoice output uses JSON.parse for struct validation", async () => {
+  test("extract-invoice output checks the struct instead of casting it", async () => {
     const source = await Bun.file("docs/examples/extract-invoice.prompt").text();
     const ast = parse(tokenize(source));
     const out = compile(ast, "extract-invoice.prompt");
-    expect(out).toContain("JSON.parse");
+    expect(out).toContain(
+      `$parseOutput("extract_invoice", raw, extract_invoice$output) as ExtractedInvoice`
+    );
   });
 });
 

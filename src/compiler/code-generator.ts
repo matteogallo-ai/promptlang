@@ -5,7 +5,8 @@ import type {
   Program,
   Parameter,
 } from "../ast/nodes";
-import { mapType, toPascalCase, toConstName } from "./type-mapper";
+import { mapType, toPascalCase } from "./type-mapper";
+import { outputSpec } from "./output-schema";
 import { compileStringLiteral } from "./template-compiler";
 
 export type TypeRegistry = Map<string, TypeExpression>;
@@ -39,9 +40,6 @@ export function generateTypeDeclaration(decl: TypeDeclaration): string {
     case "EnumType": {
       const union = definition.values.map((v) => JSON.stringify(v)).join(" | ");
       parts.push(`export type ${name} = ${union};`);
-      parts.push("");
-      const vals = definition.values.map((v) => JSON.stringify(v)).join(", ");
-      parts.push(`const ${toConstName(name)}: ${name}[] = [${vals}];`);
       break;
     }
     case "StructType": {
@@ -84,6 +82,12 @@ export function generatePromptDeclaration(
   // Meta const
   parts.push(generateMetaConst(name, meta));
   parts.push("");
+  // What the answer is checked against: the declared output type, as data. Names
+  // the generated code adds hold a `$`, which no PromptLang identifier can.
+  parts.push(
+    `const ${name}$output: $OutputSpec = ${JSON.stringify(outputSpec(returnType, registry))};`
+  );
+  parts.push("");
 
   // Input interface
   parts.push(generateInputInterface(inputType, parameters));
@@ -116,7 +120,8 @@ export function generatePromptDeclaration(
       section.content.value,
       section.content.isTemplate,
       paramNames,
-      optionalParamNames(parameters)
+      optionalParamNames(parameters),
+      structParamNames(parameters, registry)
     );
     parts.push(`      {`);
     parts.push(`        role: "${section.role}",`);
@@ -130,9 +135,9 @@ export function generatePromptDeclaration(
   parts.push(`  const raw = response.content.trim();`);
   parts.push("");
 
-  // Validation
-  const resolved = resolveType(returnType, registry);
-  parts.push(generateValidation(returnTsType, resolved, name));
+  parts.push(
+    `  return $parseOutput(${JSON.stringify(name)}, raw, ${name}$output) as ${returnTsType};`
+  );
   parts.push("}");
 
   return parts.join("\n");
@@ -158,6 +163,24 @@ export function optionalParamNames(params: readonly Parameter[]): Set<string> {
   return new Set(params.filter((p) => p.optional).map((p) => p.name));
 }
 
+/**
+ * The parameters whose type is a struct of this file, through aliases: they are
+ * inserted as JSON, as plain interpolation writes "[object Object]" (Python: a
+ * dict repr). A type imported from another file cannot be resolved here.
+ */
+export function structParamNames(
+  params: readonly Parameter[],
+  registry: ReadonlyMap<string, TypeExpression>
+): Set<string> {
+  const isStruct = (type: TypeExpression, seen: ReadonlySet<string>): boolean => {
+    if (type.kind === "StructType") return true;
+    if (type.kind !== "TypeReference" || seen.has(type.name)) return false;
+    const target = registry.get(type.name);
+    return target !== undefined && isStruct(target, new Set([...seen, type.name]));
+  };
+  return new Set(params.filter((p) => isStruct(p.type, new Set())).map((p) => p.name));
+}
+
 /** `export interface XInput { ... }` for a prompt's or chain's parameters. */
 export function generateInputInterface(inputType: string, params: readonly Parameter[]): string {
   if (params.length === 0) {
@@ -169,75 +192,5 @@ export function generateInputInterface(inputType: string, params: readonly Param
     lines.push(`  ${p.name}${p.optional ? "?" : ""}: ${mapType(p.type)};`);
   }
   lines.push("}");
-  return lines.join("\n");
-}
-
-function resolveType(type: TypeExpression, registry: TypeRegistry): TypeExpression {
-  if (type.kind === "TypeReference") {
-    return registry.get(type.name) ?? type;
-  }
-  return type;
-}
-
-function generateValidation(
-  returnTsType: string,
-  resolved: TypeExpression,
-  promptName: string
-): string {
-  const lines: string[] = [];
-
-  switch (resolved.kind) {
-    case "EnumType": {
-      const valuesVar = toConstName(returnTsType);
-      lines.push(`  if (!${valuesVar}.includes(raw as ${returnTsType})) {`);
-      lines.push(`    throw new Error(`);
-      lines.push(
-        `      \`Invalid output for prompt '${promptName}': expected one of \${${valuesVar}.join(", ")}, got "\${raw}"\``
-      );
-      lines.push(`    );`);
-      lines.push(`  }`);
-      lines.push(`  return raw as ${returnTsType};`);
-      break;
-    }
-    case "StructType": {
-      lines.push(`  let parsed: unknown;`);
-      lines.push(`  try {`);
-      lines.push(`    parsed = JSON.parse(raw);`);
-      lines.push(`  } catch {`);
-      lines.push(
-        `    throw new Error(\`Invalid JSON output for prompt '${promptName}': \${raw}\`);`
-      );
-      lines.push(`  }`);
-      lines.push(`  return parsed as ${returnTsType};`);
-      break;
-    }
-    case "PrimitiveType": {
-      if (resolved.name === "boolean") {
-        lines.push(`  const bool = raw.toLowerCase();`);
-        lines.push(`  if (bool !== "true" && bool !== "false") {`);
-        lines.push(
-          `    throw new Error(\`Invalid boolean output for prompt '${promptName}': "\${raw}"\`);`
-        );
-        lines.push(`  }`);
-        lines.push(`  return (bool === "true") as unknown as ${returnTsType};`);
-      } else if (resolved.name === "number") {
-        lines.push(`  const num = Number(raw);`);
-        lines.push(`  if (isNaN(num)) {`);
-        lines.push(
-          `    throw new Error(\`Invalid number output for prompt '${promptName}': "\${raw}"\`);`
-        );
-        lines.push(`  }`);
-        lines.push(`  return num as unknown as ${returnTsType};`);
-      } else {
-        lines.push(`  return raw as unknown as ${returnTsType};`);
-      }
-      break;
-    }
-    default: {
-      lines.push(`  return raw as unknown as ${returnTsType};`);
-      break;
-    }
-  }
-
   return lines.join("\n");
 }

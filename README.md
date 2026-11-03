@@ -252,7 +252,7 @@ approves without asking.
 Each analyzed prompt is one request to Claude Haiku 5.5 (by default) with
 `max_tokens: 4096`, which leaves room for its adaptive thinking. At list prices
 ($0.10 / $0.50 per million input / output tokens, prompts up to 100K tokens) the
-three example files (four prompts) cost about $0.01 if every call used its full
+six example files (seven prompts) cost about $0.015 if every call used its full
 `max_tokens`. This is an estimate from request sizes, not a measurement. The
 committed live run (five prompts) used 5,557 input and 6,517 output tokens:
 $0.0038. Costs are yours — bring your own API key.
@@ -462,7 +462,7 @@ PromptLang is developed as a Bun workspace. The main package,
 
 | Package | Location | Version | Description |
 | --- | --- | --- | --- |
-| [`@promptlang/yaml-parser`](https://www.npmjs.com/package/@promptlang/yaml-parser) | `packages/yaml-parser/` | 1.0.1 (1.0.0 on npm since PromptLang v1.2.0) | Zero-dependency minimal YAML parser. Extracted from PromptLang core in v1.1.0 so sibling projects (like [Praxis](https://github.com/matteogallo-ai/praxis)) can reuse it via `bun add @promptlang/yaml-parser`. |
+| [`@promptlang/yaml-parser`](https://www.npmjs.com/package/@promptlang/yaml-parser) | `packages/yaml-parser/` | 1.0.1 | Zero-dependency minimal YAML parser. Extracted from PromptLang core in v1.1.0 so sibling projects (like [Praxis](https://github.com/matteogallo-ai/praxis)) can reuse it via `bun add @promptlang/yaml-parser`. |
 
 Each package has its own `README.md`, `CHANGELOG.md`, and independent
 SemVer track.
@@ -470,10 +470,6 @@ SemVer track.
 ---
 
 ## Roadmap
-
-In progress:
-
-- **npm publication** of `@promptlang/core`
 
 Not scheduled:
 

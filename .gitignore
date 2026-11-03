@@ -11,3 +11,5 @@ bun.lockb
 generated/
 runtime-generated/
 tmp-test-output/
+.stryker-tmp/
+reports/

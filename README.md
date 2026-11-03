@@ -37,7 +37,8 @@ PromptLang treats prompts as first-class typed code:
   the model name per provider (`modelMap`), and never falls back on a bad key
 - **AI-powered linter**: `analyze --ai` sends each prompt to Claude for a semantic
   review; measured on a labelled corpus, it finds almost every designed defect but
-  most of its findings are false alarms (precision about 20%)
+  most of its findings are false alarms (precision about 20%, against 12.5% for
+  a linter that reports every category)
 - **No third-party runtime dependencies**: Bun + `fetch` + your own API keys
 
 Not delivered, and labelled as such everywhere in this repository (see
@@ -108,20 +109,24 @@ const category = await classify_ticket({ ticket: "..." }, client);
 
 ## Comparison
 
-Each PromptLang cell is checked against [`docs/CLAIMS.md`](docs/CLAIMS.md) by the
-`claims` CI job. The other columns reflect the maintainer's reading of those
-tools' public documentation and are not tested here.
+Each cell is checked against [`docs/CLAIMS.md`](docs/CLAIMS.md) by the `claims` CI job.
 
-| Feature                          | LangChain | LangSmith | W&B Weave | **PromptLang** |
-| -------------------------------- | :-------: | :-------: | :-------: | :------------: |
-| Typed I/O                        |    ❌     |    ❌     |    ❌     |       ✅       |
-| Native tests                     |    ❌     |   SaaS    |   SaaS    | ✅ (mock or live; no evals) |
-| SemVer for prompts               |    ❌     |    ❌     |    ❌     |       ✅       |
-| AI-powered linter                |    ❌     |    ❌     |    ❌     | ✅ (measured; precision ~20%) |
-| Multi-provider fallback          |  Partial  |    ❌     |    ❌     | ✅ (per-provider model map) |
-| Compile to TypeScript **and** Python | ❌     |    ❌     |    ❌     |       ✅       |
-| Static analysis (SonarQube-style)|    ❌     |    ❌     |    ❌     |       ✅       |
-| Open source, zero SaaS           |    ✅     |    ❌     |    ❌     |       ✅       |
+| Feature                              | PromptLang |
+| ------------------------------------ | :--------: |
+| Typed I/O                            | ✅ |
+| Native tests                         | ✅ (mock or live; no evals) |
+| SemVer for prompts                   | ✅ |
+| AI-powered linter                    | ✅ (measured; precision ~20%, baseline 12.5%) |
+| Multi-provider fallback              | ✅ (per-provider model map) |
+| Compile to TypeScript **and** Python | ✅ |
+| Static analysis (SonarQube-style)    | ✅ |
+| Open source, zero SaaS               | ✅ |
+
+Other tools are not scored here: nothing in this repository tests them. Several
+overlap with this list: LangChain returns typed outputs (`with_structured_output`)
+and falls back across models (`with_fallbacks`); LangSmith and W&B Weave version
+prompts and run evaluations, mainly as hosted services (both offer self-hosting).
+Check their documentation for what they offer today.
 
 ---
 
@@ -222,8 +227,12 @@ It looks for six kinds of defect that static rules cannot see:
 `claude-haiku-5-5`: it finds almost every designed defect (recall 44/45 and
 45/45 over two runs) but reports about four categories per prompt, so most of
 its findings are false alarms (precision 20%, 95% CI 15–26%) and it flags every
-clean prompt (15/15). Read its findings as leads to check, not as defects; the
-six static rules of `promptlang analyze` do not depend on the model.
+clean prompt (15/15). Reporting every category on every prompt would find all 45
+defects at 12.5% precision (95% CI 9.5–16.3%), so recall alone says little; the
+precision gain over that baseline is modest. The labels are set by construction;
+their human check (`evals/linter/human-review/`) has no answers recorded. Read its
+findings as leads to check, not as defects; the six static rules of
+`promptlang analyze` do not depend on the model.
 
 ### Usage
 
@@ -243,7 +252,7 @@ approves without asking.
 Each analyzed prompt is one request to Claude Haiku 5.5 (by default) with
 `max_tokens: 4096`, which leaves room for its adaptive thinking. At list prices
 ($0.10 / $0.50 per million input / output tokens, prompts up to 100K tokens) the
-three example files (four prompts) cost about $0.01 if every call used its full
+six example files (seven prompts) cost about $0.015 if every call used its full
 `max_tokens`. This is an estimate from request sizes, not a measurement. The
 committed live run (five prompts) used 5,557 input and 6,517 output tokens:
 $0.0038. Costs are yours — bring your own API key.
@@ -333,7 +342,9 @@ bun run cli compile
 
 Once the registry is populated (`.promptlang/manifest.json` + `integrity.json`),
 `promptlang check` verifies that no imported prompt has been silently modified
-since it was last resolved. See [`docs/yaml-support.md`](docs/yaml-support.md)
+since it was last resolved. `compile` does not read `integrity.json`, so a prompt
+you are editing compiles without a new `install`; in CI, run `check` before
+`compile` to make a modified prompt fail the build. See [`docs/yaml-support.md`](docs/yaml-support.md)
 for the exact YAML subset supported.
 
 ---
@@ -466,7 +477,7 @@ PromptLang is developed as a Bun workspace. The main package,
 
 | Package | Location | Version | Description |
 | --- | --- | --- | --- |
-| [`@promptlang/yaml-parser`](https://www.npmjs.com/package/@promptlang/yaml-parser) | `packages/yaml-parser/` | 1.0.1 (1.0.0 on npm since PromptLang v1.2.0) | Zero-dependency minimal YAML parser. Extracted from PromptLang core in v1.1.0 so sibling projects (like [Praxis](https://github.com/matteogallo-ai/praxis)) can reuse it via `bun add @promptlang/yaml-parser`. |
+| [`@promptlang/yaml-parser`](https://www.npmjs.com/package/@promptlang/yaml-parser) | `packages/yaml-parser/` | 1.0.1 | Zero-dependency minimal YAML parser. Extracted from PromptLang core in v1.1.0 so sibling projects (like [Praxis](https://github.com/matteogallo-ai/praxis)) can reuse it via `bun add @promptlang/yaml-parser`. |
 
 Each package has its own `README.md`, `CHANGELOG.md`, and independent
 SemVer track.
@@ -474,10 +485,6 @@ SemVer track.
 ---
 
 ## Roadmap
-
-In progress:
-
-- **npm publication** of `@promptlang/core`
 
 Not scheduled:
 

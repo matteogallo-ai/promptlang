@@ -10,6 +10,7 @@ import { mapType, toPascalCase, toConstName } from "./type-mapper";
 import { compileStringLiteral, extractTemplateVars } from "./template-compiler";
 import { CompilerError } from "./errors";
 import type { Program, PrimitiveType, EnumType, StructType, TypeReference } from "../ast/nodes";
+import { SCRATCH } from "../../tests/support/scratch";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -462,15 +463,12 @@ describe("compile — classify-ticket.prompt (integration)", () => {
 // paths) and the failure path (isolation, no paths).
 // ---------------------------------------------------------------------------
 
-const TMP_DIR = "./tmp-test-output";
+const TMP_DIR = join(SCRATCH, "tmp-test-output");
 
 // Relative path from TMP_DIR to the local runtime source.
 // Used in explicit tsconfig paths so the test does not inherit from the
 // project tsconfig — which would be a faux positif.
-const RUNTIME_REL = relative(
-  join(process.cwd(), TMP_DIR),
-  join(process.cwd(), "src/runtime/index.ts")
-);
+const RUNTIME_REL = relative(TMP_DIR, join(process.cwd(), "src/runtime/index.ts"));
 
 function makeExplicitTsconfig(runtimeRelPath: string): string {
   return JSON.stringify(

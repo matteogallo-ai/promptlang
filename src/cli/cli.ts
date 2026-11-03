@@ -59,7 +59,7 @@ File commands:
                                    --yes   Approve the estimate without asking
                             Exit: 0 all pass, 1 a failure, 2 usage error,
                                   3 provider error (no verdict)
-  version                   Show version and repository info
+  version, --version        Show version and repository info
 
 Examples:
   promptlang init
@@ -99,6 +99,7 @@ export async function main(argv: string[]): Promise<number> {
       case "test":
         return await runTest(args.slice(1));
       case "version":
+      case "--version":
         return runVersion();
       case undefined:
       case "help":

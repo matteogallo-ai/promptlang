@@ -40,6 +40,11 @@ export function compileStringLiteral(
   return `\`${escaped}\``;
 }
 
+/** Each `{{name}}` in `value`, with the offset of its opening brace. */
+export function templatePlaceholders(value: string): Array<{ name: string; index: number }> {
+  return [...value.matchAll(/\{\{(\w+)\}\}/g)].map((m) => ({ name: m[1]!, index: m.index }));
+}
+
 export function extractTemplateVars(value: string): string[] {
-  return [...value.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]!);
+  return templatePlaceholders(value).map((p) => p.name);
 }

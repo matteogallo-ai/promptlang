@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **`prompt-injection-risk` warns in more places.** It now reads `system:` and
+  `assistant:` sections, and `date` and text-bearing struct parameters, so a file
+  that passed `analyze --strict` can now exit 1: for example a `{{tone}}` string
+  parameter in a system prompt. Remedy: declare a value from a fixed list as an
+  `enum`, or enclose the input in a delimiter pair.
+
 - **Generated code checks every answer against its declared type** (breaking for
   code that relied on the old behaviour). Answers that used to pass now raise
   `InvalidOutputError`: a struct with a field the type does not declare, a field
@@ -35,6 +41,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Code that catches `InvalidRequestError` for a 404 catches `NotFoundError`.
 
 ### Fixed
+- **`prompt-injection-risk` checks what encloses each input.** It accepted a
+  section with any `---` or `<tag>` anywhere (`Answer in <b>bold</b>. Here is:
+  {{x}}` passed), and never looked at `system:` sections. It now flags each text
+  parameter (`string`, `date`, a struct with a text field, or an undeclared
+  type) whose placeholder is not inside a delimiter pair, in every role, and no
+  longer flags numbers, booleans or enums.
+- **The example's injection test claimed a check it did not make.** Its comment
+  said the mock checks the hostile text reaches the prompt inside `<ticket>`
+  tags; nothing did. `tests/example-injection.test.ts` now checks it, and fails
+  when the tags are removed.
 - **`semver-check` treats declared type names as interface.** Renaming
   `type Category` to `type Kind` with the same values passed as a patch, because
   prompt contracts are compared by structure, yet the generated TypeScript and
@@ -42,6 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   declared type removed or renamed is now major, one added minor, and a changed
   type is judged like an output: narrowing an enum is major, adding an optional
   struct field minor (ADR 0002, amended).
+
 - **Long-context prices in the estimate and the cap.** Claude Haiku 5.5 bills
   $0.50 / $2.50 per million tokens for a prompt over 100K tokens, five times its
   short-prompt rate, but every estimate and the spending cap priced it at

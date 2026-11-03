@@ -201,20 +201,103 @@ describe("prompt-injection-risk rule", () => {
     expect(issues).toHaveLength(0);
   });
 
-  test("no issue for system sections (not user-controlled input)", () => {
-    const ctx = makeContext("a.prompt", [
-      makePrompt("p", ["lang"], [makeMessageSection("system", "Translate to {{lang}}", true)]),
-    ]);
-    const issues = promptInjectionRiskRule.check(ctx);
-    expect(issues).toHaveLength(0);
-  });
-
   test("no issue when content uses XML-style delimiters", () => {
     const ctx = makeContext("a.prompt", [
       makePrompt("p", ["data"], [makeMessageSection("user", "Input: <DATA>{{data}}</DATA>", true)]),
     ]);
     const issues = promptInjectionRiskRule.check(ctx);
     expect(issues).toHaveLength(0);
+  });
+});
+
+// The rule judges each placeholder of a string parameter, whatever the role:
+// the caller supplies the value either way, and system text carries more weight.
+describe("prompt-injection-risk: what encloses each placeholder", () => {
+  const issuesFor = (params: string, body: string, types = "") =>
+    promptInjectionRiskRule.check({
+      file: "f.prompt",
+      ast: parse(
+        tokenize(`@version "1.0.0"\n${types}prompt p(${params}) -> string {\n${body}\n}\n`)
+      ),
+    });
+
+  const flagged: Array<[string, string]> = [
+    ["an unrelated tag earlier in the text", `  user: "Answer in <b>bold</b>. Here is: {{x}}"`],
+    ["a --- pair that closes before the input", `  user: "---\\nRules\\n---\\nInput: {{x}}"`],
+    ["an opening tag never closed", `  user: "<doc>{{x}}"`],
+    ["a closing tag of another name", `  user: "<doc>{{x}}</other>"`],
+    ["a string parameter in a system section", `  system: "Translate to {{x}}"`],
+    ["--- inside a line, not on its own", `  user: "a --- {{x}} --- b"`],
+    ["]] closing before the input", `  user: "[[a]] {{x}} ]]"`],
+    ["a code fence closed before the input", '  user: "```\\nrules\\n```\\n{{x}}\\n```"'],
+    ["a tag closed before the input, reopened after", `  user: "<d>a</d> {{x}} </d>"`],
+    ["mis-nested tags: the outer one closed first", `  user: "<a><b></a>{{x}}</b>"`],
+    ["the same placeholder once enclosed and once not", `  user: "<d>{{x}}</d> and {{x}}"`],
+  ];
+  for (const [name, body] of flagged) {
+    test(`flags ${name}`, () => {
+      expect(issuesFor("x: string", body).map((i) => i.rule)).toEqual(["prompt-injection-risk"]);
+    });
+  }
+
+  const delimited: Array<[string, string]> = [
+    ["a matching tag pair", `  user: "Read <doc>\\n{{x}}\\n</doc> and answer."`],
+    ["a tag with attributes", `  user: "<doc id=\\"1\\">{{x}}</doc>"`],
+    ["--- lines on both sides", `  user: "Input:\\n---\\n{{x}}\\n---"`],
+    ["a code fence", '  user: "```\\n{{x}}\\n```"'],
+    ["<BEGIN> and <END>", `  user: "<BEGIN>{{x}}<END>"`],
+    ["[[ and ]]", `  user: "[[{{x}}]]"`],
+    ["a closing tag with a space", `  user: "<d>{{x}}</d >"`],
+    ["a namespaced tag", `  user: "<ns:doc>{{x}}</ns:doc>"`],
+    ["nested tags closed in order", `  user: "<a><b>{{x}}</b></a>"`],
+  ];
+  for (const [name, body] of delimited) {
+    test(`accepts ${name}`, () => {
+      expect(issuesFor("x: string", body)).toEqual([]);
+    });
+  }
+
+  // Text the caller supplies reaches the prompt as is, whatever the declared type says.
+  const textTypes: Array<[string, string, string]> = [
+    ["date", "x: date", ""],
+    ["a type the file does not declare", "x: Imported", ""],
+    ["an alias of string", "x: Name", "type Name = string\n"],
+    ["a recursive alias", "x: A", "type A = B\ntype B = A\n"],
+    // Python inserts a dict's repr, so its text fields reach the prompt verbatim.
+    ["a struct with a text field", "x: Note", "type Note = struct { body: string }\n"],
+    [
+      "a struct whose field is an alias cycle",
+      "x: S",
+      "type S = struct { a: A }\ntype A = B\ntype B = A\n",
+    ],
+  ];
+  for (const [name, params, types] of textTypes) {
+    test(`flags ${name}`, () => {
+      expect(issuesFor(params, `  user: "Use {{x}}"`, types).map((i) => i.rule)).toEqual([
+        "prompt-injection-risk",
+      ]);
+    });
+  }
+
+  test("a parameter that cannot carry text is not flagged", () => {
+    expect(issuesFor("n: number, b: boolean", `  system: "Use {{n}} words, strict {{b}}"`)).toEqual(
+      []
+    );
+    expect(
+      issuesFor("l: Lang", `  user: "Translate to {{l}}"`, "type Lang = enum { fr, de }\n")
+    ).toEqual([]);
+    expect(
+      issuesFor("s: S", `  user: "Use {{s}}"`, "type S = struct { n: number, k: enum { a } }\n")
+    ).toEqual([]);
+    // The cycle runs through the struct, so it adds no field that could hold text.
+    expect(
+      issuesFor("s: S", `  user: "Use {{s}}"`, "type S = struct { n: number, me?: S }\n")
+    ).toEqual([]);
+  });
+
+  test("names only the placeholders left open", () => {
+    const [issue] = issuesFor("x: string, y: string", `  user: "<a>{{x}}</a> then {{y}}"`);
+    expect(issue?.message).toBe("Template '{{y}}' in user section is not enclosed in a delimiter.");
   });
 });
 

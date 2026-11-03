@@ -108,6 +108,12 @@ describe("satisfies", () => {
     expect(satisfies("1.2.0-rc.2", ">=1.2.0-rc.1")).toBe(true);
     expect(satisfies("1.2.0", "^1.2.0-rc.1")).toBe(true);
   });
+
+  test("only the internal <X-0 bound of ^ and ~ is denied the pre-release opt-in", () => {
+    expect(satisfies("1.2.0-rc", ">=1.2.0-0")).toBe(true);
+    expect(satisfies("1.2.0-beta", "<1.2.0-rc")).toBe(true);
+    expect(satisfies("1.2.0-0.3", "<1.2.0-0.5")).toBe(true);
+  });
 });
 
 describe("invalid input and parsed ranges", () => {

@@ -137,13 +137,14 @@ this quick example with the installed CLI and type-checks the generated code aga
 the installed declarations (`scripts/consumer-test.ts`). No version of
 `@promptlang/core` is on npm before 2.0.0.
 
-To work on PromptLang itself:
+To work on PromptLang itself, one command from a fresh clone to the example tests
+passing (CI runs it on every pull request, `fresh-clone` job):
 
+<!-- fresh-clone:start -->
 ```bash
-git clone https://github.com/matteogallo-ai/promptlang.git
-cd promptlang && bun install
-bun run cli --help
+git clone https://github.com/matteogallo-ai/promptlang.git && cd promptlang && bun install --frozen-lockfile && bun run cli test docs/examples
 ```
+<!-- fresh-clone:end -->
 
 ---
 

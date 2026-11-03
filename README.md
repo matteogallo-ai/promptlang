@@ -510,21 +510,13 @@ I design the specifications and acceptance criteria. A coding agent implements; 
 
 Design decisions are recorded in [`docs/adr/`](docs/adr/).
 
-### What I'd do differently
+## What I'd do differently
 
-- **Write the claims table first.** The audit found headline features marked ✅
-  with no code behind them. A README line backed by a named test from the start
-  (`docs/CLAIMS.md`) would have made that impossible instead of caught late.
-- **Small commits from the first day.** Up to v1.2.0 each milestone is one large
-  commit, which nobody can review; the 400-line limit came after.
-- **Measure the model-backed feature before calling it a feature.** The AI linter
-  shipped tested on fake clients, with one live run on five prompts and no measure
-  of its findings; a labelled corpus with precision,
-  recall and intervals (`evals/linter/`) is what says whether it works.
-- **Put a cap in code before the first paid call,** not an estimate and a promise
-  ([ADR 0004](docs/adr/0004-spending-cap.md)).
-- **Require a comprehension check from the start.** Code I did not write and
-  cannot explain is code I cannot maintain.
+**Evaluation before shipping.** The AI linter shipped before it had an evaluation set. Once measured on a held-out split, it caught 98% of planted defects, but only 20% of its flags were correct (a lower bound until a human review of the labels is complete). Today, an AI feature ships with its eval set, metric and confidence interval, or it's labelled experimental. Next: raise precision, tuned on dev, measured on test. ([#11](https://github.com/matteogallo-ai/promptlang/pull/11), [#14](https://github.com/matteogallo-ai/promptlang/pull/14))
+
+**Claims enforced by CI, not by discipline.** Every public claim now maps to a test, and CI fails if one isn't backed. I'd have built that gate first. ([#1](https://github.com/matteogallo-ai/promptlang/pull/1))
+
+**Supply-chain and test-quality gates from day one.** Signed releases with provenance, Scorecard, fuzzing and mutation testing (96% score) were added in a dedicated hardening pass. In a new project, they're in the template from the first commit. ([#5](https://github.com/matteogallo-ai/promptlang/pull/5), [#8](https://github.com/matteogallo-ai/promptlang/pull/8), [#10](https://github.com/matteogallo-ai/promptlang/pull/10), [#13](https://github.com/matteogallo-ai/promptlang/pull/13))
 
 ---
 

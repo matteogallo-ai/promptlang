@@ -185,3 +185,73 @@ describe("diffPrograms — chains share the interface rules", () => {
     ]);
   });
 });
+
+describe("diffPrograms — boundaries", () => {
+  const raw = (src: string) => parse(tokenize(src));
+
+  test("@temperature added, changed or removed is a patch change with (none) for absence", () => {
+    const at = (t: string) => raw(`${HEADER}${t}${PROMPT("x: string")}`);
+    const change = (a: string, b: string) => diffPrograms(at(a), at(b)).map(formatChange);
+    expect(change("", "@temperature 0.3\n")).toEqual([
+      "patch: p: temperature changed: (none) → 0.3",
+    ]);
+    expect(change("@temperature 0.3\n", "@temperature 0.5\n")).toEqual([
+      "patch: p: temperature changed: 0.3 → 0.5",
+    ]);
+    expect(change("@temperature 0.3\n", "")).toEqual([
+      "patch: p: temperature changed: 0.3 → (none)",
+    ]);
+  });
+
+  test("a model change is reported on prompts only: a chain has no model of its own", () => {
+    const file = (model: string) =>
+      raw(
+        `@model ${model}\n${PROMPT("x: string")}chain c(x: string) -> string {\n  step s = p(x: x)\n  return s\n}\n`
+      );
+    expect(diffPrograms(file("a"), file("b")).map(formatChange)).toEqual([
+      "major: p: target model changed: a → b",
+    ]);
+  });
+
+  test("moving a declaration to another column is not a change", () => {
+    const indented = `prompt p(x: string) -> string {\n        user: "Hi {{x}}"\n}\n`;
+    expect(diff(PROMPT("x: string"), indented)).toEqual([]);
+  });
+
+  test("reordering struct fields is not a change, in a parameter or in the output", () => {
+    const s1 = "struct { a: string, b: number }";
+    const s2 = "struct { b: number, a: string }";
+    expect(diff(PROMPT(`x: ${s1}`, s1), PROMPT(`x: ${s2}`, s2))).toEqual([]);
+  });
+
+  test("types are rendered in full when an output changes kind", () => {
+    expect(
+      levels(PROMPT("x: string", "struct { a?: string, b: enum { y, x } }"), PROMPT("x: string"))
+    ).toEqual(["major: p: output type changed: struct { a?: string, b: enum { x, y } } → string"]);
+    expect(levels(PROMPT("x: string"), PROMPT("x: string", "struct { a: string }"))).toEqual([
+      "major: p: output type changed: string → struct { a: string }",
+    ]);
+  });
+
+  test("a nested field changing kind names the field path", () => {
+    const out = (t: string) => PROMPT("x: string", `struct { o: struct { a: ${t} } }`);
+    expect(levels(out("string"), out("struct { z: string }"))).toEqual([
+      "major: p: output field 'o.a' type changed: string → struct { z: string }",
+    ]);
+  });
+
+  test("an unknown type name is compared by name; a recursive type does not loop", () => {
+    expect(diff(PROMPT("x: Missing"), PROMPT("x: Missing"))).toEqual([]);
+    expect(levels(PROMPT("x: Missing"), PROMPT("x: Other"))).toEqual([
+      "major: p: parameter 'x' type changed: Missing → Other",
+    ]);
+    // A prompt's name is not a type: a parameter typed `p` stays unresolved.
+    expect(levels(PROMPT("x: p"), PROMPT("x: q"))).toEqual([
+      "major: p: parameter 'x' type changed: p → q",
+    ]);
+    const tree = (leaf: string) => `type T = struct { next?: T, v: ${leaf} }\n${PROMPT("x: T")}`;
+    expect(levels(tree("string"), tree("number"))).toEqual([
+      "major: p: parameter 'x' type changed: struct { next?: T, v: string } → struct { next?: T, v: number }",
+    ]);
+  });
+});

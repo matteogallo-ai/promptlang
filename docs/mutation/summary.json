@@ -1,0 +1,78 @@
+{
+  "date": "2026-11-03",
+  "stryker": "10.1.1",
+  "files": [
+    {
+      "file": "src/lexer/errors.ts",
+      "killed": 2,
+      "timeout": 0,
+      "survived": 0,
+      "noCoverage": 0,
+      "errors": 0,
+      "score": 100
+    },
+    {
+      "file": "src/lexer/lexer.ts",
+      "killed": 393,
+      "timeout": 31,
+      "survived": 10,
+      "noCoverage": 0,
+      "errors": 0,
+      "score": 97.7
+    },
+    {
+      "file": "src/parser/errors.ts",
+      "killed": 2,
+      "timeout": 0,
+      "survived": 0,
+      "noCoverage": 0,
+      "errors": 0,
+      "score": 100
+    },
+    {
+      "file": "src/parser/parser.ts",
+      "killed": 638,
+      "timeout": 29,
+      "survived": 29,
+      "noCoverage": 0,
+      "errors": 0,
+      "score": 95.83
+    },
+    {
+      "file": "src/semver/check.ts",
+      "killed": 197,
+      "timeout": 0,
+      "survived": 19,
+      "noCoverage": 0,
+      "errors": 0,
+      "score": 91.2
+    },
+    {
+      "file": "src/semver/interface.ts",
+      "killed": 271,
+      "timeout": 0,
+      "survived": 2,
+      "noCoverage": 0,
+      "errors": 0,
+      "score": 99.27
+    },
+    {
+      "file": "src/semver/semver.ts",
+      "killed": 277,
+      "timeout": 0,
+      "survived": 14,
+      "noCoverage": 0,
+      "errors": 0,
+      "score": 95.19
+    }
+  ],
+  "total": {
+    "file": "total",
+    "killed": 1780,
+    "timeout": 60,
+    "survived": 74,
+    "noCoverage": 0,
+    "errors": 0,
+    "score": 96.13
+  }
+}

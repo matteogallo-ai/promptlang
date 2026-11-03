@@ -3,7 +3,8 @@
   "workspaces": {
     ".": {
       "entry": ["src/index.ts", "src/runtime/index.ts", "scripts/*.ts", "benchmarks/*.ts"],
-      "project": ["src/**/*.ts", "scripts/**/*.ts", "tests/**/*.ts", "benchmarks/**/*.ts"]
+      "project": ["src/**/*.ts", "scripts/**/*.ts", "tests/**/*.ts", "benchmarks/**/*.ts"],
+      "ignoreDependencies": ["@stryker-mutator/command-runner"]
     },
     "packages/yaml-parser": {
       "project": ["src/**/*.ts", "tests/**/*.ts"]

@@ -1,0 +1,12 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "testRunner": "command",
+  "commandRunner": { "command": "bun test src/lexer src/parser src/semver" },
+  "mutate": ["src/lexer/**/*.ts", "src/parser/**/*.ts", "src/semver/**/*.ts", "!**/*.test.ts"],
+  "coverageAnalysis": "off",
+  "reporters": ["clear-text", "progress", "json"],
+  "jsonReporter": { "fileName": "reports/mutation/mutation.json" },
+  "concurrency": 8,
+  "timeoutMS": 20000,
+  "cleanTempDir": "always"
+}

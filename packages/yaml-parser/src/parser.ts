@@ -98,7 +98,8 @@ function stripInlineComment(s: string): string {
   let inDouble = false;
   for (let i = 0; i < s.length; i++) {
     const ch = s[i]!;
-    if ((inSingle || inDouble) && ch === "\\") {
+    // Only double-quoted strings have backslash escapes; in single quotes `\` is literal.
+    if (inDouble && ch === "\\") {
       i++;
       continue;
     }
@@ -190,12 +191,12 @@ class YamlParser {
       this.idx++;
       if (rest === "") {
         if (this.idx < this.lines.length && this.lines[this.idx]!.indent > indent) {
-          obj[key] = this.parseBlock(this.lines[this.idx]!.indent);
+          setKey(obj, key, this.parseBlock(this.lines[this.idx]!.indent));
         } else {
-          obj[key] = null;
+          setKey(obj, key, null);
         }
       } else {
-        obj[key] = parseScalar(rest, line.lineNum);
+        setKey(obj, key, parseScalar(rest, line.lineNum));
       }
     }
     return obj;
@@ -252,12 +253,12 @@ class YamlParser {
     const val = firstLineRest.slice(firstColonIdx + 1).trim();
     if (val === "") {
       if (this.idx < this.lines.length && this.lines[this.idx]!.indent > innerIndent) {
-        mapping[key] = this.parseBlock(this.lines[this.idx]!.indent);
+        setKey(mapping, key, this.parseBlock(this.lines[this.idx]!.indent));
       } else {
-        mapping[key] = null;
+        setKey(mapping, key, null);
       }
     } else {
-      mapping[key] = parseScalar(val, firstLineNum);
+      setKey(mapping, key, parseScalar(val, firstLineNum));
     }
     // Consume additional keys of the same mapping element at innerIndent.
     while (this.idx < this.lines.length) {
@@ -277,16 +278,25 @@ class YamlParser {
       this.idx++;
       if (v === "") {
         if (this.idx < this.lines.length && this.lines[this.idx]!.indent > innerIndent) {
-          mapping[k] = this.parseBlock(this.lines[this.idx]!.indent);
+          setKey(mapping, k, this.parseBlock(this.lines[this.idx]!.indent));
         } else {
-          mapping[k] = null;
+          setKey(mapping, k, null);
         }
       } else {
-        mapping[k] = parseScalar(v, nl.lineNum);
+        setKey(mapping, k, parseScalar(v, nl.lineNum));
       }
     }
     return mapping;
   }
+}
+
+/**
+ * Assignment would run the `__proto__` setter: the key would vanish and a
+ * nested mapping would become the object's prototype. Defining the property
+ * keeps every key as plain data.
+ */
+function setKey(obj: { [key: string]: YamlValue }, key: string, value: YamlValue): void {
+  Object.defineProperty(obj, key, { value, enumerable: true, writable: true, configurable: true });
 }
 
 // ---------------------------------------------------------------------------
@@ -307,7 +317,8 @@ function findKeyColon(s: string): number {
   let inDouble = false;
   for (let i = 0; i < s.length; i++) {
     const ch = s[i]!;
-    if ((inSingle || inDouble) && ch === "\\") {
+    // Only double-quoted strings have backslash escapes; in single quotes `\` is literal.
+    if (inDouble && ch === "\\") {
       i++;
       continue;
     }

@@ -86,6 +86,12 @@ describe("yaml-parser: scalars", () => {
     expect(result.c).toBeNull();
   });
 
+  test("a backslash in a single-quoted string is literal, so a comment after it is stripped", () => {
+    expect(parseYaml("dir: 'C:\\'  # windows\n")).toEqual({ dir: "C:\\" });
+    expect(parseYaml("- 'C:\\'  # windows\n")).toEqual(["C:\\"]);
+    expect(parseYaml('dir: "C:\\\\"  # windows\n')).toEqual({ dir: "C:\\" });
+  });
+
   test("ignores full-line and inline comments", () => {
     const src =
       "# leading comment\n" + "name: p # inline comment\n" + "# another line\n" + "count: 3\n";
@@ -239,5 +245,20 @@ describe("yaml-parser: types are typed correctly", () => {
     expect(Number.isInteger(result.i as number)).toBe(true);
     expect(Number.isInteger(result.f as number)).toBe(false);
     expect(result.e).toBe(150);
+  });
+});
+
+describe("yaml-parser: hostile keys", () => {
+  test("a __proto__ key is kept as data and never replaces the mapping's prototype", () => {
+    const flat = asObj(parseYaml("__proto__: x\n"));
+    expect(Object.keys(flat)).toEqual(["__proto__"]);
+    expect(Object.getOwnPropertyDescriptor(flat, "__proto__")?.value).toBe("x");
+
+    const nested = asObj(parseYaml("__proto__:\n  polluted: 1\n"));
+    expect(Object.getPrototypeOf(nested)).toBe(Object.prototype);
+    expect((nested as { polluted?: unknown }).polluted).toBeUndefined();
+
+    const item = asArr(parseYaml("- __proto__: x\n  b: 1\n"))[0] as Record<string, YamlValue>;
+    expect(Object.keys(item)).toEqual(["__proto__", "b"]);
   });
 });

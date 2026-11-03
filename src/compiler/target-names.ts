@@ -1,6 +1,6 @@
 import type { AstNode, Program, StructType, TypeExpression } from "../ast/nodes";
 import { CompilerError } from "./errors";
-import { toPascalCase } from "./type-mapper";
+import { toConstName, toPascalCase } from "./type-mapper";
 
 export type Target = "typescript" | "python";
 
@@ -28,14 +28,32 @@ const PYTHON_RESERVED = new Set(
   ).split(" ")
 );
 
+/**
+ * The parameters of every generated chain function, in scope throughout its
+ * body; the other one, `input`, is a PromptLang keyword.
+ */
+const CHAIN_PARAMETERS = new Set(["client"]);
+
 const LANGUAGE: Record<Target, string> = { typescript: "TypeScript", python: "Python" };
 
-/** Module-level names the generated code imports or relies on, which a declaration would shadow. */
+/**
+ * Module-level names the generated code imports, or globals its function bodies
+ * call, which a declaration of the same name would shadow.
+ */
 const GENERATED_GLOBALS: Record<Target, ReadonlySet<string>> = {
-  typescript: new Set(["PromptClient", "PromptRequest", "Promise"]),
+  typescript: new Set([
+    "PromptClient",
+    "PromptRequest",
+    "Promise",
+    "Number",
+    "isNaN",
+    "Error",
+    "JSON",
+  ]),
   python: new Set([
     "PromptClient",
     "PromptRequest",
+    "ValueError",
     "TypedDict",
     "NotRequired",
     "Literal",
@@ -62,9 +80,9 @@ interface Emitted {
 }
 
 /**
- * Every module-level name the generated code declares for `program`: each
- * declaration's own name and those derived from it (`FooInput`, `foo_meta` or
- * `FOO_META`, Python's `_FOO_VALUES`).
+ * The module-level names the generated code declares for each declaration of
+ * `program`: its own name, `FooInput` and `foo_meta` (Python: `FOO_META`) for a
+ * prompt or chain, `FOO_VALUES` (Python: `_FOO_VALUES`) for an enum.
  */
 function emittedNames(program: Program, target: Target): Emitted[] {
   const out: Emitted[] = [];
@@ -72,8 +90,12 @@ function emittedNames(program: Program, target: Target): Emitted[] {
     if (d.kind === "TypeDeclaration") {
       const source = `the type ${d.name}`;
       out.push({ name: d.name, source, node: d });
-      if (target === "python" && d.definition.kind === "EnumType")
-        out.push({ name: `_${d.name.toUpperCase()}_VALUES`, source, node: d });
+      if (d.definition.kind === "EnumType")
+        out.push({
+          name: target === "python" ? `_${toConstName(d.name)}` : toConstName(d.name),
+          source,
+          node: d,
+        });
     } else if (d.kind === "PromptDeclaration" || d.kind === "ChainDeclaration") {
       const source = `the ${d.kind === "PromptDeclaration" ? "prompt" : "chain"} ${d.name}`;
       out.push({ name: d.name, source, node: d });
@@ -151,14 +173,17 @@ export function checkTargetNames(program: Program, target: Target): void {
     )
   );
   for (const { name, role, node, bound } of names(program, target)) {
+    const moduleLevel = role !== "a step" && role !== "a field" && role !== "a parameter";
     let problem: string | undefined;
     if (name.includes("-")) problem = `${language} identifiers cannot contain '-'`;
     else if (bound && (target === "python" ? PYTHON_RESERVED : TYPESCRIPT_RESERVED).has(name))
       problem = `it is a reserved word in ${language}`;
     else if (target === "typescript" && role === "a type" && TYPESCRIPT_TYPE_NAMES.has(name))
       problem = `TypeScript reserves it as a type name`;
-    else if (role !== "a step" && bound && GENERATED_GLOBALS[target].has(name))
+    else if (moduleLevel && GENERATED_GLOBALS[target].has(name))
       problem = `the generated ${language} uses that name`;
+    else if ((moduleLevel || role === "a step") && CHAIN_PARAMETERS.has(name) && role !== "a type")
+      problem = "the generated chain's parameters use that name";
     else if (role === "a step" && callables.has(name))
       problem = "the file declares a prompt or chain of that name";
     if (problem)

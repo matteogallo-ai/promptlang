@@ -108,4 +108,54 @@ describe("names the target language cannot hold are compile errors", () => {
         "4:3 'summarize' cannot name a step: the file declares a prompt or chain of that name"
       );
   });
+
+  // Each of these compiled with exit 0 to TypeScript that does not type-check.
+  test("an enum and a name equal to the constant generated for it", () => {
+    expect(
+      refusal(
+        "typescript",
+        `type Foo = enum { a, b }
+prompt FOO_VALUES(x: string) -> Foo { user: "<a>{{x}}</a>" }`
+      )
+    ).toBe("3:1 'FOO_VALUES' is generated twice: for the type Foo and for the prompt FOO_VALUES");
+    expect(
+      refusal(
+        "typescript",
+        `type Foo = enum { a, b }
+type foo = enum { c }`
+      )
+    ).toBe("3:1 'FOO_VALUES' is generated twice: for the type Foo and for the type foo");
+  });
+
+  // Inside a generated chain, `client` is a parameter: a step of that name
+  // redeclares it, a callable of that name is shadowed by it. `input`, the other
+  // parameter, is a PromptLang keyword and names nothing.
+  test("'client' cannot name a step, a prompt or a chain", () => {
+    const step = `${prompt("p")}\nchain c(x: string) -> string {\n  step client = p(x: x)\n  return client\n}`;
+    for (const target of ["typescript", "python"] as const) {
+      expect(refusal(target, step)).toBe(
+        "4:3 'client' cannot name a step: the generated chain's parameters use that name"
+      );
+      expect(refusal(target, prompt("client"))).toBe(
+        "2:1 'client' cannot name a prompt: the generated chain's parameters use that name"
+      );
+    }
+  });
+
+  // A module-level function of that name hides the global another prompt's code calls.
+  test("a global the generated function bodies call", () => {
+    for (const name of ["Number", "isNaN", "Error", "JSON"])
+      expect(refusal("typescript", prompt(name))).toContain(
+        `'${name}' cannot name a prompt: the generated TypeScript uses that name`
+      );
+    expect(refusal("python", prompt("ValueError"))).toContain(
+      "'ValueError' cannot name a prompt: the generated Python uses that name"
+    );
+  });
+
+  // A TypedDict attribute does not bind a module name, so it shadows nothing.
+  test("a Python field or parameter may share a builtin's name", () => {
+    const body = `type T = struct { list: string }\nprompt p(str: string, t: T) -> string { user: "<a>{{str}}</a>" }`;
+    expect(refusal("python", body)).toBeUndefined();
+  });
 });

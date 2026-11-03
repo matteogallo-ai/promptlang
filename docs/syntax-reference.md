@@ -129,12 +129,16 @@ prompt classify_ticket(ticket: string) -> Category {
     chain, step and type names in TypeScript (`delete`, `if`; types also not `any`,
     `string`...), every name in Python, parameters and struct fields included
     (`class`, `pass`);
-  - a name the generated module imports or relies on (`PromptClient`, `Promise`;
-    in Python also `TypedDict`, `Literal`, `str`...);
+  - a type, prompt or chain named after something the generated module imports
+    or calls (`PromptClient`, `Promise`, `Number`, `JSON`; in Python also
+    `TypedDict`, `Literal`, `str`, `ValueError`...); a parameter or field may
+    use these names;
+  - a step, prompt or chain named `client`, a parameter of every generated chain;
   - a step named after a prompt or chain of the file;
   - two declarations that generate the same name: a prompt `foo` generates `foo`,
-    `FooInput` and `foo_meta` (`FOO_META` in Python), so a type `FooInput` beside
-    it is refused.
+    `FooInput` and `foo_meta` (`FOO_META` in Python), an enum `Foo` generates
+    `FOO_VALUES` (`_FOO_VALUES` in Python), so a type `FooInput` beside the
+    prompt, or an enum `foo` beside the enum, is refused.
 
 ### Generated output handling
 

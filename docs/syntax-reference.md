@@ -288,7 +288,7 @@ output, `--strict` to exit 1 on warnings):
 | --- | --- | --- |
 | `missing-tests` | warning | a prompt with no `test` block calling it |
 | `unbounded-template` | warning | `{{var}}` where `var` is not a parameter |
-| `prompt-injection-risk` | warning | a `user` section that interpolates a variable and contains no delimiter (`---`, triple backticks, `<tag>`, `<BEGIN>`/`<END>`, `[[ ]]`) |
+| `prompt-injection-risk` | warning | a message section of any role that inserts a text parameter (`string`, or a type the file does not declare) outside a delimiter pair enclosing it: `<tag>`…`</tag>`, `---` lines, a code fence, `<BEGIN>`/`<END>`, `[[ ]]`. A delimiter is not escaping: a value containing the closing delimiter still closes it |
 | `token-cost-estimate` | info | a prompt whose static text is estimated above 500 tokens |
 | `chain-complexity` | info | a chain with more than 5 steps |
 | `duplicate-prompts` | warning | the same prompt name declared in several files |

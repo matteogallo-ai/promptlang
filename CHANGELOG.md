@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **`prompt-injection-risk` checks what encloses each input.** It accepted a
+  section with any `---` or `<tag>` anywhere (`Answer in <b>bold</b>. Here is:
+  {{x}}` passed), and never looked at `system:` sections. It now flags each text
+  parameter (`string`, or an undeclared type) whose placeholder is not inside a
+  delimiter pair, in every role, and no longer flags numbers, booleans or enums.
+- **The example's injection test claimed a check it did not make.** Its comment
+  said the mock checks the hostile text reaches the prompt inside `<ticket>`
+  tags; nothing did. `tests/example-injection.test.ts` now checks it, and fails
+  when the tags are removed.
+
 ## [2.0.0] - 2026-11-03
 
 Remediation after the 2026-11-02 external audit, and the first release of

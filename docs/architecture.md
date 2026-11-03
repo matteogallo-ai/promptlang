@@ -177,7 +177,7 @@ Static analysis pass that runs against the parsed AST. Two tiers:
 |------|---------------|
 | `missing-tests` | Prompts with zero test blocks |
 | `unbounded-template` | `{{var}}` where `var` is not a declared parameter |
-| `prompt-injection-risk` | Undelimited `{{var}}` in user section |
+| `prompt-injection-risk` | `{{var}}` of a text parameter not enclosed in a delimiter pair, in any role |
 | `token-cost-estimate` | Prompts with likely token cost > threshold |
 | `chain-complexity` | Chains with too many steps |
 | `duplicate-prompts` | The same prompt name declared in several files |

@@ -1,8 +1,14 @@
+import { existsSync } from "node:fs";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const RUNTIME_ENTRY = join(import.meta.dir, "..", "runtime", "index.ts");
+// A checkout has the TypeScript source; the published package has only the
+// built dist/runtime/index.js, next to the bundled CLI.
+const RUNTIME_SOURCE = join(import.meta.dir, "..", "runtime", "index.ts");
+const RUNTIME_ENTRY = existsSync(RUNTIME_SOURCE)
+  ? RUNTIME_SOURCE
+  : join(import.meta.dir, "..", "runtime", "index.js");
 const RUNTIME_SPECIFIER = '"@promptlang/core/runtime"';
 
 /**

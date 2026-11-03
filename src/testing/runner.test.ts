@@ -41,7 +41,9 @@ describe("runTests in mock mode", () => {
       `${CLASSIFY}test "t" {\n  input: classify("x")\n  mock: "feature"\n  expect: bug\n}`
     );
     expect(r?.passed).toBe(false);
-    expect(r?.failures[0]).toStartWith("classify threw: ");
+    expect(r?.failures).toEqual([
+      "classify output does not match its type: output: expected one of bug, other, got a string",
+    ]);
   });
 
   test("field equality, contains, matches and schema on a struct output", async () => {
@@ -52,14 +54,13 @@ describe("runTests in mock mode", () => {
     expect(r).toMatchObject({ passed: true, output: { total: 120, ref: "INV-7" } });
   });
 
-  test("schema failures and a string operator on a missing field are reported per assertion", async () => {
+  test("an answer outside the declared type fails the test before its assertions run", async () => {
     const mock = `"{\\"total\\": \\"120\\"}"`;
     const [r] = await run(
       `${EXTRACT}test "t" {\n  input: extract("x")\n  mock: ${mock}\n  expect.total contains: "1"\n  expect.ref matches: "x"\n  expect schema\n}`
     );
     expect(r?.failures).toEqual([
-      "expect.ref matches: expected a string, got undefined",
-      'expect schema: output.total: expected number, got "120"',
+      "extract output does not match its type: output.total: expected number, got a string",
     ]);
   });
 

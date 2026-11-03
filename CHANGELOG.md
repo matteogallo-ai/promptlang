@@ -8,6 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Generated code checks every answer against its declared type** (breaking for
+  code that relied on the old behaviour). Answers that used to pass now raise
+  `InvalidOutputError`: a struct with a field the type does not declare, a field
+  of the wrong type at any depth, a `number` not in decimal notation (`0x10`), a
+  `date` that is not a real day (`2024-02-30`). The error has `prompt`, `errors`
+  (at most 10, each at most 500 characters) and `output`; its message names the
+  mismatches and never quotes the answer. In Python it subclasses `ValueError`,
+  which the generated code raised before.
+- **Generated TypeScript imports `parseOutput` from `@promptlang/core/runtime` as
+  a value**, so it runs only with a runtime release that exports it. Before, it
+  imported types only.
+- **`expect schema` uses the same check**, so its messages give the kind of the
+  wrong value (`got a string`) instead of quoting it, and count undeclared fields
+  instead of naming them. `promptlang test` reports a mock outside the type as a
+  failure before the test's assertions run.
+
 - **`RoutingClient` falls back only when a provider could not serve the
   request** (outage, rate limit, timeout, network, 404, malformed body). A 400
   and any error that is not a `PromptClientError` used to send the same request,
@@ -19,6 +35,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Code that catches `InvalidRequestError` for a 404 catches `NotFoundError`.
 
 ### Fixed
+- **Struct outputs are no longer cast unchecked.** Generated TypeScript
+  `JSON.parse`d and cast the answer, and generated Python returned `json.loads`'
+  result, so `{"amount": "not a number", "hacked": true}` came back typed as
+  `ExtractedInvoice`. Both now call `parseOutput` / `parse_output` with the same
+  rules and messages; one surrounding code fence is accepted.
+- **Answers that cannot be checked are refused, not crashes.** A recursive type
+  nested past the call stack raised `RangeError` (TypeScript) or
+  `RecursionError` (Python); it is now an `InvalidOutputError`.
 - **`OpenAIClient` sends `max_completion_tokens`, not `max_tokens`** (TypeScript
   and Python). GPT-5 and the o-series, which the routing example falls back to,
   answer `max_tokens` with a 400. The `@temperature` warning now says those

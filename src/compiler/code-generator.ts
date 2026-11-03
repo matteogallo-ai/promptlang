@@ -116,7 +116,8 @@ export function generatePromptDeclaration(
       section.content.value,
       section.content.isTemplate,
       paramNames,
-      optionalParamNames(parameters)
+      optionalParamNames(parameters),
+      structParamNames(parameters, registry)
     );
     parts.push(`      {`);
     parts.push(`        role: "${section.role}",`);
@@ -156,6 +157,24 @@ function generateMetaConst(name: string, meta: CompiledMetadata): string {
 
 export function optionalParamNames(params: readonly Parameter[]): Set<string> {
   return new Set(params.filter((p) => p.optional).map((p) => p.name));
+}
+
+/**
+ * The parameters whose type is a struct of this file, through aliases: they are
+ * inserted as JSON, as plain interpolation writes "[object Object]" (Python: a
+ * dict repr). A type imported from another file cannot be resolved here.
+ */
+export function structParamNames(
+  params: readonly Parameter[],
+  registry: ReadonlyMap<string, TypeExpression>
+): Set<string> {
+  const isStruct = (type: TypeExpression, seen: ReadonlySet<string>): boolean => {
+    if (type.kind === "StructType") return true;
+    if (type.kind !== "TypeReference" || seen.has(type.name)) return false;
+    const target = registry.get(type.name);
+    return target !== undefined && isStruct(target, new Set([...seen, type.name]));
+  };
+  return new Set(params.filter((p) => isStruct(p.type, new Set())).map((p) => p.name));
 }
 
 /** `export interface XInput { ... }` for a prompt's or chain's parameters. */

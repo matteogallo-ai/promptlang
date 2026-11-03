@@ -11,7 +11,7 @@ import type {
 import { mapPythonType, toPythonPascalCase, toPythonConstName } from "./python-type-mapper";
 import { compilePythonStringLiteral } from "./python-template-compiler";
 import { CompilerError } from "../errors";
-import { optionalParamNames } from "../code-generator";
+import { optionalParamNames, structParamNames } from "../code-generator";
 import type { CallableRegistry } from "../chain-compiler";
 
 export function buildCallableRegistryForPython(program: Program): CallableRegistry {
@@ -154,7 +154,8 @@ export function generatePythonPromptDeclaration(
       section.content.value,
       section.content.isTemplate,
       paramNames,
-      optionalParamNames(parameters)
+      optionalParamNames(parameters),
+      structParamNames(parameters, registry)
     );
     parts.push(`            {`);
     parts.push(`                "role": "${section.role}",`);

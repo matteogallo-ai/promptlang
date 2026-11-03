@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **A struct parameter reaches the model as JSON.** `{{ctx}}` with `ctx` a struct
+  was sent as `[object Object]` from TypeScript and as a dict repr from Python;
+  both now send `{"plan":"pro","seats":3}`, byte for byte the same.
+
 ## [2.0.0] - 2026-11-03
 
 Remediation after the 2026-11-02 external audit, and the first release of

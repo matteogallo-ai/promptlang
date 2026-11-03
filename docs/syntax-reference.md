@@ -386,6 +386,15 @@ async def classify_ticket(input: ClassifyTicketInput, client: PromptClient) -> C
 Plus `__init__.py` and a generated `promptlang_runtime.py` (its HTTP clients need
 `httpx`; `MockClient` needs nothing).
 
+### Output file names
+
+Each `.prompt` file compiles to one file in the `--out` folder, named after it:
+`x.prompt` → `x.ts`. For Python every character that cannot appear in a module name
+becomes `_` (`sentiment.v2.prompt` → `sentiment_v2.py`), with a leading `_` before a
+digit. The folder is flat and the index re-exports every module, so `compile` exits 1
+and writes nothing when two sources would produce the same file (letter case
+ignored, as on macOS and Windows) or declare the same prompt, chain or type name.
+
 ---
 
 ## Not supported

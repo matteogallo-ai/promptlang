@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **`compile` no longer overwrites one source with another.** Two files with
+  the same name in different folders compiled to the same output file: the
+  last one won, `index.ts` exported it twice and the exit code was 0. `compile`
+  now exits 1 and writes nothing when two sources would produce the same file
+  (case ignored) or declare the same name, which the index cannot export twice.
+- **Python module names are importable.** `sentiment.v2.prompt` compiled to
+  `sentiment.v2.py`, which `__init__.py` imported as a package `sentiment`;
+  it is now `sentiment_v2.py`.
+- The `--help` example and the benchmark compile `docs/examples/*.prompt`:
+  the folder also holds the demo's two versions of one prompt, which are
+  alternatives and do not compile together.
+
 ## [2.0.0] - 2026-11-03
 
 Remediation after the 2026-11-02 external audit, and the first release of

@@ -109,9 +109,7 @@ export async function runCompile(args: string[]): Promise<number> {
     return 1;
   }
 
-  await mkdir(outDir, { recursive: true });
-
-  const generatedNames: string[] = [];
+  const compiled: Compiled[] = [];
   let hasErrors = false;
 
   for (const file of files) {
@@ -137,21 +135,19 @@ export async function runCompile(args: string[]): Promise<number> {
       warnAboutEvals(ast, file);
       warnAboutTemperature(ast, file);
 
-      if (target === "python") {
-        const generated = compilePython(ast, file);
-        const outName = `${basename(file, ".prompt").replace(/-/g, "_")}.py`;
-        const outPath = join(outDir, outName);
-        await Bun.write(outPath, generated);
-        console.log(`  compiled  ${file} → ${outPath}`);
-        generatedNames.push(outName);
-      } else {
-        const generated = compile(ast, file);
-        const outName = `${basename(file, ".prompt")}.ts`;
-        const outPath = join(outDir, outName);
-        await Bun.write(outPath, generated);
-        console.log(`  compiled  ${file} → ${outPath}`);
-        generatedNames.push(outName);
-      }
+      const stem = basename(file, ".prompt");
+      compiled.push({
+        file,
+        outName: target === "python" ? `${pythonModuleName(stem)}.py` : `${stem}.ts`,
+        code: target === "python" ? compilePython(ast, file) : compile(ast, file),
+        names: ast.declarations.flatMap((d) =>
+          d.kind === "TypeDeclaration" ||
+          d.kind === "PromptDeclaration" ||
+          d.kind === "ChainDeclaration"
+            ? [d.name]
+            : []
+        ),
+      });
     } catch (error) {
       if (
         error instanceof LexerError ||
@@ -168,6 +164,25 @@ export async function runCompile(args: string[]): Promise<number> {
         throw error;
       }
     }
+  }
+
+  // The output folder is flat and the index re-exports every module, so two
+  // sources that share a file name or a declared name cannot both be written:
+  // one would silently replace the other.
+  const collisions = findCollisions(compiled);
+  if (collisions.length > 0) {
+    for (const c of collisions) console.error(`  [error]   ${c}`);
+    console.error("  Nothing was written. Compile these files to different --out folders.");
+    return 1;
+  }
+
+  await mkdir(outDir, { recursive: true });
+  const generatedNames: string[] = [];
+  for (const { file, outName, code } of compiled) {
+    const outPath = join(outDir, outName);
+    await Bun.write(outPath, code);
+    console.log(`  compiled  ${file} → ${outPath}`);
+    generatedNames.push(outName);
   }
 
   if (generatedNames.length > 0) {
@@ -205,6 +220,41 @@ export async function runCompile(args: string[]): Promise<number> {
   }
 
   return hasErrors ? 1 : 0;
+}
+
+interface Compiled {
+  file: string;
+  outName: string;
+  code: string;
+  /** The names the file declares, each exported by the module and by the index. */
+  names: string[];
+}
+
+/** One message per output file or exported name that two sources would both produce. */
+function findCollisions(compiled: readonly Compiled[]): string[] {
+  const messages: string[] = [];
+  const byFile = new Map<string, Compiled>();
+  const byName = new Map<string, Compiled>();
+  for (const c of compiled) {
+    // Case-insensitive file systems (macOS, Windows) hold only one of X.ts and x.ts.
+    const key = c.outName.toLowerCase();
+    const other = byFile.get(key);
+    if (other) messages.push(`${other.file} and ${c.file} both compile to ${c.outName}`);
+    else byFile.set(key, c);
+    for (const name of c.names) {
+      const first = byName.get(name);
+      if (first && first !== c)
+        messages.push(`'${name}' is declared in both ${first.file} and ${c.file}`);
+      else byName.set(name, c);
+    }
+  }
+  return messages;
+}
+
+/** A file name Python can import: `sentiment.v2` is read as a package `sentiment`. */
+function pythonModuleName(stem: string): string {
+  const name = stem.replace(/[^A-Za-z0-9_]/g, "_");
+  return /^[0-9]/.test(name) ? `_${name}` : name;
 }
 
 function computeDefaultRuntimePath(outDir: string): string {

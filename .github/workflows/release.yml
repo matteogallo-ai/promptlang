@@ -1,7 +1,8 @@
 name: Release
 
 # A v* tag publishes @promptlang/core (and @promptlang/yaml-parser when its
-# version is not on npm yet), after the whole CI workflow passes on the tag, then
+# version is not on npm yet) through npm trusted publishing (OIDC, no token),
+# after the whole CI workflow passes on the tag, then
 # creates the GitHub Release with the same tarball and its signed provenance.
 # Run by hand, it is always a dry run: only a tag publishes, attests or creates a
 # release, so every published version has passed the tag/version check below.
@@ -29,8 +30,9 @@ jobs:
     environment: npm
     permissions:
       contents: read
-      # OIDC token for npm provenance and for the Sigstore certificate that signs the
-      # GitHub attestation: both record which workflow built the tarball.
+      # OIDC token: npm trusted publishing authenticates the publish with it (no npm
+      # token exists), and npm provenance and the Sigstore certificate that signs the
+      # GitHub attestation record which workflow built the tarball.
       id-token: write
       # Stores the tarball's build provenance in the repository's attestations.
       attestations: write
@@ -43,10 +45,11 @@ jobs:
         with:
           node-version: "lts/*"
           registry-url: "https://registry.npmjs.org"
-      # The release publishes with NPM_TOKEN; trusted publishing (docs/RELEASING.md,
-      # option B) replaces it and needs npm >= 11.5.1 and Node >= 22.14.0. "lts/*"
-      # moves, so the versions are printed and checked here, before anything is
-      # packed: a dry run shows whether the runner can switch without upgrading npm.
+      # Trusted publishing needs npm >= 11.5.1 and Node >= 22.14.0. The npm bundled
+      # with "lts/*" moves and may be older, so a pinned npm is installed, and both
+      # versions are checked before anything is packed.
+      - name: Install the npm that trusted publishing needs
+        run: npm install -g npm@11.21.1
       - name: Node and npm meet the trusted-publishing minimums
         run: |
           node --version
@@ -143,7 +146,6 @@ jobs:
           npm publish "$TARBALL" --provenance --access public $TAG $DRY_RUN
         env:
           TARBALL: ${{ steps.pack.outputs.tarball }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish @promptlang/yaml-parser
         if: steps.yaml_parser.outputs.publish == 'true'
@@ -152,8 +154,6 @@ jobs:
           VERSION="$(node -p "require('./package.json').version")"
           case "$VERSION" in *-*) TAG="--tag next" ;; *) TAG="" ;; esac
           npm publish --provenance --access public $TAG $DRY_RUN
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   github-release:
     needs: publish

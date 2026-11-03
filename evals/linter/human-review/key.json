@@ -1,0 +1,422 @@
+[
+  {
+    "item_id": "r01",
+    "case": "b22-missing-format-spec",
+    "kind": "decoy",
+    "category": "TOKEN_INEFFICIENCY",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r02",
+    "case": "b19-conflicting-instructions",
+    "kind": "decoy",
+    "category": "UNDEFINED_TERMS",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r03",
+    "case": "b16-potential-hallucination-risk",
+    "kind": "decoy",
+    "category": "VAGUE_INSTRUCTIONS",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r04",
+    "case": "b12-missing-format-spec",
+    "kind": "decoy",
+    "category": "TOKEN_INEFFICIENCY",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r05",
+    "case": "b26-conflicting-instructions",
+    "kind": "decoy",
+    "category": "UNDEFINED_TERMS",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r06",
+    "case": "b23-undefined-terms",
+    "kind": "decoy",
+    "category": "MISSING_FORMAT_SPEC",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r07",
+    "case": "b29-token-inefficiency",
+    "kind": "designed",
+    "category": "TOKEN_INEFFICIENCY",
+    "expected": "supported"
+  },
+  {
+    "item_id": "r08",
+    "case": "b12-missing-format-spec",
+    "kind": "designed",
+    "category": "MISSING_FORMAT_SPEC",
+    "expected": "supported"
+  },
+  {
+    "item_id": "r09",
+    "case": "b29-vague-instructions",
+    "kind": "designed",
+    "category": "VAGUE_INSTRUCTIONS",
+    "expected": "supported"
+  },
+  {
+    "item_id": "r10",
+    "case": "b08-clean",
+    "kind": "decoy",
+    "category": "POTENTIAL_HALLUCINATION_RISK",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r11",
+    "case": "b04-potential-hallucination-risk",
+    "kind": "designed",
+    "category": "POTENTIAL_HALLUCINATION_RISK",
+    "expected": "supported"
+  },
+  {
+    "item_id": "r12",
+    "case": "b16-potential-hallucination-risk",
+    "kind": "designed",
+    "category": "POTENTIAL_HALLUCINATION_RISK",
+    "expected": "supported"
+  },
+  {
+    "item_id": "r13",
+    "case": "b17-vague-instructions",
+    "kind": "decoy",
+    "category": "MISSING_FORMAT_SPEC",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r14",
+    "case": "b29-vague-instructions",
+    "kind": "decoy",
+    "category": "CONFLICTING_INSTRUCTIONS",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r15",
+    "case": "b20-clean",
+    "kind": "decoy",
+    "category": "VAGUE_INSTRUCTIONS",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r16",
+    "case": "b04-undefined-terms",
+    "kind": "decoy",
+    "category": "MISSING_FORMAT_SPEC",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r17",
+    "case": "b02-missing-format-spec",
+    "kind": "designed",
+    "category": "MISSING_FORMAT_SPEC",
+    "expected": "supported"
+  },
+  {
+    "item_id": "r18",
+    "case": "b22-missing-format-spec",
+    "kind": "designed",
+    "category": "MISSING_FORMAT_SPEC",
+    "expected": "supported"
+  },
+  {
+    "item_id": "r19",
+    "case": "b19-conflicting-instructions",
+    "kind": "designed",
+    "category": "CONFLICTING_INSTRUCTIONS",
+    "expected": "supported"
+  },
+  {
+    "item_id": "r20",
+    "case": "b24-conflicting-instructions",
+    "kind": "decoy",
+    "category": "MISSING_FORMAT_SPEC",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r21",
+    "case": "b17-token-inefficiency",
+    "kind": "decoy",
+    "category": "VAGUE_INSTRUCTIONS",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r22",
+    "case": "b02-missing-format-spec",
+    "kind": "decoy",
+    "category": "UNDEFINED_TERMS",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r23",
+    "case": "b27-token-inefficiency",
+    "kind": "decoy",
+    "category": "VAGUE_INSTRUCTIONS",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r24",
+    "case": "b26-conflicting-instructions",
+    "kind": "designed",
+    "category": "CONFLICTING_INSTRUCTIONS",
+    "expected": "supported"
+  },
+  {
+    "item_id": "r25",
+    "case": "b08-clean",
+    "kind": "designed",
+    "category": null,
+    "expected": "supported"
+  },
+  {
+    "item_id": "r26",
+    "case": "b05-vague-instructions",
+    "kind": "decoy",
+    "category": "CONFLICTING_INSTRUCTIONS",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r27",
+    "case": "b28-potential-hallucination-risk",
+    "kind": "designed",
+    "category": "POTENTIAL_HALLUCINATION_RISK",
+    "expected": "supported"
+  },
+  {
+    "item_id": "r28",
+    "case": "b24-clean",
+    "kind": "designed",
+    "category": null,
+    "expected": "supported"
+  },
+  {
+    "item_id": "r29",
+    "case": "b24-conflicting-instructions",
+    "kind": "designed",
+    "category": "CONFLICTING_INSTRUCTIONS",
+    "expected": "supported"
+  },
+  {
+    "item_id": "r30",
+    "case": "b29-missing-format-spec",
+    "kind": "designed",
+    "category": "MISSING_FORMAT_SPEC",
+    "expected": "supported"
+  },
+  {
+    "item_id": "r31",
+    "case": "b22-vague-instructions",
+    "kind": "designed",
+    "category": "VAGUE_INSTRUCTIONS",
+    "expected": "supported"
+  },
+  {
+    "item_id": "r32",
+    "case": "b29-missing-format-spec",
+    "kind": "decoy",
+    "category": "VAGUE_INSTRUCTIONS",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r33",
+    "case": "b22-vague-instructions",
+    "kind": "decoy",
+    "category": "TOKEN_INEFFICIENCY",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r34",
+    "case": "b23-undefined-terms",
+    "kind": "designed",
+    "category": "UNDEFINED_TERMS",
+    "expected": "supported"
+  },
+  {
+    "item_id": "r35",
+    "case": "b28-clean",
+    "kind": "decoy",
+    "category": "MISSING_FORMAT_SPEC",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r36",
+    "case": "b11-undefined-terms",
+    "kind": "decoy",
+    "category": "VAGUE_INSTRUCTIONS",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r37",
+    "case": "b28-conflicting-instructions",
+    "kind": "designed",
+    "category": "CONFLICTING_INSTRUCTIONS",
+    "expected": "supported"
+  },
+  {
+    "item_id": "r38",
+    "case": "b28-potential-hallucination-risk",
+    "kind": "decoy",
+    "category": "TOKEN_INEFFICIENCY",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r39",
+    "case": "b05-vague-instructions",
+    "kind": "designed",
+    "category": "VAGUE_INSTRUCTIONS",
+    "expected": "supported"
+  },
+  {
+    "item_id": "r40",
+    "case": "b20-token-inefficiency",
+    "kind": "decoy",
+    "category": "POTENTIAL_HALLUCINATION_RISK",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r41",
+    "case": "b04-potential-hallucination-risk",
+    "kind": "decoy",
+    "category": "CONFLICTING_INSTRUCTIONS",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r42",
+    "case": "b13-potential-hallucination-risk",
+    "kind": "designed",
+    "category": "POTENTIAL_HALLUCINATION_RISK",
+    "expected": "supported"
+  },
+  {
+    "item_id": "r43",
+    "case": "b29-token-inefficiency",
+    "kind": "decoy",
+    "category": "MISSING_FORMAT_SPEC",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r44",
+    "case": "b22-clean",
+    "kind": "decoy",
+    "category": "UNDEFINED_TERMS",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r45",
+    "case": "b17-clean",
+    "kind": "designed",
+    "category": null,
+    "expected": "supported"
+  },
+  {
+    "item_id": "r46",
+    "case": "b11-undefined-terms",
+    "kind": "designed",
+    "category": "UNDEFINED_TERMS",
+    "expected": "supported"
+  },
+  {
+    "item_id": "r47",
+    "case": "b27-token-inefficiency",
+    "kind": "designed",
+    "category": "TOKEN_INEFFICIENCY",
+    "expected": "supported"
+  },
+  {
+    "item_id": "r48",
+    "case": "b16-undefined-terms",
+    "kind": "designed",
+    "category": "UNDEFINED_TERMS",
+    "expected": "supported"
+  },
+  {
+    "item_id": "r49",
+    "case": "b17-clean",
+    "kind": "decoy",
+    "category": "TOKEN_INEFFICIENCY",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r50",
+    "case": "b22-clean",
+    "kind": "designed",
+    "category": null,
+    "expected": "supported"
+  },
+  {
+    "item_id": "r51",
+    "case": "b16-undefined-terms",
+    "kind": "decoy",
+    "category": "CONFLICTING_INSTRUCTIONS",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r52",
+    "case": "b28-conflicting-instructions",
+    "kind": "decoy",
+    "category": "UNDEFINED_TERMS",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r53",
+    "case": "b17-vague-instructions",
+    "kind": "designed",
+    "category": "VAGUE_INSTRUCTIONS",
+    "expected": "supported"
+  },
+  {
+    "item_id": "r54",
+    "case": "b04-undefined-terms",
+    "kind": "designed",
+    "category": "UNDEFINED_TERMS",
+    "expected": "supported"
+  },
+  {
+    "item_id": "r55",
+    "case": "b28-clean",
+    "kind": "designed",
+    "category": null,
+    "expected": "supported"
+  },
+  {
+    "item_id": "r56",
+    "case": "b20-clean",
+    "kind": "designed",
+    "category": null,
+    "expected": "supported"
+  },
+  {
+    "item_id": "r57",
+    "case": "b17-token-inefficiency",
+    "kind": "designed",
+    "category": "TOKEN_INEFFICIENCY",
+    "expected": "supported"
+  },
+  {
+    "item_id": "r58",
+    "case": "b24-clean",
+    "kind": "decoy",
+    "category": "UNDEFINED_TERMS",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r59",
+    "case": "b13-potential-hallucination-risk",
+    "kind": "decoy",
+    "category": "CONFLICTING_INSTRUCTIONS",
+    "expected": "unsupported"
+  },
+  {
+    "item_id": "r60",
+    "case": "b20-token-inefficiency",
+    "kind": "designed",
+    "category": "TOKEN_INEFFICIENCY",
+    "expected": "supported"
+  }
+]

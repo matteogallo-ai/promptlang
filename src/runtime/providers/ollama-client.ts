@@ -7,7 +7,7 @@ import {
   ServerError,
 } from "../errors";
 import { BaseHttpClient, type HttpRequestSpec } from "./base-http-client";
-import { invalidField, isRecord } from "./response";
+import { invalidField, isRecord, requireCompleteAnswer } from "./response";
 
 /** Options for configuring the OllamaClient. */
 export interface OllamaClientOptions {
@@ -93,13 +93,22 @@ export class OllamaClient extends BaseHttpClient {
     );
   }
 
-  protected parseResponse(data: Record<string, unknown>): PromptResponse {
+  protected parseResponse(data: Record<string, unknown>, request: PromptRequest): PromptResponse {
     if (!isRecord(data.message) || typeof data.message.content !== "string") {
       invalidField("ollama", "message.content");
     }
     const content = (data.message as { content: string }).content;
     const inputTokens = typeof data.prompt_eval_count === "number" ? data.prompt_eval_count : 0;
     const outputTokens = typeof data.eval_count === "number" ? data.eval_count : 0;
+    // Ollama reports `length` when num_predict cut generation; older servers omit done_reason.
+    const raw = typeof data.done_reason === "string" ? data.done_reason : "";
+    requireCompleteAnswer(
+      "ollama",
+      raw === "length" ? "max_tokens" : "complete",
+      raw,
+      content,
+      request.max_tokens
+    );
     return {
       content,
       usage: {

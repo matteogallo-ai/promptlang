@@ -1,5 +1,6 @@
 import {
   AuthenticationError,
+  IncompleteResponseError,
   InvalidRequestError,
   InvalidResponseError,
   NotFoundError,
@@ -18,6 +19,7 @@ function isNonRetryable(err: Error): boolean {
     err instanceof AuthenticationError ||
     err instanceof InvalidRequestError ||
     err instanceof InvalidResponseError ||
+    err instanceof IncompleteResponseError ||
     err instanceof NotFoundError
   );
 }
@@ -27,7 +29,8 @@ function isNonRetryable(err: Error): boolean {
  * `baseDelay * 2^attempt` ms between attempts, or the provider's Retry-After
  * when a RateLimitError carries one (thrown at once beyond
  * MAX_RETRY_AFTER_SECONDS). Non-retryable errors (AuthenticationError,
- * InvalidRequestError, InvalidResponseError, NotFoundError) are re-thrown
+ * InvalidRequestError, InvalidResponseError, IncompleteResponseError,
+ * NotFoundError) are re-thrown
  * immediately without consuming retry budget.
  */
 export async function withRetry<T>(

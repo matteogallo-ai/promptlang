@@ -81,6 +81,22 @@ class InvalidResponseError(PromptClientError):
     """A 2xx body that is not JSON or lacks a documented field."""
 
 
+class IncompleteResponseError(PromptClientError):
+    """A well-formed 2xx body that is not a complete answer.
+
+    reason is "max_tokens", "refusal", "unexpected_stop" or "empty". The same
+    request gets the same stop, so the prompt or its @max_tokens must change.
+    """
+
+    def __init__(self, message: str, reason: str, provider: str | None = None):
+        super().__init__(message, provider)
+        self.reason = reason
+
+
+# max_tokens sent when the prompt has no @max_tokens; the Messages API requires one.
+DEFAULT_MAX_TOKENS = 1024
+
+
 def _require_api_key(api_key: object, client: str, env_var: str) -> str:
     if not isinstance(api_key, str) or api_key.strip() == "":
         raise ValueError(f"{client}: api_key is empty. Pass a key, e.g. from os.environ['{env_var}'].")
@@ -120,6 +136,44 @@ def _read_json_object(response: Any, provider: str) -> dict:
     if not isinstance(data, dict):
         raise InvalidResponseError(f"{provider} returned a JSON body that is not an object", provider)
     return data
+
+
+def _require_complete_answer(provider: str, stop: str, raw: str, text: str, max_tokens: int | None) -> None:
+    # stop is "complete", "max_tokens", "refusal" or "unexpected_stop". The model's
+    # text never enters the message: it is untrusted and may be long.
+    if stop == "max_tokens":
+        limit = "the provider default" if max_tokens is None else f"max_tokens {max_tokens}"
+        raise IncompleteResponseError(
+            f"{provider} stopped at the output limit ({limit}) before finishing the answer; raise @max_tokens on the prompt",
+            "max_tokens", provider)
+    if stop == "refusal":
+        raise IncompleteResponseError(f"{provider} refused to answer (stop reason \`{raw}\`)", "refusal", provider)
+    if stop == "unexpected_stop":
+        raise IncompleteResponseError(
+            f"{provider} stopped with \`{raw}\` before giving a final answer", "unexpected_stop", provider)
+    if text == "":
+        raise IncompleteResponseError(f"{provider} returned no text", "empty", provider)
+
+
+def _anthropic_stop(raw: str) -> str:
+    # A body with no stop_reason (some proxies drop it) is judged by its text alone.
+    if raw in ("", "end_turn", "stop_sequence"):
+        return "complete"
+    if raw == "max_tokens":
+        return "max_tokens"
+    if raw == "refusal":
+        return "refusal"
+    return "unexpected_stop"
+
+
+def _openai_stop(raw: str) -> str:
+    if raw in ("", "stop"):
+        return "complete"
+    if raw == "length":
+        return "max_tokens"
+    if raw in ("content_filter", "refusal"):
+        return "refusal"
+    return "unexpected_stop"
 
 
 def _invalid_field(provider: str, field: str) -> NoReturn:
@@ -178,7 +232,7 @@ class AnthropicClient(PromptClient):
 
         payload: dict = {
             "model": request["model"],
-            "max_tokens": request.get("max_tokens", 1024),
+            "max_tokens": request.get("max_tokens", DEFAULT_MAX_TOKENS),
             "messages": user_msgs,
         }
         if system_msgs:
@@ -211,6 +265,9 @@ class AnthropicClient(PromptClient):
             for block in blocks
             if isinstance(block, dict) and block.get("type") == "text" and isinstance(block.get("text"), str)
         )
+        raw = data.get("stop_reason") if isinstance(data.get("stop_reason"), str) else ""
+        _require_complete_answer("anthropic", _anthropic_stop(raw), raw, content,
+                                 request.get("max_tokens", DEFAULT_MAX_TOKENS))
 
         return {
             "content": content,
@@ -270,8 +327,13 @@ class OpenAIClient(PromptClient):
         usage = data.get("usage")
         if not isinstance(usage, dict) or not _is_count(usage.get("prompt_tokens")) or not _is_count(usage.get("completion_tokens")):
             _invalid_field("openai", "usage")
+        content = content or ""
+        refusal = choice["message"].get("refusal")
+        finish = choice.get("finish_reason")
+        raw = "refusal" if isinstance(refusal, str) and refusal else (finish if isinstance(finish, str) else "")
+        _require_complete_answer("openai", _openai_stop(raw), raw, content, request.get("max_tokens"))
         return {
-            "content": content or "",
+            "content": content,
             "usage": {
                 "input_tokens": usage["prompt_tokens"],
                 "output_tokens": usage["completion_tokens"],

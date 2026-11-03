@@ -10,6 +10,7 @@ import { compile } from "../compiler/compiler";
 import { MockClient, type PromptClient } from "../runtime/client";
 import {
   AuthenticationError,
+  IncompleteResponseError,
   InvalidRequestError,
   NotFoundError,
   PromptClientError,
@@ -21,8 +22,8 @@ import { schemaErrors } from "./schema";
 
 /**
  * Why a call got no answer. `configuration`: the provider refused what was sent
- * (key, model, parameters), or the call would have passed the approved budget,
- * so retrying changes nothing until the file, the key or the approval changes.
+ * (key, model, parameters), the answer was cut at `@max_tokens` or refused,
+ * or the call would have passed the approved budget, so retrying changes nothing until the file, the key or the approval changes.
  * `provider`: timeout, network, rate limit, server or a malformed body, which a
  * later retry can clear.
  */
@@ -36,6 +37,7 @@ function classify(error: PromptClientError): ProviderFailure {
     error instanceof BudgetExceededError ||
     error instanceof AuthenticationError ||
     error instanceof InvalidRequestError ||
+    error instanceof IncompleteResponseError ||
     error instanceof NotFoundError;
   return {
     kind: configuration ? "configuration" : "provider",

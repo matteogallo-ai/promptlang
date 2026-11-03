@@ -272,6 +272,7 @@ All runtime errors extend `PromptClientError → Error`. Sub-classes:
 | `ConnectionError` | Yes | ECONNREFUSED (Ollama) |
 | `NotFoundError` | Never | 404 (Ollama model missing) |
 | `InvalidResponseError` | Never | 2xx body that is not JSON or lacks the documented fields |
+| `IncompleteResponseError` | Never | Well-formed 2xx that is not a complete answer; `reason` is `max_tokens` (Anthropic `stop_reason`, OpenAI `finish_reason: length`, Ollama `done_reason: length`), `refusal` (Anthropic `refusal`, OpenAI `content_filter` or `message.refusal`), `unexpected_stop` (any other stop value, e.g. `pause_turn`, `tool_calls`) or `empty` (no text) |
 | `AllProvidersFailedError` | — | All RoutingClient providers failed |
 
 **Provider clients** (`providers/`):

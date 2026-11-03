@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { tokenize } from "../lexer/lexer";
 import { parse } from "../parser/parser";
 import type { PromptClient } from "../runtime/client";
-import { TimeoutError } from "../runtime/errors";
+import { IncompleteResponseError, TimeoutError } from "../runtime/errors";
 import { runTests } from "./runner";
 
 const HEADER = `@version "1.0.0"\n@model claude-opus-5-5\n`;
@@ -100,6 +100,23 @@ describe("runTests in live mode", () => {
     const [r] = await runTests(program, "t.prompt", { kind: "live", client });
     expect(seen).toEqual(["Classify: boom"]);
     expect(r).toMatchObject({ passed: true, usage: { input_tokens: 12, output_tokens: 1 } });
+  });
+
+  // A truncated or refused answer does not change on retry: the prompt or @max_tokens must.
+  test("an incomplete response is a configuration failure", async () => {
+    const client: PromptClient = {
+      async complete() {
+        throw new IncompleteResponseError("stopped at the output limit", "max_tokens", "anthropic");
+      },
+    };
+    const program = parse(
+      tokenize(`${HEADER}${CLASSIFY}test "t" {\n  input: classify("boom")\n  expect: bug\n}`)
+    );
+    const [r] = await runTests(program, "t.prompt", { kind: "live", client });
+    expect(r?.providerError).toEqual({
+      kind: "configuration",
+      message: "IncompleteResponseError: stopped at the output limit",
+    });
   });
 
   test("a provider failure is reported as a provider error, not as a failed assertion", async () => {

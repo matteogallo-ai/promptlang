@@ -1,6 +1,12 @@
 import type { PromptRequest, PromptResponse } from "../types";
 import { BaseHttpClient, type HttpRequestSpec } from "./base-http-client";
-import { invalidField, isRecord, requireApiKey } from "./response";
+import {
+  type StopKind,
+  invalidField,
+  isRecord,
+  requireApiKey,
+  requireCompleteAnswer,
+} from "./response";
 
 /** Options for configuring the OpenAIClient. */
 export interface OpenAIClientOptions {
@@ -16,6 +22,14 @@ export interface OpenAIClientOptions {
   retryDelay?: number;
   /** Optional OpenAI organization ID sent in the `OpenAI-Organization` header. */
   organization?: string;
+}
+
+/** `stop` is a finished answer; a body with no `finish_reason` is judged by its text alone. */
+function openaiStop(raw: string): StopKind {
+  if (raw === "" || raw === "stop") return "complete";
+  if (raw === "length") return "max_tokens";
+  if (raw === "content_filter" || raw === "refusal") return "refusal";
+  return "unexpected_stop";
 }
 
 /** HTTP client for the OpenAI Chat Completions API (`/v1/chat/completions`). */
@@ -52,7 +66,7 @@ export class OpenAIClient extends BaseHttpClient {
     return { url: `${this.baseURL}/chat/completions`, headers, body };
   }
 
-  protected parseResponse(data: Record<string, unknown>): PromptResponse {
+  protected parseResponse(data: Record<string, unknown>, request: PromptRequest): PromptResponse {
     const choice = Array.isArray(data.choices) ? data.choices[0] : undefined;
     if (!isRecord(choice) || !isRecord(choice.message))
       invalidField("openai", "choices[0].message");
@@ -70,6 +84,10 @@ export class OpenAIClient extends BaseHttpClient {
     ) {
       invalidField("openai", "usage");
     }
+    const refused = typeof message.refusal === "string" && message.refusal !== "";
+    const finish = (choice as Record<string, unknown>).finish_reason;
+    const raw = refused ? "refusal" : typeof finish === "string" ? finish : "";
+    requireCompleteAnswer("openai", openaiStop(raw), raw, content, request.max_tokens);
     return {
       content,
       usage: {

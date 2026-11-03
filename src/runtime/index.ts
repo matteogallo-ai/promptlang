@@ -13,6 +13,7 @@ export {
   ServerError,
   InvalidRequestError,
   InvalidResponseError,
+  IncompleteResponseError,
   TimeoutError,
   NetworkError,
   ConnectionError,

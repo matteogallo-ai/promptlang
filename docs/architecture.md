@@ -159,13 +159,13 @@ Python backend, mirroring the TypeScript compiler. Activated with `--target pyth
 | TypeReference | referenced class name |
 
 **Generated file structure per compile run:**
-- `<name>.py` — async function(s) with `TypedDict` inputs; each prompt checks its answer with the runtime's `parse_output` against `_PROMPTLANG_<NAME>_OUTPUT`, the schema of its declared type
+- `<name>.py` — async function(s) with `TypedDict` inputs; each prompt checks its answer with the runtime's `parse_output` against `_promptlang_output_<name>`, the schema of its declared type
 - `__init__.py` — `from .module import *` barrel
 - `promptlang_runtime.py` — autonomous runtime with `PromptClient` (ABC), `MockClient`, `AnthropicClient` (httpx), `OpenAIClient` (httpx)
 
 **Template compilation:** `{{var}}` → `{input['var']}` inside f-strings. Literal `{` and `}` that aren't part of a `{{...}}` pattern are doubled (`{{`/`}}`) to be safe in f-string context.
 
-**Naming conventions:** functions and variables use `snake_case`; input types use `PascalCase + Input`; meta constants use `SCREAMING_SNAKE_CASE + _META`; names the compiler adds for its own use start with `_promptlang_` / `_PROMPTLANG_`; enum value lists use `_NAME_VALUES`.
+**Naming conventions:** functions and variables use `snake_case`; input types use `PascalCase + Input`; meta constants use `SCREAMING_SNAKE_CASE + _META`; names the compiler adds for its own use start with `_promptlang_`, a prefix it refuses in user names; enum value lists use `_NAME_VALUES`.
 
 ### `src/analyzer/`
 

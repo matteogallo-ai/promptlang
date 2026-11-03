@@ -166,5 +166,5 @@ function bounded(errors: readonly string[]): string[] {
     .slice(0, MAX_ERRORS)
     .map((e) => (e.length > MAX_ERROR_LENGTH ? `${e.slice(0, 250)}…${e.slice(-249)}` : e));
   const rest = errors.length - shown.length;
-  return rest > 0 ? [...shown, `and ${rest} more`] : shown;
+  return rest > 0 ? [...shown, `output: ${rest} more mismatches`] : shown;
 }

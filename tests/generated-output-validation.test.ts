@@ -51,6 +51,12 @@ prompt count_output(x: string) -> number {
 prompt _json(x: string) -> Invoice {
   user: "<t>{{x}}</t>"
 }
+prompt a(x: string) -> number {
+  user: "<t>{{x}}</t>"
+}
+prompt A(x: string) -> string {
+  user: "<t>{{x}}</t>"
+}
 `;
 
 type Call = (input: { x: string }, client: MockClient) => Promise<unknown>;
@@ -65,7 +71,9 @@ type Module = Record<
   | "parseOutput"
   | "parse_output"
   | "count_output"
-  | "_json",
+  | "_json"
+  | "a"
+  | "A",
   Call
 >;
 
@@ -145,7 +153,7 @@ describe("generated code validates the model's output against the declared type"
     const wrongAtEveryLevel = `${'{"v": "x", "next": '.repeat(30)}{"v": "x"}${"}".repeat(30)}`;
     const many = await failure("chain_of", wrongAtEveryLevel);
     expect(many.errors).toHaveLength(11);
-    expect(many.errors.at(-1)).toBe("and 21 more");
+    expect(many.errors.at(-1)).toBe("output: 21 more mismatches");
     const deep = `${'{"v": 1, "next": '.repeat(200)}{"v": "x"}${"}".repeat(200)}`;
     const [long] = (await failure("chain_of", deep)).errors;
     expect(long).toHaveLength(500);
@@ -221,6 +229,12 @@ const CASES: Array<[keyof Module, string]> = [
   ["parse_output", "7"],
   ["count_output", "7"],
   ["_json", '{"amount": 1, "vendor": "A"}'],
+  // Python's json.loads refuses integers over 4300 digits unless told how to read them.
+  ["invoice", `{"amount": 1${"0".repeat(5_000)}, "vendor": "A"}`],
+  ["count", `1${"0".repeat(5_000)}`],
+  // Two names that differ only by case must not share a generated constant.
+  ["a", "7"],
+  ["A", "7"],
 ];
 
 type Outcome = { value: unknown } | { errors: string[]; message: string };

@@ -247,6 +247,12 @@ def _resolve(schema: dict, defs: dict) -> dict:
     return schema
 
 
+def _read_int(text: str) -> int | float:
+    # json.loads refuses integers over 4300 digits (int_max_str_digits); as a float
+    # such an integer is infinite, which output_errors refuses as TypeScript does.
+    return int(text) if len(text) <= 4000 else float(text)
+
+
 def _no_constant(name: str) -> NoReturn:
     # JSON has no NaN or Infinity, but json.loads accepts them unless refused here.
     raise ValueError(f"{name} is not JSON")
@@ -272,7 +278,7 @@ def parse_output(prompt: str, raw: str, spec: dict) -> Any:
     elif root["kind"] == "struct":
         fenced = _FENCED.fullmatch(raw)
         try:
-            value = json.loads(fenced.group(1) if fenced else raw, parse_constant=_no_constant)
+            value = json.loads(fenced.group(1) if fenced else raw, parse_constant=_no_constant, parse_int=_read_int)
         except ValueError:
             raise InvalidOutputError(prompt, ["output: not valid JSON"], raw) from None
         except RecursionError:
@@ -292,7 +298,7 @@ def _bounded(errors: list[str]) -> list[str]:
     """At most _MAX_ERRORS errors of at most _MAX_ERROR_LENGTH characters, as in TypeScript."""
     shown = [e if len(e) <= _MAX_ERROR_LENGTH else e[:250] + "\u2026" + e[-249:] for e in errors[:_MAX_ERRORS]]
     rest = len(errors) - len(shown)
-    return shown + [f"and {rest} more"] if rest > 0 else shown
+    return shown + [f"output: {rest} more mismatches"] if rest > 0 else shown
 
 
 # ---- Client interface ----

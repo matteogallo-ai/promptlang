@@ -90,8 +90,9 @@ export function generatePythonPromptDeclaration(
   const returnPyType = mapPythonType(returnType);
   const paramNames = new Set(parameters.map((p) => p.name));
   const metaConstName = `${name.toUpperCase()}_META`;
-  // Private, with a prefix the user is unlikely to write, so `import *` skips it.
-  const outputConstName = `_PROMPTLANG_${name.toUpperCase()}_OUTPUT`;
+  // Private, so `import *` skips it, under a prefix the compiler refuses in user
+  // names; the name keeps its case, since `a` and `A` are two prompts.
+  const outputConstName = `_promptlang_output_${name}`;
 
   const parts: string[] = [];
 

@@ -13,11 +13,13 @@ import {
   type CompiledPythonMetadata,
 } from "./python-code-generator";
 import { buildTypeRegistry } from "../code-generator";
+import { CompilerError } from "../errors";
 import pkg from "../../../package.json";
 
 /** Compiles a PromptLang Program to a Python source string. */
 export function compilePython(program: Program, sourceFile: string): string {
   checkTestReferences(program);
+  refuseGeneratedPrefix(program);
   const timestamp = new Date().toISOString();
   const parts: string[] = [];
 
@@ -127,4 +129,22 @@ function hasStructOrParams(program: Program): boolean {
     if (d.kind === "ChainDeclaration") return true;
     return false;
   });
+}
+
+const ROLE = {
+  TypeDeclaration: "type",
+  PromptDeclaration: "prompt",
+  ChainDeclaration: "chain",
+} as const;
+
+/** The generated module names its own helpers `_promptlang_...`; a user name there would replace one. */
+function refuseGeneratedPrefix(program: Program): void {
+  for (const d of program.declarations) {
+    if (d.kind in ROLE && "name" in d && d.name.startsWith("_promptlang_"))
+      throw new CompilerError(
+        `'${d.name}' cannot name a ${ROLE[d.kind as keyof typeof ROLE]}: names starting with _promptlang_ are reserved for generated code`,
+        d.line,
+        d.column
+      );
+  }
 }

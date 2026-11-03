@@ -136,6 +136,15 @@ describe("Python compiler — prompt declarations", () => {
   });
 
   // What the check does is run in tests/generated-output-validation.test.ts.
+  // The generated module names its own helpers with this prefix.
+  test("a name starting with _promptlang_ is a compile error", () => {
+    expect(() =>
+      compile(`@version "1.0.0"\nprompt _promptlang_json() -> string { user: "x" }`)
+    ).toThrow(
+      "'_promptlang_json' cannot name a prompt: names starting with _promptlang_ are reserved for generated code"
+    );
+  });
+
   test("a prompt checks its answer with parse_output against its declared type", () => {
     const out = compile(`
 type Invoice = struct { amount: number }
@@ -143,7 +152,7 @@ prompt extract() -> Invoice { user: "test" }`);
     expect(out).toContain(
       "from .promptlang_runtime import PromptClient, PromptRequest, parse_output as _promptlang_parse_output"
     );
-    const literal = /^_PROMPTLANG_EXTRACT_OUTPUT = _promptlang_json\.loads\((".*")\)$/m.exec(
+    const literal = /^_promptlang_output_extract = _promptlang_json\.loads\((".*")\)$/m.exec(
       out
     )?.[1];
     expect(JSON.parse(JSON.parse(literal!))).toEqual({
@@ -156,7 +165,7 @@ prompt extract() -> Invoice { user: "test" }`);
       },
     });
     expect(out).toContain(
-      '    return _promptlang_parse_output("extract", raw, _PROMPTLANG_EXTRACT_OUTPUT)'
+      '    return _promptlang_parse_output("extract", raw, _promptlang_output_extract)'
     );
   });
 

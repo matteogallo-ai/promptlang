@@ -127,18 +127,24 @@ prompt classify_ticket(ticket: string) -> Category {
   - a `-` (allowed in `@model` only);
   - a reserved word of the target where the generated code binds the name: prompt,
     chain, step and type names in TypeScript (`delete`, `if`; types also not `any`,
-    `string`...), every name in Python, parameters and struct fields included
-    (`class`, `pass`);
+    `string`, `keyof`...), every name in Python, parameters and struct fields
+    included (`class`, `pass`);
+  - in Python, any name starting with `__` (mangled in a class body, special at
+    module level);
   - a type, prompt or chain named after something the generated module imports
-    or calls (`PromptClient`, `Promise`, `Number`, `JSON`; in Python also
-    `TypedDict`, `Literal`, `str`, `ValueError`...); a parameter or field may
-    use these names;
-  - a step, prompt or chain named `client`, a parameter of every generated chain;
-  - a step named after a prompt or chain of the file;
+    (`PromptClient`, `Promise`; in Python also `TypedDict`, `Literal`, `str`,
+    `ValueError`...), and in TypeScript a prompt or chain named after a global its
+    code calls (`Number`, `isNaN`, `Error`, `JSON`; a type of that name is fine). A
+    parameter or field may use these names;
+  - a step, prompt or chain named `client`, a parameter of every generated chain,
+    even when no chain of the file calls that prompt: one added later would;
+  - a step named after a prompt or chain of the file, after a parameter of its
+    chain (a reference would read the parameter), or after an earlier step;
   - two declarations that generate the same name: a prompt `foo` generates `foo`,
     `FooInput` and `foo_meta` (`FOO_META` in Python), an enum `Foo` generates
     `FOO_VALUES` (`_FOO_VALUES` in Python), so a type `FooInput` beside the
-    prompt, or an enum `foo` beside the enum, is refused.
+    prompt, or an enum `foo` beside the enum, is refused. TypeScript keeps types
+    and values apart, so a type and a value of the same name are allowed there.
 
 ### Generated output handling
 

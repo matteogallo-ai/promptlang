@@ -3,6 +3,7 @@ import { tokenize } from "../lexer/lexer";
 import { parse } from "../parser/parser";
 import { compile } from "./compiler";
 import { CompilerError } from "./errors";
+import { exportedNames } from "./target-names";
 import { compilePython } from "./python/python-compiler";
 
 const compilers = { typescript: compile, python: compilePython } as const;
@@ -157,5 +158,58 @@ type foo = enum { c }`
   test("a Python field or parameter may share a builtin's name", () => {
     const body = `type T = struct { list: string }\nprompt p(str: string, t: T) -> string { user: "<a>{{str}}</a>" }`;
     expect(refusal("python", body)).toBeUndefined();
+  });
+
+  // A TypeScript type does not hide a value of the same name, nor a value a type.
+  test("TypeScript keeps type and value names apart", () => {
+    expect(
+      refusal("typescript", `type Error = struct { code: number }\n${prompt("p")}`)
+    ).toBeUndefined();
+    expect(
+      refusal("typescript", `type FOO_VALUES = string\ntype Foo = enum { a }`)
+    ).toBeUndefined();
+    expect(
+      refusal(
+        "typescript",
+        `type Foo = enum { a, b }\nprompt FOO_VALUES(x: string) -> Foo { user: "<a>{{x}}</a>" }`
+      )
+    ).toContain("is generated twice");
+  });
+
+  test("the enum constant is not exported, so two files may each have one", () => {
+    const program = parse(tokenize(`@version "1.0.0"\ntype Foo = enum { a }\n`));
+    expect(exportedNames(program, "typescript")).toEqual(["Foo"]);
+  });
+
+  // Each compiled with exit 0 to TypeScript that does not parse (TS1110, TS1003).
+  test("TypeScript type operators cannot name a type", () => {
+    for (const name of ["keyof", "readonly", "unique", "infer"])
+      expect(refusal("typescript", `type ${name} = string\n${prompt("p")}`)).toBe(
+        `2:1 '${name}' cannot name a type: TypeScript reserves it as a type name`
+      );
+  });
+
+  test("a step named twice, or after a parameter of its chain", () => {
+    const twice = `${prompt("p")}\nchain c(x: string) -> string {\n  step a = p(x: x)\n  step a = p(x: x)\n  return a\n}`;
+    const param = `${prompt("p")}\nchain c(x: string) -> string {\n  step x = p(x: x)\n  return x\n}`;
+    for (const target of ["typescript", "python"] as const) {
+      expect(refusal(target, twice)).toBe(
+        "5:3 'a' cannot name a step: an earlier step of the chain has that name"
+      );
+      expect(refusal(target, param)).toBe(
+        "4:3 'x' cannot name a step: a parameter of the chain has that name"
+      );
+    }
+  });
+
+  // Python mangles `__x` inside a class body (TypedDict keys) and gives `__x__` module names a meaning.
+  test("a Python name starting with '__'", () => {
+    expect(refusal("python", `type T = struct { __secret: string }\n${prompt("p")}`)).toBe(
+      "2:19 '__secret' cannot name a field: Python reserves names starting with '__'"
+    );
+    expect(refusal("python", prompt("__all__"))).toContain(
+      "Python reserves names starting with '__'"
+    );
+    expect(refusal("typescript", prompt("__all__"))).toBeUndefined();
   });
 });

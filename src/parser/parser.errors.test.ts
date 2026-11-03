@@ -36,6 +36,9 @@ const CASES: Case[] = [
   ["@version 1", "@version expects a string value, e.g. @version \"1.0.0\"", 1, 10, "STRING", "NUMBER"],
   ["@version \"1.0\"", "@version \"1.0\" is not a valid SemVer 2.0.0 version: expected MAJOR.MINOR.PATCH with optional -pre-release and +build, e.g. \"1.0.0\" or \"2.1.0-rc.1\"", 1, 10],
   ["@model \"x\"", "@model expects an identifier, e.g. @model claude-opus-5-5", 1, 8, "IDENT", "STRING"],
+  ["@model x.{", "Expected a declaration ('type', 'prompt', 'chain', 'test', or 'eval') but found '.'.", 1, 9, "declaration keyword", "DOT"],
+  ["import \"a.prompt\" as A \"requires\"", "Expected a declaration ('type', 'prompt', 'chain', 'test', or 'eval') but found 'requires'.", 1, 24, "declaration keyword", "STRING"],
+  ["import \"a.prompt\" as A foo", "Expected a declaration ('type', 'prompt', 'chain', 'test', or 'eval') but found 'foo'.", 1, 24, "declaration keyword", "IDENT"],
   ["@temperature \"x\"", "@temperature expects a number, e.g. @temperature 0.3", 1, 14, "NUMBER", "STRING"],
   ["@max_tokens x", "@max_tokens expects a number, e.g. @max_tokens 2048", 1, 13, "NUMBER", "IDENT"],
   ["@breaking_changes 1", "@breaking_changes expects a string", 1, 19, "STRING", "NUMBER"],
@@ -83,6 +86,7 @@ const CASES: Case[] = [
   ["chain c() -> string { step a = -> return a }", "Expected an expression (identifier, call, member access, or literal) but found '->'.", 1, 32],
   ["chain c() -> string { step a = f(x y) return a }", "Expected ')' to close argument list for 'f'. Did you forget a comma?", 1, 36, "RPAREN", "IDENT"],
   ["chain c() -> string { step a = x.1 return a }", "Expected property name after 'x.'", 1, 34, "IDENT", "NUMBER"],
+  ["chain c() -> string { step a = f(\"k\": v) return a }", "Expected ')' to close argument list for 'f'. Did you forget a comma?", 1, 37, "RPAREN", "COLON"],
   ["test 1 { input: f() expect: 1 }", "Expected a test description string after 'test'", 1, 6, "STRING", "NUMBER"],
   ["test \"t\" input: f() expect: 1 }", "Expected '{' to open test body", 1, 10, "LBRACE", "INPUT"],
   ["test \"t\" { expect: 1 }", "Expected 'input' as the first statement in a test body", 1, 12, "INPUT", "EXPECT"],
@@ -94,6 +98,10 @@ const CASES: Case[] = [
   ["test \"t\" { input: f() expect. 1 }", "Expected a field name after 'expect.'", 1, 31, "IDENT", "NUMBER"],
   ["test \"t\" { input: f() expect 1 }", "After 'expect', expected ':', 'contains', 'matches' or 'schema' but found '1'.", 1, 30],
   ["test \"t\" { input: f() expect.a schema }", "After 'expect.a', expected ':', 'contains', 'matches' or 'schema' ('schema' applies to the whole output, not to a field) but found 'schema'.", 1, 32],
+  ["test \"t\" { input: f() \"mock\": \"m\" expect: 1 }", "Test body must contain at least one 'expect' clause.", 1, 23],
+  ["test \"t\" { input: f() foo: \"m\" expect: 1 }", "Test body must contain at least one 'expect' clause.", 1, 23],
+  ["test \"t\" { input: f() expect \"schema\" }", "After 'expect', expected ':', 'contains', 'matches' or 'schema' but found 'schema'.", 1, 30],
+  ["test \"t\" { input: f() expect \"contains\": \"x\" }", "After 'expect', expected ':', 'contains', 'matches' or 'schema' but found 'contains'.", 1, 30],
   ["test \"t\" { input: f() expect contains \"x\" }", "Expected ':' after 'expect contains'", 1, 39, "COLON", "STRING"],
   ["test \"t\" { input: f() expect.a matches \"x\" }", "Expected ':' after 'expect.a matches'", 1, 40, "COLON", "STRING"],
   ["test \"t\" { input: f() expect contains: 1 }", "Expected a string after 'contains:'", 1, 40, "STRING", "NUMBER"],
@@ -126,4 +134,20 @@ describe("parser error messages", () => {
       expect([error.expected, error.found]).toEqual([expected, found]);
     });
   }
+});
+
+const program = (source: string) => parse(tokenize(source));
+
+describe("parser boundary cases", () => {
+  test("an import path may be triple-quoted, and an import without requires has no range key", () => {
+    const [imp] = program(
+      'import """a.prompt""" as A\nprompt p() -> string { system: "s" }'
+    ).imports;
+    expect(imp?.path).toBe("a.prompt");
+    expect(imp && "versionRange" in imp).toBe(false);
+  });
+
+  test("a model name may continue with .identifier as well as .number", () => {
+    expect(program("@model a.b.1").metadata[0]).toMatchObject({ value: "a.b.1" });
+  });
 });

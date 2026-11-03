@@ -1,0 +1,225 @@
+{
+  "date": "2026-11-02T19:50:38Z",
+  "repo": {
+    "name": "github.com/matteogallo-ai/promptlang",
+    "commit": "b3270b712b7c2a7bf2432025ba7c269951cdf090"
+  },
+  "scorecard": { "version": "v5.6.0", "commit": "61e84743356275f6ffca23b1b2f2cb945e19eb96" },
+  "score": 6.6,
+  "checks": [
+    {
+      "name": "Dangerous-Workflow",
+      "score": 10,
+      "reason": "no dangerous workflow patterns detected",
+      "details": null,
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#dangerous-workflow",
+        "short": "Determines if the project's GitHub Action workflows avoid dangerous patterns."
+      }
+    },
+    {
+      "name": "Code-Review",
+      "score": 0,
+      "reason": "Found 0/4 approved changesets -- score normalized to 0",
+      "details": null,
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#code-review",
+        "short": "Determines if the project requires human code review before pull requests (aka merge requests) are merged."
+      }
+    },
+    {
+      "name": "Maintained",
+      "score": 0,
+      "reason": "project was created within the last 90 days. Please review its contents carefully",
+      "details": ["Warn: Repository was created within the last 90 days."],
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#maintained",
+        "short": "Determines if the project is \"actively maintained\"."
+      }
+    },
+    {
+      "name": "Security-Policy",
+      "score": 10,
+      "reason": "security policy file detected",
+      "details": [
+        "Info: security policy file detected: SECURITY.md:1",
+        "Info: Found linked content: SECURITY.md:1",
+        "Info: Found disclosure, vulnerability, and/or timelines in security policy: SECURITY.md:1",
+        "Info: Found text in security policy: SECURITY.md:1"
+      ],
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#security-policy",
+        "short": "Determines if the project has published a security policy."
+      }
+    },
+    {
+      "name": "Binary-Artifacts",
+      "score": 10,
+      "reason": "no binaries found in the repo",
+      "details": null,
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#binary-artifacts",
+        "short": "Determines if the project has generated executable (binary) artifacts in the source repository."
+      }
+    },
+    {
+      "name": "Pinned-Dependencies",
+      "score": 10,
+      "reason": "all dependencies are pinned",
+      "details": [
+        "Info:  19 out of  19 GitHub-owned GitHubAction dependencies pinned",
+        "Info:  12 out of  12 third-party GitHubAction dependencies pinned"
+      ],
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#pinned-dependencies",
+        "short": "Determines if the project has declared and pinned the dependencies of its build process."
+      }
+    },
+    {
+      "name": "Token-Permissions",
+      "score": 10,
+      "reason": "GitHub workflow tokens follow principle of least privilege",
+      "details": [
+        "Info: jobLevel 'contents' permission set to 'read': .github/workflows/codeql.yml:18",
+        "Info: jobLevel 'contents' permission set to 'read': .github/workflows/release.yml:30",
+        "Info: jobLevel 'contents' permission set to 'read': .github/workflows/scorecard.yml:20",
+        "Info: topLevel 'contents' permission set to 'read': .github/workflows/ci.yml:12",
+        "Info: topLevel 'contents' permission set to 'read': .github/workflows/codeql.yml:12",
+        "Info: topLevel 'contents' permission set to 'read': .github/workflows/release.yml:13",
+        "Info: topLevel 'contents' permission set to 'read': .github/workflows/scorecard.yml:14",
+        "Info: no jobLevel write permissions found"
+      ],
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#token-permissions",
+        "short": "Determines if the project's workflows follow the principle of least privilege."
+      }
+    },
+    {
+      "name": "Dependency-Update-Tool",
+      "score": 10,
+      "reason": "update tool detected",
+      "details": ["Info: detected update tool: Dependabot: .github/dependabot.yml:1"],
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#dependency-update-tool",
+        "short": "Determines if the project uses a dependency update tool."
+      }
+    },
+    {
+      "name": "Vulnerabilities",
+      "score": 10,
+      "reason": "0 existing vulnerabilities detected",
+      "details": null,
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#vulnerabilities",
+        "short": "Determines if the project has open, known unfixed vulnerabilities."
+      }
+    },
+    {
+      "name": "CII-Best-Practices",
+      "score": 0,
+      "reason": "no effort to earn an OpenSSF best practices badge detected",
+      "details": null,
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#cii-best-practices",
+        "short": "Determines if the project has an OpenSSF (formerly CII) Best Practices Badge."
+      }
+    },
+    {
+      "name": "SAST",
+      "score": 8,
+      "reason": "SAST tool detected but not run on all commits",
+      "details": [
+        "Info: SAST configuration detected: CodeQL",
+        "Warn: 12 commits out of 30 are checked with a SAST tool"
+      ],
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#sast",
+        "short": "Determines if the project uses static code analysis."
+      }
+    },
+    {
+      "name": "Fuzzing",
+      "score": 0,
+      "reason": "project is not fuzzed",
+      "details": ["Warn: no fuzzer integrations found"],
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#fuzzing",
+        "short": "Determines if the project uses fuzzing."
+      }
+    },
+    {
+      "name": "Signed-Releases",
+      "score": -1,
+      "reason": "no releases found",
+      "details": null,
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#signed-releases",
+        "short": "Determines if the project cryptographically signs release artifacts."
+      }
+    },
+    {
+      "name": "Packaging",
+      "score": -1,
+      "reason": "packaging workflow not detected",
+      "details": ["Warn: no GitHub/GitLab publishing workflow detected."],
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#packaging",
+        "short": "Determines if the project is published as a package that others can easily download, install, easily update, and uninstall."
+      }
+    },
+    {
+      "name": "Contributors",
+      "score": 0,
+      "reason": "project has 0 contributing companies or organizations -- score normalized to 0",
+      "details": null,
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#contributors",
+        "short": "Determines if the project has a set of contributors from multiple organizations (e.g., companies)."
+      }
+    },
+    {
+      "name": "License",
+      "score": 10,
+      "reason": "license file detected",
+      "details": [
+        "Info: project has a license file: LICENSE:0",
+        "Info: FSF or OSI recognized license: MIT License: LICENSE:0"
+      ],
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#license",
+        "short": "Determines if the project has defined a license."
+      }
+    },
+    {
+      "name": "Branch-Protection",
+      "score": 3,
+      "reason": "branch protection is not maximal on development and all release branches",
+      "details": [
+        "Info: 'allow deletion' disabled on branch 'main'",
+        "Info: 'force pushes' disabled on branch 'main'",
+        "Info: 'branch protection settings apply to administrators' is required to merge on branch 'main'",
+        "Warn: 'stale review dismissal' is disabled on branch 'main'",
+        "Warn: branch 'main' does not require approvers",
+        "Warn: codeowners review is not required on branch 'main'",
+        "Warn: 'last push approval' is disabled on branch 'main'",
+        "Warn: 'up-to-date branches' is disabled on branch 'main'",
+        "Info: status check found to merge onto on branch 'main'",
+        "Info: PRs are required in order to make changes on branch 'main'"
+      ],
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#branch-protection",
+        "short": "Determines if the default and release branches are protected with GitHub's branch protection settings."
+      }
+    },
+    {
+      "name": "CI-Tests",
+      "score": 10,
+      "reason": "4 out of 4 merged PRs checked by a CI test -- score normalized to 10",
+      "details": null,
+      "documentation": {
+        "url": "https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md#ci-tests",
+        "short": "Determines if the project runs tests before pull requests are merged."
+      }
+    }
+  ]
+}

@@ -51,16 +51,18 @@ records one run so that the explanations below can be checked against it.
 
 ## `ruleset-main.json`: the ruleset for `main`
 
-The current `main` ruleset with six more required checks: `semver-check`,
-`osv-scanner`, `package (node 20)`, `package (node lts/*)`, `analyze
-(javascript-typescript)`, `analyze (actions)`, and a `code_scanning` rule that
+The `main` ruleset as applied on 2026-11-03: pull request, no force-push, no
+deletion, fifteen required checks and a `code_scanning` rule. Beyond the eight checks
+of the first ruleset it requires `semver-check`, `osv-scanner`, `package (node 20)`,
+`package (node lts/*)`, `analyze (javascript-typescript)`, `analyze (actions)` and
+`fresh-clone`; the `code_scanning` rule
 blocks a merge on a CodeQL security alert of high severity or above, or on any
 CodeQL alert of severity error. `tests/ruleset.test.ts`
 fails if a required check is not a check that pull requests run, so a renamed job
 cannot leave a check that never reports and blocks every merge. It also fails on
 what would let a required check skip a pull request: a `pull_request` filter
-(`paths`, `branches`, `types`…) or a job-level `if:`. The maintainer
-applies it:
+(`paths`, `branches`, `types`…) or a job-level `if:`. A change to this file reaches
+GitHub only when the maintainer applies it:
 
 ```bash
 gh api -X PUT repos/matteogallo-ai/promptlang/rulesets/26384704 \

@@ -70,6 +70,21 @@ type Callable = (input: Record<string, unknown>, client: PromptClient) => Promis
  * generates for it, so tests exercise the real request building and output
  * parsing. `compile()` also rejects tests on unknown prompts (CompilerError).
  */
+
+/**
+ * The installed CLI bundles its own copy of the runtime, while the generated
+ * code it runs imports dist/runtime: the error class differs, so `instanceof`
+ * alone misses it there. Its name and its list of mismatches identify it.
+ */
+function isInvalidOutputError(error: unknown): error is InvalidOutputError {
+  return (
+    error instanceof InvalidOutputError ||
+    (error instanceof Error &&
+      error.name === "InvalidOutputError" &&
+      Array.isArray((error as Partial<InvalidOutputError>).errors))
+  );
+}
+
 export async function runTests(
   program: Program,
   file: string,
@@ -186,7 +201,7 @@ async function runOne(
     }
     // The generated code checks the answer against the declared type before
     // returning it, so no assertion can run on it: each mismatch is a failure.
-    if (error instanceof InvalidOutputError) {
+    if (isInvalidOutputError(error)) {
       return result(error.errors.map((m) => `${call.callee} output does not match its type: ${m}`));
     }
     // Whatever else the prompt raises is the test's verdict, recorded with its

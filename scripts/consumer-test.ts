@@ -159,6 +159,23 @@ if (import.meta.main) {
     await writeFile(join(app, "tsconfig.app.json"), JSON.stringify(APP_TSCONFIG));
     run([join(ROOT, "node_modules/.bin/tsc"), "-p", "tsconfig.app.json"], app);
     console.log("README quick example: tests pass, compiles, and its usage type-checks");
+
+    // The installed CLI and the generated code it runs load the runtime from two
+    // bundles; an answer of the wrong type must still be reported as a mismatch.
+    const wrong = join(app, "wrong-type");
+    run(["mkdir", "-p", wrong], app);
+    await writeFile(
+      join(wrong, "kind.prompt"),
+      `@version "1.0.0"\ntype Kind = enum { bug, other }\nprompt kind(x: string) -> Kind {\n  user: "<t>{{x}}</t>"\n}\ntest "a wrong answer" {\n  input: kind("a")\n  mock: "feature"\n  expect: bug\n}\n`
+    );
+    const failed = Bun.spawnSync([cli, "test", "kind.prompt"], { cwd: wrong, stdout: "pipe" });
+    const report = failed.stdout.toString();
+    if (
+      failed.exitCode === 0 ||
+      !report.includes("kind output does not match its type: output: expected one of bug, other")
+    )
+      throw new Error(`a wrong-type answer was not reported as a type mismatch:\n${report}`);
+    console.log("a wrong-type answer is reported as a type mismatch");
     console.log("consumer test: ok");
   } finally {
     await rm(work, { recursive: true, force: true });

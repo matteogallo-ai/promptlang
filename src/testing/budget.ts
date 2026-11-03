@@ -1,6 +1,6 @@
 import type { PromptClient, PromptRequest, PromptResponse } from "../runtime";
 import { PromptClientError } from "../runtime/errors";
-import { CHARS_PER_TOKEN, pricePerMTok, UnpricedModelError } from "./cost";
+import { CHARS_PER_TOKEN, callUsd, pricePerMTok } from "./cost";
 
 /** AnthropicClient's max_tokens when a request sets none. */
 const DEFAULT_MAX_TOKENS = 1024;
@@ -18,16 +18,16 @@ export class BudgetExceededError extends PromptClientError {
 
 /**
  * What the estimates charge `request` at most: its input at characters ÷ 3 and
- * its whole max_tokens of output. Not a hard bound: text that tokenizes at under
- * 3 characters per token (CJK, base64, dense code) costs more input. Not rounded per call: the estimates round
- * the total once, and a cap set to an estimate must hold every call it counted.
+ * its whole max_tokens of output, on the rate card that input selects. Not a
+ * hard bound: text that tokenizes at under 3 characters per token (CJK, base64,
+ * dense code) costs more input, and near 100K tokens it can also move the call
+ * to a long-context card that bills several times more. Not rounded per call:
+ * the estimates round each card's input once, and a cap set to an estimate must
+ * hold every call it counted.
  */
 export function worstCaseUsd(request: PromptRequest): number {
-  const price = pricePerMTok(request.model);
-  if (!price) throw new UnpricedModelError(`no price is recorded for model ${request.model}`);
   const chars = request.messages.reduce((n, m) => n + m.content.length, 0);
-  const output = request.max_tokens ?? DEFAULT_MAX_TOKENS;
-  return ((chars / CHARS_PER_TOKEN) * price[0] + output * price[1]) / 1e6;
+  return callUsd(request.model, chars / CHARS_PER_TOKEN, request.max_tokens ?? DEFAULT_MAX_TOKENS);
 }
 
 /**
@@ -56,8 +56,7 @@ export class BudgetedClient implements PromptClient {
   }
 
   async complete(request: PromptRequest): Promise<PromptResponse> {
-    const price = pricePerMTok(request.model);
-    if (!price)
+    if (!pricePerMTok(request.model))
       throw new BudgetExceededError(
         `budget: no price is recorded for model ${request.model}, so its cost cannot be capped; nothing was sent`
       );
@@ -73,8 +72,7 @@ export class BudgetedClient implements PromptClient {
     try {
       const response = await this.inner.complete(request);
       if (response.usage)
-        charge =
-          (response.usage.input_tokens * price[0] + response.usage.output_tokens * price[1]) / 1e6;
+        charge = callUsd(request.model, response.usage.input_tokens, response.usage.output_tokens);
       return response;
     } finally {
       this.reserved -= worst;

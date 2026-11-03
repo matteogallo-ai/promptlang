@@ -42,6 +42,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   declared type removed or renamed is now major, one added minor, and a changed
   type is judged like an output: narrowing an enum is major, adding an optional
   struct field minor (ADR 0002, amended).
+- **Long-context prices in the estimate and the cap.** Claude Haiku 5.5 bills
+  $0.50 / $2.50 per million tokens for a prompt over 100K tokens, five times its
+  short-prompt rate, but every estimate and the spending cap priced it at
+  $0.10 / $0.50, so a long call could pass the approved cap fivefold. Each call is
+  now priced on the rate card its own prompt length selects: the estimate before
+  approval, the worst case the cap checks, and the charge from reported usage.
+
 - **A struct parameter reaches the model as JSON.** `{{ctx}}` with `ctx` a struct
   was sent as `[object Object]` from TypeScript and as a dict repr from Python;
   both now send `{"plan":"pro","seats":3}` (numbers as each language prints them).

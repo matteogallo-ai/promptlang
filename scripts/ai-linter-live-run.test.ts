@@ -40,4 +40,25 @@ describe("ai-linter-live-run", () => {
       version: "2.0.0",
     });
   });
+
+  // Summing usage first would price 151 000 input tokens on the long card for every call.
+  test("cost is priced call by call, each on the card its prompt length selects", async () => {
+    let n = 0;
+    const client: PromptClient = {
+      async complete() {
+        n++;
+        const input_tokens = n === 1 ? 150_000 : 1000;
+        return { content: '{"issues": []}', usage: { input_tokens, output_tokens: 100 } };
+      },
+    };
+    const r = await run(
+      client,
+      await loadContexts(),
+      new Date("2026-11-02T00:00:00Z"),
+      "2026-10-21"
+    );
+    const long = 150_000 * 0.5 + 100 * 2.5;
+    const short = (r.calls.length - 1) * (1000 * 0.1 + 100 * 0.5);
+    expect(r.cost_usd).toBeCloseTo((long + short) / 1e6, 10);
+  });
 });

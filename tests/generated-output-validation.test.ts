@@ -31,12 +31,18 @@ prompt flag(x: string) -> boolean {
 prompt chain_of(x: string) -> Node {
   user: "<t>{{x}}</t>"
 }
+prompt due(x: string) -> date {
+  user: "<t>{{x}}</t>"
+}
 `;
 
 type Call = (input: { x: string }, client: MockClient) => Promise<unknown>;
-type Module = Record<"invoice" | "kind" | "count" | "flag" | "chain_of", Call>;
+type Module = Record<"invoice" | "kind" | "count" | "flag" | "chain_of" | "due", Call>;
 
-const mod = importCompiled<Module>(compile(parse(tokenize(SOURCE)), "out.prompt"));
+const program = parse(tokenize(SOURCE));
+const mod = importCompiled<Module>(compile(program, "out.prompt"));
+
+const DEEP = `${'{"v": 1, "next": '.repeat(100_000)}{"v": 1}${"}".repeat(100_000)}`;
 
 async function run(name: keyof Module, output: string): Promise<unknown> {
   return (await mod)[name]({ x: "in" }, new MockClient(() => ({ content: output })));
@@ -91,6 +97,23 @@ describe("generated code validates the model's output against the declared type"
     expect(await run("chain_of", '{"v": 1, "next": {"v": 2}}')).toEqual({ v: 1, next: { v: 2 } });
     expect((await failure("chain_of", '{"v": 1, "next": {"v": "two"}}')).errors).toEqual([
       "output.next.v: expected number, got a string",
+    ]);
+  });
+
+  // A hostile answer can nest a recursive type deeper than the call stack.
+  test("an answer nested deeper than the checker can follow is an InvalidOutputError", async () => {
+    const raw = DEEP;
+    expect((await failure("chain_of", raw)).errors).toEqual(["output: nested too deeply to check"]);
+  });
+
+  test("a number is read from decimal notation only, a date must be a real day", async () => {
+    expect(await run("count", "-1.5e3")).toBe(-1500);
+    expect((await failure("count", "0x10")).errors).toEqual([
+      "output: expected number, got a string",
+    ]);
+    expect(await run("due", "2024-02-29")).toBe("2024-02-29");
+    expect((await failure("due", "2024-02-30")).errors).toEqual([
+      "output: expected a YYYY-MM-DD date, got a string",
     ]);
   });
 

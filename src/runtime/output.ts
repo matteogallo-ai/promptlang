@@ -21,6 +21,15 @@ export interface OutputSpec {
 }
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+/** Decimal notation only, as in Python: `Number` also reads `0x10`, `0b1` and `""`. */
+const DECIMAL = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+
+/** A real calendar day: `Date.parse` alone reads 2024-02-30 as March 1st. */
+function isDate(value: unknown): boolean {
+  if (typeof value !== "string" || !ISO_DATE.test(value)) return false;
+  const time = Date.parse(value);
+  return !Number.isNaN(time) && new Date(time).toISOString().slice(0, 10) === value;
+}
 
 /**
  * What a value is, never the value itself: model output is untrusted, may hold
@@ -47,9 +56,7 @@ export function outputErrors(
 ): string[] {
   switch (schema.kind) {
     case "date":
-      return typeof value === "string" && ISO_DATE.test(value) && !Number.isNaN(Date.parse(value))
-        ? []
-        : [`${path}: expected a YYYY-MM-DD date, got ${describe(value)}`];
+      return isDate(value) ? [] : [`${path}: expected a YYYY-MM-DD date, got ${describe(value)}`];
     case "number":
       if (typeof value === "number" && !Number.isFinite(value))
         return [`${path}: expected a finite number, got ${value}`];
@@ -117,7 +124,7 @@ export function parseOutput(prompt: string, raw: string, spec: OutputSpec): unkn
   if (root.kind === "number") {
     // An answer that is not a number stays text, so the error says what it got.
     const n = Number(raw);
-    value = raw !== "" && Number.isFinite(n) ? n : raw;
+    value = DECIMAL.test(raw) && Number.isFinite(n) ? n : raw;
   } else if (root.kind === "boolean") {
     const lower = raw.toLowerCase();
     value = lower === "true" ? true : lower === "false" ? false : raw;
@@ -128,7 +135,15 @@ export function parseOutput(prompt: string, raw: string, spec: OutputSpec): unkn
       throw new InvalidOutputError(prompt, ["output: not valid JSON"], raw);
     }
   }
-  const errors = outputErrors(value, root, spec.defs);
+  let errors: string[];
+  try {
+    errors = outputErrors(value, root, spec.defs);
+  } catch (error) {
+    // A recursive type lets a hostile answer nest deeper than the call stack;
+    // that answer is rejected like any other, not surfaced as a crash.
+    if (!(error instanceof RangeError)) throw error;
+    errors = ["output: nested too deeply to check"];
+  }
   if (errors.length > 0) throw new InvalidOutputError(prompt, errors, raw);
   return value;
 }

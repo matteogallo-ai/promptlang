@@ -1,5 +1,10 @@
-import { describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { compile } from "../src/compiler/compiler";
+import { compilePython } from "../src/compiler/python/python-compiler";
+import { getPythonRuntimeSource } from "../src/compiler/python/python-runtime-template";
 import { tokenize } from "../src/lexer/lexer";
 import { parse } from "../src/parser/parser";
 import { InvalidOutputError, MockClient } from "../src/runtime";
@@ -131,4 +136,80 @@ describe("generated code validates the model's output against the declared type"
       "output: expected boolean, got a string",
     ]);
   });
+});
+
+/** Answers on which both languages must agree, value or errors and message alike. */
+const CASES: Array<[keyof Module, string]> = [
+  ["invoice", '{"amount": 12.5, "vendor": "Acme"}'],
+  ["invoice", '{"amount": "SECRET-1234", "vendor": "A", "hacked": true}'],
+  ["invoice", '{"vendor": null}'],
+  ["invoice", '```json\n{"amount": 1, "vendor": "A"}\n```'],
+  ["invoice", "Sure! Here it is: {"],
+  ["invoice", '{"amount": NaN, "vendor": "A"}'],
+  ["invoice", "[1, 2]"],
+  ["chain_of", '{"v": 1, "next": {"v": "two"}}'],
+  ["chain_of", DEEP],
+  ["kind", "bug"],
+  ["kind", "feature"],
+  ["count", "42"],
+  ["count", "-1.5e3"],
+  ["count", "forty-two"],
+  ["count", "0x10"],
+  ["count", "1e999"],
+  ["flag", "TRUE"],
+  ["flag", "maybe"],
+  ["due", "2024-02-29"],
+  ["due", "2024-02-30"],
+  ["due", "tomorrow"],
+];
+
+type Outcome = { value: unknown } | { errors: string[]; message: string };
+
+const RUN_PY = `
+import asyncio, json, sys
+from pkg import out
+from pkg.promptlang_runtime import InvalidOutputError, MockClient
+
+results = []
+for name, answer in json.load(open("cases.json")):
+    try:
+        value = asyncio.run(getattr(out, name)({"x": "in"}, MockClient([{"content": answer}])))
+        results.append({"value": value})
+    # A bad answer raised a plain ValueError before InvalidOutputError existed.
+    except ValueError as e:
+        if isinstance(e, InvalidOutputError):
+            assert e.prompt == name and e.output == answer.strip()
+        results.append({"errors": getattr(e, "errors", None), "message": str(e)})
+json.dump(results, sys.stdout)
+`;
+
+describe("generated Python checks the answer exactly as generated TypeScript does", () => {
+  let dir: string;
+  let python: Outcome[];
+
+  beforeAll(async () => {
+    dir = await mkdtemp(join(tmpdir(), "promptlang-output-"));
+    await mkdir(join(dir, "pkg"));
+    await writeFile(join(dir, "pkg", "__init__.py"), "");
+    await writeFile(join(dir, "pkg", "promptlang_runtime.py"), getPythonRuntimeSource());
+    await writeFile(join(dir, "pkg", "out.py"), compilePython(program, "out.prompt"));
+    await writeFile(join(dir, "cases.json"), JSON.stringify(CASES));
+    await writeFile(join(dir, "run.py"), RUN_PY);
+    const r = Bun.spawnSync(["python3", "run.py"], { cwd: dir });
+    if (r.exitCode !== 0) throw new Error(`python3 failed:\n${r.stderr.toString()}`);
+    python = JSON.parse(r.stdout.toString());
+  });
+  afterAll(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  for (const [i, [name, answer]] of CASES.entries()) {
+    test(`${name}: ${answer.length > 40 ? `${answer.slice(0, 40)}...` : answer}`, async () => {
+      const ts: Outcome = await run(name, answer).then(
+        (value) => ({ value }),
+        (e: InvalidOutputError) => ({ errors: [...e.errors], message: e.message })
+      );
+      expect(python[i]).toEqual(ts);
+    });
+  }
 });

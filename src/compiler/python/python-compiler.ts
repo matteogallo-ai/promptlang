@@ -6,13 +6,13 @@ import type {
   ChainDeclaration,
 } from "../../ast/nodes";
 import {
-  buildPythonTypeRegistry,
   buildCallableRegistryForPython,
   generatePythonTypeDeclaration,
   generatePythonPromptDeclaration,
   generatePythonChain,
   type CompiledPythonMetadata,
 } from "./python-code-generator";
+import { buildTypeRegistry } from "../code-generator";
 import pkg from "../../../package.json";
 
 /** Compiles a PromptLang Program to a Python source string. */
@@ -43,10 +43,11 @@ export function compilePython(program: Program, sourceFile: string): string {
   if (typingImports.length > 0) {
     parts.push(`from typing import ${typingImports.join(", ")}`);
   }
-  parts.push(`from .promptlang_runtime import PromptClient, PromptRequest`);
+  parts.push("import json as _json");
+  parts.push(`from .promptlang_runtime import PromptClient, PromptRequest, parse_output`);
   parts.push("");
 
-  const registry = buildPythonTypeRegistry(program);
+  const registry = buildTypeRegistry(program);
   const callableRegistry = buildCallableRegistryForPython(program);
   const meta = extractPythonMetadata(program);
 

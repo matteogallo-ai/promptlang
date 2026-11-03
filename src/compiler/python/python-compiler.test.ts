@@ -135,30 +135,25 @@ describe("Python compiler — prompt declarations", () => {
     expect(out).toContain(") -> str:");
   });
 
-  test("enum return type generates validation against _VALUES", () => {
-    const out = compile(`
-type Cat = enum { bug, feature }
-prompt classify() -> Cat { user: "test" }`);
-    expect(out).toContain("_CAT_VALUES");
-    expect(out).toContain("if raw not in");
-  });
-
-  test("struct return type generates JSON parse validation", () => {
+  // What the check does is run in tests/generated-output-validation.test.ts.
+  test("a prompt checks its answer with parse_output against its declared type", () => {
     const out = compile(`
 type Invoice = struct { amount: number }
 prompt extract() -> Invoice { user: "test" }`);
-    expect(out).toContain("_json.loads(raw)");
-    expect(out).toContain("JSONDecodeError");
-  });
-
-  test("number return type generates float() conversion", () => {
-    const out = compile(`@version "1.0.0"\nprompt count() -> number { user: "test" }`);
-    expect(out).toContain("float(raw)");
-  });
-
-  test("boolean return type generates true/false check", () => {
-    const out = compile(`@version "1.0.0"\nprompt flag() -> boolean { user: "test" }`);
-    expect(out).toContain('lower not in ("true", "false")');
+    expect(out).toContain(
+      "from .promptlang_runtime import PromptClient, PromptRequest, parse_output"
+    );
+    const literal = /^EXTRACT_OUTPUT = _json\.loads\((".*")\)$/m.exec(out)?.[1];
+    expect(JSON.parse(JSON.parse(literal!))).toEqual({
+      root: { kind: "ref", name: "Invoice" },
+      defs: {
+        Invoice: {
+          kind: "struct",
+          fields: { amount: { optional: false, type: { kind: "number" } } },
+        },
+      },
+    });
+    expect(out).toContain('    return parse_output("extract", raw, EXTRACT_OUTPUT)');
   });
 
   test("template {{var}} becomes f-string with input['var']", () => {

@@ -5,6 +5,7 @@ import { join } from "node:path";
 import {
   errorRate,
   latestRecord,
+  renderPerformance,
   renderSlo,
   SLO,
   staleDocs,
@@ -63,5 +64,26 @@ describe("measured blocks of docs/SLO.md and docs/SYSTEM_CARD.md", () => {
     expect(withBlock("a\n<!-- measured:start -->\nold\n<!-- measured:end -->\nb", "new")).toBe(
       "a\n<!-- measured:start -->\nnew\n<!-- measured:end -->\nb"
     );
+  });
+});
+
+describe("eval-report edge cases", () => {
+  test("an interrupted run is labelled as partial in both blocks", () => {
+    const r = record({ complete: false } as Partial<EvalRecord>);
+    expect(renderSlo({ name: "linter-eval-x.json", record: r })).toContain("Interrupted run");
+    expect(
+      renderPerformance({ name: "linter-eval-x.json", record: { ...r, metrics: [] } })
+    ).toContain("Interrupted run");
+  });
+
+  test("a record with no scored repeat renders a sentence, not a crash", () => {
+    const r = record({ metrics: [] } as Partial<EvalRecord>);
+    expect(renderPerformance({ name: "linter-eval-x.json", record: r })).toContain(
+      "no repeat was scored"
+    );
+  });
+
+  test("a missing runs/live directory means no record", async () => {
+    expect(await latestRecord(join(tmpdir(), "promptlang-no-such-dir"))).toBeNull();
   });
 });

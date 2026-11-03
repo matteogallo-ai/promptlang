@@ -23,10 +23,18 @@ export const SLO = { p95LatencyMs: 20_000, errorRate: 0.02, meanCostUsd: 0.001 }
 export async function latestRecord(
   dir: string = LIVE
 ): Promise<{ name: string; record: EvalRecord } | null> {
-  const names = (await readdir(dir)).filter((f) => /^linter-eval-.*\.json$/.test(f)).sort();
+  const names = (await readdir(dir).catch(() => [] as string[]))
+    .filter((f) => /^linter-eval-.*\.json$/.test(f))
+    .sort();
   const name = names.at(-1);
   if (!name) return null;
   return { name, record: (await Bun.file(resolve(dir, name)).json()) as EvalRecord };
+}
+
+/** Names the record; an interrupted run is shown as such, never as a full measurement. */
+function source(name: string, record: EvalRecord): string {
+  const partial = record.complete === false ? " **Interrupted run: partial results.**" : "";
+  return `From \`runs/live/${name}\`${partial}`;
 }
 
 const pct = (x: number | null) => (x === null ? "n/a" : `${(x * 100).toFixed(1)}%`);
@@ -48,7 +56,7 @@ export function renderSlo(latest: { name: string; record: EvalRecord } | null): 
   const met = (ok: boolean | null) => (ok === null ? "n/a" : ok ? "met" : "**not met**");
   const p95 = record.latency_ms.p95;
   return [
-    `From \`runs/live/${name}\` (${record.model}, ${record.date.slice(0, 10)}, ${record.results.length} calls).`,
+    `${source(name, record)} (${record.model}, ${record.date.slice(0, 10)}, ${record.results.length} calls).`,
     "",
     "| Objective | Target | Measured | |",
     "| --------- | ------ | -------- | - |",
@@ -62,8 +70,10 @@ export function renderPerformance(latest: { name: string; record: EvalRecord } |
   if (!latest)
     return "Not measured: no linter eval record is committed under `runs/live/`. The corpus and the scoring are tested; their numbers on a fake client are not a quality measure.";
   const { name, record } = latest;
+  const first = record.metrics[0];
+  if (!first) return `${source(name, record)}: no repeat was scored.`;
   const lines = [
-    `From \`runs/live/${name}\`: ${record.model}, corpus ${record.corpus.version} (${record.corpus.cases} cases), ${record.repeats} repeats. Scores on the test split; the dev split is in the record.`,
+    `${source(name, record)}: ${record.model}, corpus ${record.corpus.version} (${record.corpus.cases} cases), ${record.repeats} repeat${record.repeats === 1 ? "" : "s"}. Scores on the test split; the dev split is in the record.`,
     "",
     "| Repeat | Precision | Recall | Clean cases with a false alarm | No verdict |",
     "| ------ | --------- | ------ | ------------------------------ | ---------- |",
@@ -77,7 +87,7 @@ export function renderPerformance(latest: { name: string; record: EvalRecord } |
     "| Category (repeat 1) | Precision | Recall |",
     "| ------------------- | --------- | ------ |"
   );
-  for (const [cat, s] of Object.entries(record.metrics[0]!.test.per_category))
+  for (const [cat, s] of Object.entries(first.test.per_category))
     lines.push(`| ${cat} | ${cell(s.precision)} | ${cell(s.recall)} |`);
   return lines.join("\n");
 }

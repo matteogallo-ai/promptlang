@@ -143,15 +143,12 @@ type foo = enum { c }`
     }
   });
 
-  // A module-level function of that name hides the global another prompt's code calls.
-  test("a global the generated function bodies call", () => {
+  // Generated bodies reach output parsing through the runtime import and JSON
+  // through globalThis, so a prompt of a global's name shadows nothing they call.
+  test("a prompt may share a global's name", () => {
     for (const name of ["Number", "isNaN", "Error", "JSON"])
-      expect(refusal("typescript", prompt(name))).toContain(
-        `'${name}' cannot name a prompt: the generated TypeScript uses that name`
-      );
-    expect(refusal("python", prompt("ValueError"))).toContain(
-      "'ValueError' cannot name a prompt: the generated Python uses that name"
-    );
+      expect(refusal("typescript", prompt(name))).toBeUndefined();
+    expect(refusal("python", prompt("ValueError"))).toBeUndefined();
   });
 
   // A TypedDict attribute does not bind a module name, so it shadows nothing.

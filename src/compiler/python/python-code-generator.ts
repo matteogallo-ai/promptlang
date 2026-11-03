@@ -2,7 +2,6 @@ import type {
   TypeDeclaration,
   PromptDeclaration,
   ChainDeclaration,
-  TypeExpression,
   Program,
   Expression,
   CallArgument,
@@ -12,7 +11,8 @@ import { mapPythonType, toPythonPascalCase, toPythonConstName } from "./python-t
 import { compilePythonStringLiteral } from "./python-template-compiler";
 import { CompilerError } from "../errors";
 import { sourceLabel } from "../source-label";
-import { optionalParamNames } from "../code-generator";
+import { optionalParamNames, structParamNames, type TypeRegistry } from "../code-generator";
+import { outputSpec } from "../output-schema";
 import type { CallableRegistry } from "../chain-compiler";
 
 export function buildCallableRegistryForPython(program: Program): CallableRegistry {
@@ -30,18 +30,6 @@ export interface CompiledPythonMetadata {
   model?: string;
   temperature?: number;
   maxTokens?: number;
-}
-
-export type PythonTypeRegistry = Map<string, TypeExpression>;
-
-export function buildPythonTypeRegistry(program: Program): PythonTypeRegistry {
-  const registry: PythonTypeRegistry = new Map();
-  for (const decl of program.declarations) {
-    if (decl.kind === "TypeDeclaration") {
-      registry.set(decl.name, decl.definition);
-    }
-  }
-  return registry;
 }
 
 // ---------------------------------------------------------------------------
@@ -95,7 +83,7 @@ export function generatePythonTypeDeclaration(decl: TypeDeclaration): string {
 export function generatePythonPromptDeclaration(
   decl: PromptDeclaration,
   meta: CompiledPythonMetadata,
-  registry: PythonTypeRegistry,
+  registry: TypeRegistry,
   sourceFile: string
 ): string {
   const { name, parameters, returnType, sections } = decl;
@@ -104,8 +92,16 @@ export function generatePythonPromptDeclaration(
   const returnPyType = mapPythonType(returnType);
   const paramNames = new Set(parameters.map((p) => p.name));
   const metaConstName = `${name.toUpperCase()}_META`;
+  // Private, so `import *` skips it, under a prefix the compiler refuses in user
+  // names; the name keeps its case, since `a` and `A` are two prompts.
+  const outputConstName = `_promptlang_output_${name}`;
 
   const parts: string[] = [];
+
+  // The declared output type, as parse_output checks it.
+  const spec = JSON.stringify(outputSpec(returnType, registry));
+  parts.push(`${outputConstName} = _promptlang_json.loads(${JSON.stringify(spec)})`);
+  parts.push("");
 
   // Meta constant
   parts.push(`${metaConstName} = {`);
@@ -156,7 +152,8 @@ export function generatePythonPromptDeclaration(
       section.content.value,
       section.content.isTemplate,
       paramNames,
-      optionalParamNames(parameters)
+      optionalParamNames(parameters),
+      structParamNames(parameters, registry)
     );
     parts.push(`            {`);
     parts.push(`                "role": "${section.role}",`);
@@ -170,9 +167,7 @@ export function generatePythonPromptDeclaration(
   parts.push(`    raw = response["content"].strip()`);
   parts.push("");
 
-  // Validation
-  const resolved = resolveType(returnType, registry);
-  parts.push(...generatePythonValidation(returnPyType, resolved, name));
+  parts.push(`    return _promptlang_parse_output("${name}", raw, ${outputConstName})`);
 
   return parts.join("\n");
 }
@@ -246,69 +241,6 @@ export function generatePythonChain(
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function resolveType(type: TypeExpression, registry: PythonTypeRegistry): TypeExpression {
-  if (type.kind === "TypeReference") {
-    return registry.get(type.name) ?? type;
-  }
-  return type;
-}
-
-function generatePythonValidation(
-  returnPyType: string,
-  resolved: TypeExpression,
-  promptName: string
-): string[] {
-  const lines: string[] = [];
-
-  switch (resolved.kind) {
-    case "EnumType": {
-      const constName = toPythonConstName(returnPyType);
-      lines.push(`    if raw not in ${constName}:`);
-      lines.push(`        raise ValueError(`);
-      lines.push(`            f"Invalid output for prompt '${promptName}': "`);
-      lines.push(`            f"expected one of {${constName}}, got {raw!r}"`);
-      lines.push(`        )`);
-      lines.push(`    return raw  # type: ignore[return-value]`);
-      break;
-    }
-    case "StructType": {
-      lines.push(`    import json as _json`);
-      lines.push(`    try:`);
-      lines.push(`        parsed = _json.loads(raw)`);
-      lines.push(`    except _json.JSONDecodeError as exc:`);
-      lines.push(`        raise ValueError(`);
-      lines.push(`            f"Invalid JSON output for prompt '${promptName}': {raw}"`);
-      lines.push(`        ) from exc`);
-      lines.push(`    return parsed  # type: ignore[return-value]`);
-      break;
-    }
-    case "PrimitiveType": {
-      if (resolved.name === "boolean") {
-        lines.push(`    lower = raw.lower()`);
-        lines.push(`    if lower not in ("true", "false"):`);
-        lines.push(`        raise ValueError(`);
-        lines.push(`            f"Invalid boolean output for prompt '${promptName}': {raw!r}"`);
-        lines.push(`        )`);
-        lines.push(`    return (lower == "true")  # type: ignore[return-value]`);
-      } else if (resolved.name === "number") {
-        lines.push(`    try:`);
-        lines.push(`        return float(raw)  # type: ignore[return-value]`);
-        lines.push(`    except ValueError:`);
-        lines.push(`        raise ValueError(`);
-        lines.push(`            f"Invalid number output for prompt '${promptName}': {raw!r}"`);
-        lines.push(`        )`);
-      } else {
-        lines.push(`    return raw  # type: ignore[return-value]`);
-      }
-      break;
-    }
-    default:
-      lines.push(`    return raw  # type: ignore[return-value]`);
-  }
-
-  return lines;
-}
 
 function compilePythonExpr(
   expr: Expression,

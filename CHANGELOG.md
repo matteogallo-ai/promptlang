@@ -23,8 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   binds the name (`prompt delete`, a step `if`, a Python parameter `class`),
   any name with `-`, a Python name starting with `__`, a type, prompt or chain
   named after what the generated module imports (`PromptClient`, `Promise`,
-  Python's `TypedDict`, `str`, `ValueError`...), a TypeScript prompt named after
-  a global its code calls (`Number`, `JSON`...), a step, prompt or chain named
+  Python's `TypedDict`, `str`...), a step, prompt or chain named
   `client`, a step named after a prompt of the file, a parameter of its chain or
   an earlier step, and two declarations generating the same name (a type
   `FooInput` beside a prompt `foo`, enums `Foo` and `foo`). Each compiled to a
@@ -32,6 +31,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with exit 0.
 - **Generated headers no longer carry a `Generated at` timestamp**, so the same
   source and PromptLang version give the same bytes.
+
+- **Generated code checks every answer against its declared type** (breaking for
+  code that relied on the old behaviour). Answers that used to pass now raise
+  `InvalidOutputError`: a struct with a field the type does not declare, a field
+  of the wrong type at any depth, a `number` not in decimal notation (`0x10`), a
+  `date` that is not a real day (`2024-02-30`). The error has `prompt`, `errors`
+  (at most 10, each at most 500 characters) and `output`; its message names the
+  mismatches and never quotes the answer. In Python it subclasses `ValueError`,
+  which the generated code raised before.
+- **Generated TypeScript imports `parseOutput` from `@promptlang/core/runtime` as
+  a value**, so it runs only with a runtime release that exports it. Before, it
+  imported types only.
+- **`expect schema` uses the same check**, so its messages give the kind of the
+  wrong value (`got a string`) instead of quoting it, and count undeclared fields
+  instead of naming them. `promptlang test` reports a mock outside the type as a
+  failure before the test's assertions run.
+
+- **`RoutingClient` falls back only when a provider could not serve the
+  request** (outage, rate limit, timeout, network, 404, malformed body). A 400
+  and any error that is not a `PromptClientError` used to send the same request,
+  and the user's data, to the next provider; they are now thrown at once, like
+  `AuthenticationError`.
+- **A 404 from `AnthropicClient` or `OpenAIClient` raises `NotFoundError`**, as
+  `OllamaClient` already did, instead of `InvalidRequestError`, so a model or
+  endpoint one provider lacks falls back while a malformed request does not.
+  Code that catches `InvalidRequestError` for a 404 catches `NotFoundError`.
 
 ### Fixed
 - **The source path in generated headers and Python docstrings is escaped.** A
@@ -41,6 +66,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The `--help` example and the benchmark compile `docs/examples/*.prompt`:
   the folder also holds the demo's two versions of one prompt, which are
   alternatives and do not compile together.
+- **Long-context prices in the estimate and the cap.** Claude Haiku 5.5 bills
+  $0.50 / $2.50 per million tokens for a prompt over 100K tokens, five times its
+  short-prompt rate, but every estimate and the spending cap priced it at
+  $0.10 / $0.50, so a long call could pass the approved cap fivefold. Each call is
+  now priced on the rate card its own prompt length selects: the estimate before
+  approval, the worst case the cap checks, and the charge from reported usage.
+- **A struct parameter reaches the model as JSON.** `{{ctx}}` with `ctx` a struct
+  was sent as `[object Object]` from TypeScript and as a dict repr from Python;
+  both now send `{"plan":"pro","seats":3}` (numbers as each language prints them).
+- **Struct outputs are no longer cast unchecked.** Generated TypeScript
+  `JSON.parse`d and cast the answer, and generated Python returned `json.loads`'
+  result, so `{"amount": "not a number", "hacked": true}` came back typed as
+  `ExtractedInvoice`. Both now call `parseOutput` / `parse_output` with the same
+  rules and messages; one surrounding code fence is accepted.
+- **Answers that cannot be checked are refused, not crashes.** A recursive type
+  nested past the call stack raised `RangeError` (TypeScript) or
+  `RecursionError` (Python); it is now an `InvalidOutputError`.
+- **`OpenAIClient` sends `max_completion_tokens`, not `max_tokens`** (TypeScript
+  and Python). GPT-5 and the o-series, which the routing example falls back to,
+  answer `max_tokens` with a 400. The `@temperature` warning now says those
+  models refuse any value but 1.
+- **An incomplete answer is an error, not a result.** The TypeScript and Python
+  runtimes returned whatever text a 2xx body held, so an answer cut at
+  `max_tokens` (or a thinking-only body with no text), a refusal, or an empty
+  answer reached the caller as a success; a struct prompt then failed later with
+  a misleading parse error. They now raise `IncompleteResponseError` with a
+  `reason` (`max_tokens`, `refusal`, `unexpected_stop`, `empty`) and the `usage`
+  the provider billed. It is never retried and `RoutingClient` does not send it
+  to a fallback, so a refusal is not routed around. `promptlang test --live`
+  reports it as a configuration failure and still counts its tokens. Visible
+  changes: an OpenAI body with `content: null` or blank text now raises instead
+  of reading as `""`, and an OpenAI-compatible server that ends a successful
+  answer with a non-standard `finish_reason` now raises `unexpected_stop`.
 
 ## [2.0.0] - 2026-11-03
 

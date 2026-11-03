@@ -1,4 +1,39 @@
-import { InvalidResponseError } from "../errors";
+import { IncompleteResponseError, InvalidResponseError } from "../errors";
+
+/** How a provider says generation ended, mapped onto the cases a caller must not treat as an answer. */
+export type StopKind = "complete" | "max_tokens" | "refusal" | "unexpected_stop";
+
+/**
+ * Throws IncompleteResponseError unless generation ended normally with some
+ * non-blank text. `decidedBy` is the provider's stop value, or the field that
+ * carried a refusal, quoted so it can be looked up; it comes from the provider,
+ * so it is capped. The model's text never enters the message: it is untrusted
+ * and may be long.
+ */
+export function requireCompleteAnswer(
+  provider: string,
+  stop: StopKind,
+  decidedBy: string,
+  text: string,
+  maxTokens: number | undefined,
+  usage: { input_tokens: number; output_tokens: number } | undefined
+): void {
+  const fail = (message: string, reason: IncompleteResponseError["reason"]): never => {
+    throw new IncompleteResponseError(message, reason, provider, usage);
+  };
+  const quoted = `\`${decidedBy.slice(0, 64)}\``;
+  if (stop === "max_tokens") {
+    const limit = maxTokens === undefined ? "the provider default" : `max_tokens ${maxTokens}`;
+    fail(
+      `${provider} stopped at the output limit (${limit}) before finishing the answer; raise @max_tokens on the prompt`,
+      "max_tokens"
+    );
+  }
+  if (stop === "refusal") fail(`${provider} refused to answer (${quoted})`, "refusal");
+  if (stop === "unexpected_stop")
+    fail(`${provider} stopped with ${quoted} before giving a final answer`, "unexpected_stop");
+  if (text.trim() === "") fail(`${provider} returned no text`, "empty");
+}
 
 /** Rejects missing, empty or whitespace API keys before any request is sent. */
 export function requireApiKey(apiKey: unknown, client: string, envVar: string): string {

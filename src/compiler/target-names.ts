@@ -39,17 +39,15 @@ const CHAIN_PARAMETERS = new Set(["client"]);
 const LANGUAGE: Record<Target, string> = { typescript: "TypeScript", python: "Python" };
 
 /**
- * Names the generated module imports or its function bodies call. A declaration
- * of the same name would shadow one: in TypeScript only a value hides a value,
- * so the globals called (`Number`...) bind prompts and chains only; in Python a
- * type is a value too.
+ * Names the generated module imports. A declaration of the same name would
+ * shadow one; in Python a type is a value too. The function bodies call no global
+ * by its bare name, so a prompt may be named `JSON` or `ValueError`.
  */
 const GENERATED_IMPORTS: Record<Target, ReadonlySet<string>> = {
   typescript: new Set(["PromptClient", "PromptRequest", "Promise"]),
   python: new Set([
     "PromptClient",
     "PromptRequest",
-    "ValueError",
     "TypedDict",
     "NotRequired",
     "Literal",
@@ -62,8 +60,6 @@ const GENERATED_IMPORTS: Record<Target, ReadonlySet<string>> = {
     "dict",
   ]),
 };
-const TYPESCRIPT_VALUE_GLOBALS = new Set(["Number", "isNaN", "Error", "JSON"]);
-
 /** Whether `name` is a reserved word of `target`, e.g. to name a Python module. */
 export function isReservedWord(name: string, target: Target): boolean {
   return (target === "python" ? PYTHON_RESERVED : TYPESCRIPT_RESERVED).has(name);
@@ -198,11 +194,7 @@ export function checkTargetNames(program: Program, target: Target): void {
       problem = `it is a reserved word in ${language}`;
     else if (target === "typescript" && role === "a type" && TYPESCRIPT_TYPE_NAMES.has(name))
       problem = `TypeScript reserves it as a type name`;
-    else if (
-      (callable || role === "a type") &&
-      (GENERATED_IMPORTS[target].has(name) ||
-        (target === "typescript" && callable && TYPESCRIPT_VALUE_GLOBALS.has(name)))
-    )
+    else if ((callable || role === "a type") && GENERATED_IMPORTS[target].has(name))
       problem = `the generated ${language} uses that name`;
     else if ((callable || role === "a step") && CHAIN_PARAMETERS.has(name))
       problem = "the generated chain's parameters use that name";

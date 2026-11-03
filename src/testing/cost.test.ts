@@ -45,6 +45,13 @@ describe("estimateLiveCost", () => {
     expect(e?.inputTokens).toBe(Math.ceil((35 + 15 + 35 + 600) / 3));
   });
 
+  test("a literal given to a struct parameter counts as the JSON it is inserted as", () => {
+    const q = `prompt q(c: struct { a: string }) -> string {\n  user: "{{c}}"\n}\n`;
+    const t = `test "t" {\n  input: q("${'\\"'.repeat(12)}")\n  expect: x\n}\n`;
+    // 5 chars of template + JSON.stringify of 12 quotes: 2 + 24.
+    expect(est(`@model claude-haiku-5-5\n${q}${t}`)?.inputTokens).toBe(Math.ceil((5 + 26) / 3));
+  });
+
   test("numbers, booleans and enum members count as the text they are inserted as", () => {
     const p = `prompt p(n: number) -> string {\n  user: "Score {{n}}"\n}\n`;
     const t = `test "t" {\n  input: p(123456789012)\n  expect: x\n}\n`;
@@ -96,6 +103,17 @@ describe("the estimate as a cap, end to end", () => {
       `prompt o(x: string) -> struct { a: string } {\n  user: "{{x}}"\n}\n${p(4)}chain c(x: string) -> string {\n  step s = o(x: x)\n  step b = p(x: s)\n  return b\n}\n`,
       1,
     ],
+    // A struct parameter is inserted as JSON, which escapes and quotes what it inserts.
+    [
+      "a struct parameter given a literal full of quotes",
+      `prompt q(c: struct { a: string }) -> string {\n  user: "{{c}}"\n}\nchain c(x: string) -> string {\n  step a = q(c: "${'\\"'.repeat(12)}")\n  return a\n}\n`,
+      1,
+    ],
+    [
+      "a struct output inserted into a struct parameter",
+      `prompt o(x: string) -> struct { a: string } {\n  user: "{{x}}"\n}\nprompt q(c: struct { a: string }) -> string {\n  user: "${"{{c}}".repeat(4)}"\n}\nchain c(x: string) -> string {\n  step s = o(x: x)\n  step b = q(c: s)\n  return b\n}\n`,
+      1,
+    ],
   ];
   for (const [name, decls, maxTokens] of cases) {
     test(`${name}: every call fits`, async () => {
@@ -122,4 +140,11 @@ describe("the estimate as a cap, end to end", () => {
       expect(sent).toBe(estimate.calls);
     });
   }
+
+  test("a test whose prompt passes 100K tokens is estimated on the long-context card", () => {
+    const big = `test "t" {\n  input: p("${"b".repeat(300_000)}")\n  expect: x\n}\n`;
+    const e = est(`@model claude-haiku-5-5\n@max_tokens 100\n${PROMPT}${big}`);
+    // 35 + 300 000 chars → 100 012 tokens, over 100K: $0.5 / $2.5 per million.
+    expect(e?.estimatedUsd).toBeCloseTo((Math.ceil(300_035 / 3) * 0.5 + 100 * 2.5) / 1e6, 12);
+  });
 });

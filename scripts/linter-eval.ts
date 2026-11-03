@@ -20,13 +20,14 @@ import type { AnalysisContext } from "../src/analyzer/analyzer";
 import { tokenize } from "../src/lexer/lexer";
 import { parse } from "../src/parser/parser";
 import type { PromptClient } from "../src/runtime/client";
+import { IncompleteResponseError } from "../src/runtime/errors";
 import {
   AnthropicClient,
   DEFAULT_ANTHROPIC_VERSION,
 } from "../src/runtime/providers/anthropic-client";
 import { BudgetedClient } from "../src/testing/budget";
 import { checksumMismatches, sha256 } from "./checksums";
-import { pricePerMTok } from "../src/testing/cost";
+import { callUsd, pricePerMTok } from "../src/testing/cost";
 import {
   type CaseResult,
   categoryOf,
@@ -87,6 +88,7 @@ export interface EvalRecord {
   charged_usd: number;
   /** False when the run was interrupted: the cases not run are absent from `results`. */
   complete: boolean;
+  /** The short-prompt card; each call in `cost_usd` is priced on the card its prompt selects. */
   price_usd_per_mtok: { input: number; output: number };
   latency_ms: { n: number; p50: number | null; p95: number | null };
   calls: Array<{
@@ -179,8 +181,11 @@ export async function evaluate(
             calls.push({
               ...timed,
               latency_ms: Math.round(performance.now() - t0),
-              input_tokens: 0,
-              output_tokens: 0,
+              // A cut or refused answer was billed; other failures report nothing.
+              input_tokens:
+                error instanceof IncompleteResponseError ? (error.usage?.input_tokens ?? 0) : 0,
+              output_tokens:
+                error instanceof IncompleteResponseError ? (error.usage?.output_tokens ?? 0) : 0,
               error: error instanceof Error ? error.name : typeof error,
             });
             throw error;
@@ -217,8 +222,10 @@ export async function evaluate(
     },
     repeats,
     estimate_usd: estimate(corpus, repeats),
-    cost_usd:
-      calls.reduce((s, c) => s + c.input_tokens * price[0] + c.output_tokens * price[1], 0) / 1e6,
+    cost_usd: calls.reduce(
+      (s, c) => s + callUsd(AI_LINTER_MODEL, c.input_tokens, c.output_tokens),
+      0
+    ),
     charged_usd: client.spentUsd,
     complete: results.length === jobs.length,
     price_usd_per_mtok: { input: price[0], output: price[1] },

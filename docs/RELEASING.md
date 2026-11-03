@@ -10,21 +10,27 @@ On a `v*` tag:
 1. The whole CI workflow (`ci.yml`) runs on the tagged commit. This includes the
    `package` job: `npm pack --dry-run`, and `scripts/consumer-test.ts` on Node 20
    and the current LTS.
-2. If the tag differs from `v` + `package.json` `version`, the release stops.
-3. It checks whether the `@promptlang/yaml-parser` version is on npm. Only an
+2. The `publish` job prints `node --version` and `npm --version` and stops if
+   Node is below 22.14.0 or npm below 11.5.1, the trusted-publishing minimums
+   (option B below). A manual dry run also runs this check. If the check fails
+   for a release that publishes with the token, it stops even though the token
+   does not need these versions: upgrade npm in the job (as option B does)
+   rather than lowering the minimums.
+3. If the tag differs from `v` + `package.json` `version`, the release stops.
+4. It checks whether the `@promptlang/yaml-parser` version is on npm. Only an
    `E404` answer means "not on npm"; any other registry error stops the release
    before anything is published.
-4. `npm pack` builds the `@promptlang/core` tarball once (`prepack` runs
+5. `npm pack` builds the `@promptlang/core` tarball once (`prepack` runs
    `scripts/build.ts` first, so it holds a fresh `dist/`). npm, the attestation and
    the GitHub Release all get these bytes.
-5. `actions/attest-build-provenance` signs a SLSA build provenance for the tarball
+6. `actions/attest-build-provenance` signs a SLSA build provenance for the tarball
    (Sigstore, short-lived certificate from the workflow's OIDC token) and stores it
    in the repository's attestations. The tarball and its bundle are then saved as
    the run's `release-assets` artifact. If either step fails, nothing has been
    published.
-6. `npm publish <tarball> --provenance --access public` publishes `@promptlang/core`.
-7. `@promptlang/yaml-parser` is published if step 3 found its version missing.
-8. The `github-release` job creates the GitHub Release for the tag, with
+7. `npm publish <tarball> --provenance --access public` publishes `@promptlang/core`.
+8. `@promptlang/yaml-parser` is published if step 4 found its version missing.
+9. The `github-release` job creates the GitHub Release for the tag, with
    `docs/release-notes/<tag>.md` as its body and two assets: the tarball and its
    attestation bundle, `promptlang-core-<version>.tgz.sigstore.json`. Only that job can write to the
    repository's contents.

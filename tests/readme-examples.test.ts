@@ -4,6 +4,7 @@ import { analyze } from "../src/analyzer/analyzer";
 import { tokenize } from "../src/lexer/lexer";
 import { parse } from "../src/parser/parser";
 import { runTests } from "../src/testing/runner";
+import { CLONE_URL, freshCloneCommand } from "../scripts/fresh-clone";
 
 const ROOT = resolve(import.meta.dir, "..");
 const readme = await Bun.file(resolve(ROOT, "README.md")).text();
@@ -28,5 +29,20 @@ describe("README promptlang snippets", () => {
     });
     expect(results).toHaveLength(1);
     expect(results[0]?.failures).toEqual([]);
+  });
+});
+
+describe("README fresh-clone command", () => {
+  test("is one command that clones the repository, installs from the lockfile and runs", () => {
+    const command = freshCloneCommand(readme);
+    expect(command).toStartWith(`git clone ${CLONE_URL} && cd promptlang && `);
+    expect(command).toContain("bun install --frozen-lockfile");
+  });
+
+  test("a README without the markers, or cloning elsewhere, is rejected", () => {
+    expect(() => freshCloneCommand("no markers")).toThrow("fresh-clone markers");
+    const other =
+      "<!-- fresh-clone:start -->\n```bash\ngit clone https://example.com/x.git && cd x\n```\n<!-- fresh-clone:end -->";
+    expect(() => freshCloneCommand(other)).toThrow("must start with git clone");
   });
 });

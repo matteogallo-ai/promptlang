@@ -206,13 +206,7 @@ fails cleanly, and the tests still pass ([`docs/examples/demo/`](docs/examples/d
 ## AI-Powered Linting
 
 PromptLang can send each prompt to an LLM for a semantic review at build time.
-The request/response plumbing is covered by tests that use a mocked client. One
-live run is committed ([`runs/live/ai-linter-2026-11-02T16-19-27-163Z.json`](runs/live/ai-linter-2026-11-02T16-19-27-163Z.json)): five prompts, five calls
-that all returned, 17 findings. It shows what the linter returned once; it does
-not measure how good the findings are.
-
-Static analysis catches structural issues (missing tests, unbounded templates, prompt
-injection risks). The AI linter catches semantic issues that static tools cannot see:
+It looks for six kinds of defect that static rules cannot see:
 
 - Vague instructions like "be careful" that don't tell the model what to do
 - Missing format specs where structured output is expected but not constrained
@@ -220,6 +214,14 @@ injection risks). The AI linter catches semantic issues that static tools cannot
 - Undefined business terms ("premium user" without a definition)
 - Hallucination risks (invitations to guess vs. refuse)
 - Token inefficiencies (verbose phrasing that could be shorter)
+
+**Measured on a labelled corpus** (`evals/linter/`, 120 cases;
+[`docs/SYSTEM_CARD.md`](docs/SYSTEM_CARD.md)), on the test split with
+`claude-haiku-5-5`: it finds almost every designed defect (recall 44/45 and
+45/45 over two runs) but reports about four categories per prompt, so most of
+its findings are false alarms (precision 20%, 95% CI 15–26%) and it flags every
+clean prompt (15/15). Read its findings as leads to check, not as defects; the
+six static rules of `promptlang analyze` do not depend on the model.
 
 ### Usage
 

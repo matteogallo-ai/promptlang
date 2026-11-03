@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **An incomplete answer is an error, not a result.** The TypeScript and Python
+  runtimes returned whatever text a 2xx body held, so an answer cut at
+  `max_tokens` (or a thinking-only body with no text), a refusal, or an empty
+  answer reached the caller as a success; a struct prompt then failed later with
+  a misleading parse error. They now raise `IncompleteResponseError` with a
+  `reason` (`max_tokens`, `refusal`, `unexpected_stop`, `empty`) and the `usage`
+  the provider billed. It is never retried and `RoutingClient` does not send it
+  to a fallback, so a refusal is not routed around. `promptlang test --live`
+  reports it as a configuration failure and still counts its tokens. Visible
+  changes: an OpenAI body with `content: null` or blank text now raises instead
+  of reading as `""`, and an OpenAI-compatible server that ends a successful
+  answer with a non-standard `finish_reason` now raises `unexpected_stop`.
+
 ## [2.0.0] - 2026-11-03
 
 Remediation after the 2026-11-02 external audit, and the first release of

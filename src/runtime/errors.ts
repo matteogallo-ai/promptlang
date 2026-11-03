@@ -107,6 +107,30 @@ export class InvalidResponseError extends PromptClientError {
   }
 }
 
+/**
+ * A well-formed 2xx body that is not a complete answer: cut at the output limit,
+ * refused, stopped for another reason, or carrying no text. Never retried and
+ * never sent to a RoutingClient fallback: a cut answer is cut again at the same
+ * limit, and a refusal must not be routed around. `usage` is what the provider
+ * billed for the call, when it reported it.
+ */
+export class IncompleteResponseError extends PromptClientError {
+  readonly reason: "max_tokens" | "refusal" | "unexpected_stop" | "empty";
+  readonly usage?: { input_tokens: number; output_tokens: number };
+
+  constructor(
+    message: string,
+    reason: IncompleteResponseError["reason"],
+    provider?: string,
+    usage?: IncompleteResponseError["usage"]
+  ) {
+    super(message, provider);
+    this.name = "IncompleteResponseError";
+    this.reason = reason;
+    this.usage = usage;
+  }
+}
+
 /** Thrown by RoutingClient when every configured provider fails. */
 export class AllProvidersFailedError extends PromptClientError {
   /** Errors thrown by each provider, in the order they were tried. */

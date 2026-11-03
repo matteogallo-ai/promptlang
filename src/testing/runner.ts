@@ -10,6 +10,7 @@ import { compile } from "../compiler/compiler";
 import { MockClient, type PromptClient } from "../runtime/client";
 import {
   AuthenticationError,
+  IncompleteResponseError,
   InvalidRequestError,
   NotFoundError,
   PromptClientError,
@@ -21,10 +22,11 @@ import { schemaErrors } from "./schema";
 
 /**
  * Why a call got no answer. `configuration`: the provider refused what was sent
- * (key, model, parameters), or the call would have passed the approved budget,
- * so retrying changes nothing until the file, the key or the approval changes.
- * `provider`: timeout, network, rate limit, server or a malformed body, which a
- * later retry can clear.
+ * (key, model, parameters), the answer was cut at `@max_tokens`, refused, stopped
+ * early or empty, or the call would have passed the approved budget, so retrying
+ * changes nothing until the file, the key or the approval changes. `provider`:
+ * timeout, network, rate limit, server or a malformed body, which a later retry
+ * can clear.
  */
 export interface ProviderFailure {
   kind: "configuration" | "provider";
@@ -36,6 +38,7 @@ function classify(error: PromptClientError): ProviderFailure {
     error instanceof BudgetExceededError ||
     error instanceof AuthenticationError ||
     error instanceof InvalidRequestError ||
+    error instanceof IncompleteResponseError ||
     error instanceof NotFoundError;
   return {
     kind: configuration ? "configuration" : "provider",
@@ -127,10 +130,19 @@ function returnTypeOf(program: Program, name: string): TypeExpression | undefine
 function metered(client: PromptClient, usage: TestResult["usage"]): PromptClient {
   return {
     async complete(request: PromptRequest): Promise<PromptResponse> {
-      const response = await client.complete(request);
-      usage.input_tokens += response.usage?.input_tokens ?? 0;
-      usage.output_tokens += response.usage?.output_tokens ?? 0;
-      return response;
+      const add = (u: PromptResponse["usage"]) => {
+        usage.input_tokens += u?.input_tokens ?? 0;
+        usage.output_tokens += u?.output_tokens ?? 0;
+      };
+      try {
+        const response = await client.complete(request);
+        add(response.usage);
+        return response;
+      } catch (error) {
+        // A cut or refused answer was billed: count it, then let the caller see the error.
+        if (error instanceof IncompleteResponseError) add(error.usage);
+        throw error;
+      }
     },
   };
 }

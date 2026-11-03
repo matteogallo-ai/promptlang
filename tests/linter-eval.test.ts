@@ -118,7 +118,7 @@ describe("linter eval run", () => {
     expect(calls).toBe(240);
     expect(record.calls).toHaveLength(240);
     expect(record.latency_ms.n).toBe(240);
-    expect(record.corpus).toEqual({ version: "1.0.0", sha256: corpus.sha256, cases: 120 });
+    expect(record.corpus).toEqual({ version: "1.1.0", sha256: corpus.sha256, cases: 120 });
     const test1 = record.metrics[0]!.test;
     expect(test1.failed).toEqual([]);
     expect(test1.overall.precision).toMatchObject({ value: 1 });
@@ -171,7 +171,7 @@ describe("linter eval run, failures and interruption", () => {
 describe("committed eval records", () => {
   const LIVE = join(ROOT, "runs/live");
 
-  // Skipped, and reported as skipped, until a measured run is committed.
+  // Skipped, and reported as skipped, while no measured run is committed.
   test.skipIf(records.length === 0)(
     "the metrics of every committed eval record re-derive from its raw results",
     async () => {

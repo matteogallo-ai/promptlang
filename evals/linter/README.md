@@ -21,8 +21,8 @@ A frozen, labelled set of `.prompt` files with known defects, used by
 30 base tasks (invoice extraction, ticket classification, meeting details…), each
 written once as a clean prompt: concrete criteria, a JSON-only format line naming
 the keys of the declared `struct`, a missing value left out (every field is
-optional, so `null` would contradict the type) with booleans false unless shown
-true, and the input delimited as data. Each base also appears with exactly one
+optional, so `null` would contradict the type), a boolean field false unless
+shown true, and the input delimited as data. Each base also appears with exactly one
 designed defect, in three different categories. The categories rotate across
 bases so none is tied to one kind of task: each appears 15 times in all, 7 or 8
 times per split.
@@ -39,7 +39,7 @@ times per split.
 Each of the 15 snippets per category is different. Splits are by base task, so a
 base and its variants are never on both sides: `dev` holds bases 0–14, `test`
 bases 15–29. Each split has 45 defective cases and 15 clean ones. A snippet adds
-one defect only: an undefined term changes how an existing field is filled, and
+one defect only: an undefined term changes which values are kept, for any field, and
 padding does not repeat the vague phrases the linter is asked to find.
 
 ## How the results are scored

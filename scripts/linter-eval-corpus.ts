@@ -25,7 +25,7 @@ interface Base {
   criterion: string;
 }
 
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 const CATEGORIES = [
   "VAGUE_INSTRUCTIONS",
   "MISSING_FORMAT_SPEC",
@@ -107,17 +107,17 @@ const SNIPPETS: Record<string, string[]> = {
   UNDEFINED_TERMS: [
     "Leave out values that come from a premium account.",
     "Give priority to tier-2 partners.",
-    "Treat anything from a strategic vendor as high priority.",
+    "Trust values from a strategic vendor over the rest.",
     "For a key account, use the values on the amended version.",
     "Skip entries that fall under the legacy programme.",
-    "Apply the standard adjustment for gold members.",
+    "Leave out values that concern gold members.",
     "Ignore values supplied by a red-flag customer.",
-    "Use the internal grade for qualified leads.",
-    "Exclude amounts covered by the special arrangement.",
+    "Keep only values that come from qualified leads.",
+    "Exclude values covered by the special arrangement.",
     "Prefer values from approved sources.",
     "Take values from preferred suppliers over any others.",
     "Keep only values confirmed by the inner circle.",
-    "Round amounts to the Class B precision.",
+    "Write values in the Class B convention.",
     "Ignore anything marked as out-of-band.",
     "Apply the regional rule for zone-3 entries.",
   ],
@@ -145,7 +145,7 @@ const SNIPPETS: Record<string, string[]> = {
     "We would like to kindly ask you, if at all possible and if it is not too much trouble, to please consider performing the task described here, which is the task you are being asked to perform.",
     "In order to do this task, which is the task of extracting {what}, you will need to look at the {source} and then, after looking at the {source}, extract {what} from the {source} that you looked at.",
     "Note that the {source} is the {source} given below, and the {source} below is the one you should use, so use the {source} that is given below, which is the {source}.",
-    "To be completely clear and to avoid any possible confusion whatsoever, the fields listed above are the fields, and those fields are the ones that you need to fill, and no other fields than those listed fields.",
+    "To be completely clear and to avoid any possible confusion whatsoever, the fields listed in this message are the fields, and those fields are the ones that you need to fill, and no other fields than those listed fields.",
     "Remember, remember, remember: the task is extraction. Extraction is the task. The task you have is to extract, which is what extraction means, and that is the task.",
     "This is a task where you take information that is in the {source} and you put that information, the information from the {source}, into the fields, so that the fields contain the information that was in the {source}.",
     "For the avoidance of doubt and for the sake of complete clarity, let us state again, once more and one more time, that the output must follow the instructions given in this message, which are the instructions to follow.",
@@ -174,8 +174,13 @@ function systemLines(b: Base, defect: string | null, snippet: string | null): st
   lines.push(
     defect === "POTENTIAL_HALLUCINATION_RISK"
       ? s
-      : `If a value does not appear in the ${b.source}, leave its key out; a boolean is false unless the ${b.source} shows it is true.`
+      : `If a value does not appear in the ${b.source}, leave its key out.`
   );
+  // Stated apart, and only where a boolean exists: "not stated" means false, not absent.
+  if (b.fields.some(([, t]) => t === "boolean"))
+    lines.push(
+      `A boolean field is false unless the ${b.source} shows it is true; it is never left out.`
+    );
   return lines;
 }
 

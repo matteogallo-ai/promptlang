@@ -421,7 +421,7 @@ const TOKEN_SOUP = [
 ];
 
 describe("parser properties", () => {
-  test("fuzz: parse(tokenize(src)) returns a Program or throws a LexerError or ParserError", () => {
+  test("fuzz: parse(tokenize(src)) returns a Program or throws a LexerError or ParserError positioned in the source", () => {
     const source = fc.oneof(
       fc.array(fc.constantFrom(...TOKEN_SOUP), { maxLength: 30 }).map((ts) => ts.join(" ")),
       fc.string({ maxLength: 40 })
@@ -432,8 +432,12 @@ describe("parser properties", () => {
           expect(parse(tokenize(src)).kind).toBe("Program");
         } catch (error) {
           if (!(error instanceof ParserError || error instanceof LexerError)) throw error;
+          const lines = src.split("\n");
           expect(error.line).toBeGreaterThanOrEqual(1);
+          expect(error.line).toBeLessThanOrEqual(lines.length);
           expect(error.column).toBeGreaterThanOrEqual(1);
+          // The column may sit one past the line's end: EOF is reported there.
+          expect(error.column).toBeLessThanOrEqual((lines[error.line - 1]?.length ?? 0) + 1);
         }
       }),
       propertyParams(2000)

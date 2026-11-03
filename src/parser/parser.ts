@@ -192,17 +192,6 @@ class Parser {
       metadata.push(this.parseMetadata());
     }
 
-    // An import that appears after metadata or a declaration is a hard error;
-    // imports are only legal at the top of the file.
-    if (!this.isAtEnd() && this.check(TokenType.IMPORT)) {
-      const t = this.peek();
-      throw new ParserError(
-        "'import' must appear at the top of the file, before any metadata (@...) or declarations.",
-        t.line,
-        t.column
-      );
-    }
-
     while (!this.isAtEnd()) {
       declarations.push(this.parseDeclaration());
     }
@@ -427,6 +416,13 @@ class Parser {
         return this.parseTestDeclaration();
       case TokenType.EVAL:
         return this.parseEvalDeclaration();
+      // Imports were read before metadata, so one here follows metadata or a declaration.
+      case TokenType.IMPORT:
+        throw new ParserError(
+          "'import' must appear at the top of the file, before any metadata (@...) or declarations.",
+          tok.line,
+          tok.column
+        );
       default:
         throw new ParserError(
           `Expected a declaration ('type', 'prompt', 'chain', 'test', or 'eval') but found '${tok.value}'.`,

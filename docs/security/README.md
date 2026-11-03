@@ -38,7 +38,7 @@ records one run so that the explanations below can be checked against it.
 | Contributors | 0 | Low by nature on a solo repository: Scorecard counts the distinct companies and organisations (GitHub profile company, public org memberships) of contributors with at least 5 commits, and gives 10 at three. The only author has 4 commits, under that threshold; past it, their one company scores about 3, and more needs contributors from other organisations. |
 | Dangerous-Workflow | 10 | No `pull_request_target`, and no `github.event.*` or `github.head_ref` expression inside a `run:` script; `tests/workflows.test.ts` keeps both so. |
 | Dependency-Update-Tool | 10 | `.github/dependabot.yml`. |
-| Fuzzing | 0 | No fuzzing or property-based tests detected. |
+| Fuzzing | 0 | No fuzzing or property-based tests detected at `b3270b7`; see the Fuzzing check below. |
 | License | 10 | `LICENSE` is the MIT text; GitHub reports its SPDX id as `MIT`. |
 | Maintained | 0 | The repository was created on 2026-08-11; Scorecard scores 0 for its first 90 days, whatever the activity. |
 | Packaging | -1 | Scorecard has detected no successful run of a publishing workflow: `release.yml` has never run successfully. |
@@ -66,3 +66,22 @@ applies it:
 gh api -X PUT repos/matteogallo-ai/promptlang/rulesets/26384704 \
   --input docs/security/ruleset-main.json
 ```
+
+## Fuzzing check
+
+`scorecard-before.json` scores Fuzzing 0 ("project is not fuzzed"). In Scorecard v5.6.0,
+`checks/raw/fuzzing.go` counts a TypeScript repository as fuzzed when a `*.ts` or `*.tsx`
+file matches
+
+```
+(from\s+['"](fast-check|@fast-check/(ava|jest|vitest))['"]|require\(\s*['"](fast-check|@fast-check/(ava|jest|vitest))['"]\s*\))
+```
+
+and TypeScript is a prominent language of the repository (at least a quarter of the
+average lines per language; GitHub reports TypeScript as the only one). The property
+tests import `fc from "fast-check"`: `src/lexer/lexer.property.test.ts`,
+`src/parser/parser.property.test.ts`, `src/semver/semver.property.test.ts`,
+`packages/yaml-parser/tests/parser.property.test.ts` and `tests/support/property.ts`.
+The same image run as `--local=<checkout> --checks=Fuzzing` on a checkout with these
+files scores Fuzzing 10 and lists them as `TypeScriptPropertyBasedTesting` integrations
+(local mode also walks untracked directories such as `node_modules`).

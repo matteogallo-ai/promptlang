@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **`OpenAIClient` sends `max_completion_tokens`, not `max_tokens`** (TypeScript
+  and Python). GPT-5 and the o-series, which the routing example falls back to,
+  answer `max_tokens` with a 400. The `@temperature` warning now says those
+  models refuse any value but 1.
 - **An incomplete answer is an error, not a result.** The TypeScript and Python
   runtimes returned whatever text a 2xx body held, so an answer cut at
   `max_tokens` (or a thinking-only body with no text), a refusal, or an empty

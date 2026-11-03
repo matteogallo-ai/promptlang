@@ -301,7 +301,8 @@ class OpenAIClient(PromptClient):
         if "temperature" in request:
             payload["temperature"] = request["temperature"]
         if "max_tokens" in request:
-            payload["max_tokens"] = request["max_tokens"]
+            # GPT-5 and the o-series refuse max_tokens; every current chat model reads this one.
+            payload["max_completion_tokens"] = request["max_tokens"]
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",

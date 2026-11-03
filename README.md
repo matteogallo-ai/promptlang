@@ -411,6 +411,11 @@ const client = new RoutingClient({
 const category = await classify_ticket({ ticket: "..." }, client);
 ```
 
+`OpenAIClient` sends `max_tokens` as `max_completion_tokens`, which GPT-5 and the
+o-series require. Those models refuse any `temperature` but 1, so a prompt routed to
+them should not set `@temperature`; the provider's 400 surfaces as
+`InvalidRequestError`.
+
 ---
 
 ## Compiling against a checkout

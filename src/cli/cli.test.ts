@@ -1027,7 +1027,7 @@ describe("compile — test and eval blocks", () => {
     );
     expect(code).toBe(0);
     expect(warnings).toContain(
-      `${file}:2:1: @temperature is not sent to Anthropic (API version 2026-10-21 rejects it); it applies to OpenAI and Ollama only`
+      `${file}:2:1: @temperature is not sent to Anthropic (API version 2026-10-21 rejects it); it applies to OpenAI and Ollama only, and OpenAI reasoning models (gpt-5, o-series) refuse any value but 1`
     );
   });
 

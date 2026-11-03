@@ -33,7 +33,7 @@ from `--json`.
 *Symptom:* missing key: exit 2, `--live needs ANTHROPIC_API_KEY in the
 environment`, nothing called (`src/cli/live.test.ts` "refuses to start without
 ANTHROPIC_API_KEY, naming the flag"). Rejected key, unknown model, malformed
-request: exit 3, `configuration error, no verdict (fix the file or the key)`
+request: exit 3, `configuration error, no verdict (fix the file, the key or the approved budget)`
 (`src/cli/commands/test.test.ts` "a rejected request: exit 3, reported as a
 configuration error, not an outage").
 
@@ -53,8 +53,10 @@ worst case would take the spend past the approved estimate, so it was not sent
 exit 3, a configuration error, nothing sent").
 
 *Why it happens:* the estimate assumes each call's input is its rendered text
-÷ 3 characters per token; a provider that counts more tokens than that spends
-more than estimated, and the cap stops the run before the overrun.
+÷ 3 characters per token; text that tokenizes denser (CJK, base64, dense code)
+spends more than estimated, and the cap refuses the first call after the
+overrun. The overrun is at most what the calls in flight cost beyond their
+estimate.
 
 *Response:* read the usage reported by `--json`; do not raise a cap to make a run
 pass without a new estimate and a new approval.

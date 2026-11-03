@@ -131,8 +131,10 @@ labelled corpus; `docs/SYSTEM_CARD.md` states what has been measured and what ha
 *Where:* paid calls from `analyze --ai`, `test --live` and the eval script.
 
 *Mitigation:* an estimate is printed and approved before any call; the approved
-estimate is a cap enforced in code (a call whose worst case would pass it is not
-sent); every request has a `max_tokens` (the linter's is fixed); paid runs make one
+estimate is a cap enforced in code (a call whose estimated worst case would pass
+it is not sent; text that tokenizes at under 3 characters per token can pass the
+cap by what the calls in flight cost beyond their estimate, then the next call is
+refused); every request has a `max_tokens` (the linter's is fixed); paid runs make one
 attempt, no retries; every HTTP call has a timeout.
 
 *Tests:* `src/testing/budget.test.ts` (BudgetedClient); `src/cli/commands/analyze.test.ts`

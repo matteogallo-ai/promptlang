@@ -7,11 +7,19 @@ and versioning follows [SemVer 2.0](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.1] — 2026-11-03
+
+### Security
+
+- A `__proto__` mapping key is kept as an own data property. In 1.0.0 it was
+  dropped (`__proto__: x` parsed to `{}`), and a nested mapping under it became
+  the parent object's prototype, so a YAML document could set the prototype of
+  the object `parseYaml` returns: keys the document never gave that object then
+  read as if it had them.
+  Upgrade from 1.0.0 if you parse YAML you do not write yourself.
+
 ### Fixed
 
-- A `__proto__` mapping key is kept as an own data property. It used to be
-  dropped (`__proto__: x` parsed to `{}`), and a nested mapping under it
-  became the parent object's prototype.
 - A backslash inside a single-quoted string is literal, as the YAML spec and
   this README say. It used to escape the next character while looking for
   comments and the key colon, so `dir: 'C:\'  # note` raised
@@ -53,4 +61,5 @@ Initial release. Extracted verbatim from PromptLang core
   happens here first; downstream consumers (PromptLang, Praxis) pick it
   up via SemVer.
 
+[1.0.1]: https://github.com/matteogallo-ai/promptlang/tree/v2.0.0/packages/yaml-parser
 [1.0.0]: https://github.com/matteogallo-ai/promptlang/tree/main/packages/yaml-parser

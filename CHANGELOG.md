@@ -7,31 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- Property-based tests and fuzzing with fast-check (a devDependency) on the lexer,
-  the parser, `src/semver` and `@promptlang/yaml-parser`; see `docs/CLAIMS.md`.
-- Mutation testing with Stryker on `src/lexer`, `src/parser` and `src/semver`:
-  `bun run mutation`, run locally, results in `docs/mutation/`.
-
-### Fixed
-- Lexer: a string ending in a backslash at end of input or line is reported as an
-  unterminated string, not as the escape `'\undefined'` or an escaped newline.
-- Parser: an `import` after a declaration reports that imports must come first, as one
-  after metadata already did, instead of "Expected a declaration ... but found 'import'".
-- `promptlang.yaml` (through `@promptlang/yaml-parser`): a `__proto__` key is kept as
-  data instead of being dropped or replacing the object's prototype, and a backslash
-  in a single-quoted string is literal.
-
-### Changed
-- `compile --emit-tsconfig` no longer writes `baseUrl`, which TypeScript 7 rejects
-  (TS5102). A `--runtime-path` that is neither absolute nor starts with `./` or
-  `../` (either separator) is written with a leading `./`, since `paths` entries
-  without `baseUrl` must be relative. A tsconfig emitted by an earlier version
-  keeps `baseUrl`: re-run `compile --emit-tsconfig` before moving to TypeScript 7
-  (deleting the line alone leaves a non-relative `paths` entry, TS5090).
-- The repository builds and type-checks with TypeScript 7 (`typescript` ^7.0.2).
-
-## [2.0.0] - 2026-11-02
+## [2.0.0] - 2026-11-03
 
 Remediation after the 2026-11-02 external audit, and the first release of
 `@promptlang/core` on npm.
@@ -55,9 +31,10 @@ ways, each of which SemVer reserves for a major version:
   name to every provider, so Anthropic → OpenAI fallback failed. Now true:
   `RoutingClient` maps the model per provider (see Added).
 - README marked the **AI-powered linter** ✅ and "unique"; it was only tested with a
-  mocked client and had never run against the API. Now `shipped` in
-  `docs/CLAIMS.md` on one committed live run (`runs/live/`: 5/5 calls returned,
-  $0.0038). It is one sample, not a measure of the findings' quality.
+  mocked client and had never run against the API. It is now measured on a
+  labelled corpus (see Added): it finds almost every designed defect (recall
+  44/45 and 45/45) but most of its findings are false alarms (precision about
+  20%), and it flags every clean prompt. The README says so.
 - The test badge said "626 passing": it counted `@promptlang/yaml-parser`'s 23
   tests twice (603 tests ran). Removed.
 - `src/index.ts` exported only `VERSION = "0.1.0-alpha.0"` in v1.2.0.
@@ -100,11 +77,28 @@ ways, each of which SemVer reserves for a major version:
 - The published package is built: ESM for Node ≥ 20 and Bun, with `.d.ts`
   declarations; `@promptlang/yaml-parser` is bundled in, so `@promptlang/core` has no
   runtime dependency. The CLI needs Bun ≥ 1.2.20.
+- `analyze --ai`: a linter answer that is valid JSON of the wrong shape, or an
+  issue without a string category, is an `ai:parse-failure` warning instead of
+  "no issues".
+- `compile --emit-tsconfig` no longer writes `baseUrl`, which TypeScript 7 rejects
+  (TS5102). A `--runtime-path` that is neither absolute nor starts with `./` or
+  `../` (either separator) is written with a leading `./`, since `paths` entries
+  without `baseUrl` must be relative. A tsconfig emitted by an earlier version
+  keeps `baseUrl`: re-run `compile --emit-tsconfig` before moving to TypeScript 7
+  (deleting the line alone leaves a non-relative `paths` entry, TS5090).
+- The repository builds and type-checks with TypeScript 7 (`typescript` ^7.0.2).
 
 ### Security
 - The AI linter wraps each analyzed section in `<untrusted_prompt>` delimiters,
   escapes delimiter tags found in the text, and tells the model to treat the
   delimited text as data. The prompt text used to be inserted bare.
+- Provider error messages no longer carry the API key: the TypeScript runtime
+  removes the request's credential headers from the error message and stack, and
+  the Python runtime removes the key from the quoted provider body. A provider or
+  proxy that echoes the key used to leak it into terminals, CI logs and run records.
+- `promptlang.yaml` (through `@promptlang/yaml-parser`): a `__proto__` key is kept as
+  data. It used to be dropped, and a nested mapping under it became the parent
+  object's prototype. The standalone package ships the same fix as 1.0.1.
 
 ### Added
 - `@version` is validated as SemVer 2.0.0; an invalid value is a parse error
@@ -119,7 +113,11 @@ ways, each of which SemVer reserves for a major version:
   and exits 1 when `@version` was not bumped enough. CI runs it on `docs/examples`.
 - `promptlang test <paths> [--json] [--live [--yes]]`: runs `test` blocks against the
   generated TypeScript, replaying `mock:` responses by default; `--live` calls
-  Anthropic after printing an approximate cost estimate and getting approval.
+  Anthropic after printing a cost estimate and getting approval. The estimate
+  counts every call a chain makes (steps, return expression and nested calls),
+  values passed as numbers, booleans and enum members, and an earlier step's
+  output inserted into a later one, assumed at most 6 characters per token; a
+  longer answer makes the cap refuse the later call rather than overspend.
 - `RoutingClient` accepts `{ client, modelMap }` entries, so an Anthropic → OpenAI
   fallback sends OpenAI its own model name; a provider with no mapping for the
   requested model is skipped.
@@ -152,12 +150,33 @@ ways, each of which SemVer reserves for a major version:
   documented fields (not retried; `RoutingClient` still falls back).
 - `docs/CLAIMS.md`, `scripts/check-claims.ts`, `scripts/check-stale-narrative.ts`,
   `benchmarks/bench.ts`; Biome and knip configuration; CI jobs for each.
+- `analyze --ai` and `test --live` enforce the approved estimate as a spending
+  cap: a call whose estimated worst case would pass the approved total is not
+  sent. `test --live` reports the test as a configuration error with no verdict
+  (exit 3); `analyze --ai` reports the prompt as `ai:request-failure`.
+  `test --live` refuses a model without a price before any call (exit 2).
+- The AI linter is measured: `scripts/linter-eval.ts` runs it on `evals/linter/`
+  (120 labelled cases, corpus 1.1.0), scores precision and recall with Wilson
+  intervals, and writes an immutable record to `runs/live/` (checked by
+  `SHA256SUMS`). `scripts/eval-report.ts` renders the measured blocks of
+  `docs/SYSTEM_CARD.md` and `docs/SLO.md` from it.
+- `docs/THREAT_MODEL.md`, `docs/RUNBOOK.md`, `docs/SLO.md`, `docs/SYSTEM_CARD.md`.
+- The README's fresh-clone command runs in CI on every pull request (`fresh-clone`).
+- Property-based tests and fuzzing with fast-check (a devDependency) on the lexer,
+  the parser, `src/semver` and `@promptlang/yaml-parser`; see `docs/CLAIMS.md`.
+- Mutation testing with Stryker on `src/lexer`, `src/parser` and `src/semver`:
+  `bun run mutation`, run locally, results in `docs/mutation/`.
 
 ### Fixed
 - `resolveGraph` / `resolveImport` used `Bun.file` and failed under Node.
 - The stale-narrative check missed "requires the v0.6 …" in a `.prompt` comment.
 - Tests that spawn `tsc` had bun's 5 s default timeout and flaked on cold runners.
 - Python type mapper fell through from primitive to enum on an unknown primitive.
+- Lexer: a string ending in a backslash at end of input or line is reported as an
+  unterminated string, not as the escape `'\undefined'` or an escaped newline.
+- Parser: an `import` after a declaration reports that imports must come first, as one
+  after metadata already did, instead of "Expected a declaration ... but found 'import'".
+- `promptlang.yaml`: a backslash in a single-quoted string is literal.
 
 ### Removed
 - Dead exports reported by knip, orphan `.gitkeep` files, empty `src/linter/` and

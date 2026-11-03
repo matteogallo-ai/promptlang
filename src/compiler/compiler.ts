@@ -18,7 +18,9 @@ export function compile(program: Program, sourceFile: string): string {
   parts.push(`// Source: ${sourceFile}`);
   parts.push(`// Generated at: ${timestamp}`);
   parts.push("");
-  parts.push(`import type { PromptClient, PromptRequest } from "@promptlang/core/runtime";`);
+  parts.push(
+    `import { type OutputSpec, parseOutput, type PromptClient, type PromptRequest } from "@promptlang/core/runtime";`
+  );
   parts.push("");
 
   const registry = buildTypeRegistry(program);

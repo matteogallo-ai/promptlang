@@ -10,6 +10,7 @@ import { compile } from "../compiler/compiler";
 import { MockClient, type PromptClient } from "../runtime/client";
 import {
   AuthenticationError,
+  InvalidOutputError,
   InvalidRequestError,
   NotFoundError,
   PromptClientError,
@@ -182,6 +183,11 @@ async function runOne(
     // An infrastructure failure is not a verdict on the prompt; report it apart.
     if (error instanceof PromptClientError) {
       return { ...result([]), passed: false, providerError: classify(error) };
+    }
+    // The generated code checks the answer against the declared type before
+    // returning it, so no assertion can run on it: each mismatch is a failure.
+    if (error instanceof InvalidOutputError) {
+      return result(error.errors.map((m) => `${call.callee} output does not match its type: ${m}`));
     }
     // Whatever else the prompt raises (an enum value outside the type, malformed
     // JSON) is the test's verdict, recorded with its message, not a runner crash.

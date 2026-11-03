@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Generated TypeScript checks struct outputs; it no longer casts them.** A
+  struct answer was `JSON.parse`d and cast, so `{"amount": "not a number",
+  "hacked": true}` came back typed as `ExtractedInvoice`. Every answer now goes
+  through `parseOutput` (`@promptlang/core/runtime`) against the declared type:
+  each field's type, required fields present, no undeclared field, at any depth,
+  recursive types included; one surrounding code fence is accepted. A mismatch
+  raises `InvalidOutputError` (`prompt`, `errors`, `output`), not a bare `Error`,
+  and its message no longer quotes the model's answer. `expect schema` applies
+  the same check. Visible changes: an answer with an extra field now fails, and
+  `promptlang test` reports a mock outside the type as a failure before its
+  assertions run.
+
 ## [2.0.0] - 2026-11-03
 
 Remediation after the 2026-11-02 external audit, and the first release of

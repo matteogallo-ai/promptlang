@@ -5,7 +5,8 @@ import type {
   Program,
   Parameter,
 } from "../ast/nodes";
-import { mapType, toPascalCase, toConstName } from "./type-mapper";
+import { mapType, toPascalCase } from "./type-mapper";
+import { outputSpec } from "./output-schema";
 import { compileStringLiteral } from "./template-compiler";
 
 export type TypeRegistry = Map<string, TypeExpression>;
@@ -39,9 +40,6 @@ export function generateTypeDeclaration(decl: TypeDeclaration): string {
     case "EnumType": {
       const union = definition.values.map((v) => JSON.stringify(v)).join(" | ");
       parts.push(`export type ${name} = ${union};`);
-      parts.push("");
-      const vals = definition.values.map((v) => JSON.stringify(v)).join(", ");
-      parts.push(`const ${toConstName(name)}: ${name}[] = [${vals}];`);
       break;
     }
     case "StructType": {
@@ -83,6 +81,11 @@ export function generatePromptDeclaration(
 
   // Meta const
   parts.push(generateMetaConst(name, meta));
+  parts.push("");
+  // What parseOutput checks the answer against: the declared output type, as data.
+  parts.push(
+    `const ${name}_output: OutputSpec = ${JSON.stringify(outputSpec(returnType, registry))};`
+  );
   parts.push("");
 
   // Input interface
@@ -130,9 +133,9 @@ export function generatePromptDeclaration(
   parts.push(`  const raw = response.content.trim();`);
   parts.push("");
 
-  // Validation
-  const resolved = resolveType(returnType, registry);
-  parts.push(generateValidation(returnTsType, resolved, name));
+  parts.push(
+    `  return parseOutput(${JSON.stringify(name)}, raw, ${name}_output) as ${returnTsType};`
+  );
   parts.push("}");
 
   return parts.join("\n");
@@ -169,75 +172,5 @@ export function generateInputInterface(inputType: string, params: readonly Param
     lines.push(`  ${p.name}${p.optional ? "?" : ""}: ${mapType(p.type)};`);
   }
   lines.push("}");
-  return lines.join("\n");
-}
-
-function resolveType(type: TypeExpression, registry: TypeRegistry): TypeExpression {
-  if (type.kind === "TypeReference") {
-    return registry.get(type.name) ?? type;
-  }
-  return type;
-}
-
-function generateValidation(
-  returnTsType: string,
-  resolved: TypeExpression,
-  promptName: string
-): string {
-  const lines: string[] = [];
-
-  switch (resolved.kind) {
-    case "EnumType": {
-      const valuesVar = toConstName(returnTsType);
-      lines.push(`  if (!${valuesVar}.includes(raw as ${returnTsType})) {`);
-      lines.push(`    throw new Error(`);
-      lines.push(
-        `      \`Invalid output for prompt '${promptName}': expected one of \${${valuesVar}.join(", ")}, got "\${raw}"\``
-      );
-      lines.push(`    );`);
-      lines.push(`  }`);
-      lines.push(`  return raw as ${returnTsType};`);
-      break;
-    }
-    case "StructType": {
-      lines.push(`  let parsed: unknown;`);
-      lines.push(`  try {`);
-      lines.push(`    parsed = JSON.parse(raw);`);
-      lines.push(`  } catch {`);
-      lines.push(
-        `    throw new Error(\`Invalid JSON output for prompt '${promptName}': \${raw}\`);`
-      );
-      lines.push(`  }`);
-      lines.push(`  return parsed as ${returnTsType};`);
-      break;
-    }
-    case "PrimitiveType": {
-      if (resolved.name === "boolean") {
-        lines.push(`  const bool = raw.toLowerCase();`);
-        lines.push(`  if (bool !== "true" && bool !== "false") {`);
-        lines.push(
-          `    throw new Error(\`Invalid boolean output for prompt '${promptName}': "\${raw}"\`);`
-        );
-        lines.push(`  }`);
-        lines.push(`  return (bool === "true") as unknown as ${returnTsType};`);
-      } else if (resolved.name === "number") {
-        lines.push(`  const num = Number(raw);`);
-        lines.push(`  if (isNaN(num)) {`);
-        lines.push(
-          `    throw new Error(\`Invalid number output for prompt '${promptName}': "\${raw}"\`);`
-        );
-        lines.push(`  }`);
-        lines.push(`  return num as unknown as ${returnTsType};`);
-      } else {
-        lines.push(`  return raw as unknown as ${returnTsType};`);
-      }
-      break;
-    }
-    default: {
-      lines.push(`  return raw as unknown as ${returnTsType};`);
-      break;
-    }
-  }
-
   return lines.join("\n");
 }

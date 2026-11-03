@@ -126,13 +126,19 @@ prompt classify_ticket(ticket: string) -> Category {
 
 ### Generated output handling
 
-| Output type | Generated code does |
-| --- | --- |
-| `string` | returns the trimmed response text |
-| `number` | `Number(raw)`; throws if the result is `NaN` |
-| `boolean` | accepts `true` / `false` (case-insensitive); throws otherwise |
-| enum | throws unless the trimmed text is one of the members |
-| struct | `JSON.parse` (`json.loads` in Python) and a cast; field types are **not** validated |
+TypeScript: the generated function passes the trimmed response text to `parseOutput`
+(`@promptlang/core/runtime`) with a schema derived from the declared type, and throws
+`InvalidOutputError` when the answer does not conform. Its `errors` list every mismatch
+as `path: problem`; its message names them without quoting the answer.
+
+| Output type | TypeScript | Python |
+| --- | --- | --- |
+| `string` | the trimmed text | the trimmed text |
+| `number` | `Number(raw)`; `InvalidOutputError` unless finite | `float(raw)`; `ValueError` otherwise |
+| `boolean` | `true` / `false`, case-insensitive; `InvalidOutputError` otherwise | same, `ValueError` |
+| enum | `InvalidOutputError` unless the text is a member | `ValueError` unless a member |
+| `date` | `InvalidOutputError` unless `YYYY-MM-DD` | the text, unchecked |
+| struct | JSON (one surrounding code fence allowed), checked field by field at every depth; a field the type does not declare is a mismatch | `json.loads`; field types are **not** validated |
 
 ---
 

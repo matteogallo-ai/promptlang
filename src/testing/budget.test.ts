@@ -37,7 +37,10 @@ describe("BudgetedClient", () => {
         return { content: "{}" };
       },
     };
-    const cap = priceEstimate("claude-haiku-5-5", 2, [1000, 1000], 2000).estimatedUsd;
+    const cap = priceEstimate("claude-haiku-5-5", [
+      { chars: 1000, maxTokens: 1000 },
+      { chars: 1000, maxTokens: 1000 },
+    ]).estimatedUsd;
     const budgeted = new BudgetedClient(noUsage, cap);
     await budgeted.complete(req(1000));
     await budgeted.complete(req(1000));
@@ -139,8 +142,48 @@ describe("long-context rate card", () => {
 
   test("an estimate prices each call on its own rate card, not the total on one", () => {
     // Two 60K-token prompts: each is short, though together they pass 100K.
-    const e = priceEstimate("claude-haiku-5-5", 2, [180_000, 180_000], 2000);
+    const e = priceEstimate("claude-haiku-5-5", [
+      { chars: 180_000, maxTokens: 1000 },
+      { chars: 180_000, maxTokens: 1000 },
+    ]);
     expect(e.estimatedUsd).toBeCloseTo((120_000 * 0.1 + 2000 * 0.5) / 1e6, 12);
-    expect(e.inputTokens).toBe(120_000);
+    expect(e).toMatchObject({ calls: 2, inputTokens: 120_000, maxOutputTokens: 2000 });
+  });
+
+  test("an estimate of a long prompt uses the long-context card, input and output", () => {
+    const e = priceEstimate("claude-haiku-5-5", [{ chars: 300_003, maxTokens: 1000 }]);
+    expect(e.estimatedUsd).toBeCloseTo((100_001 * 0.5 + 1000 * 2.5) / 1e6, 12);
+  });
+
+  // Each call's output is priced on its own card, so uneven max_tokens cannot
+  // put a long call's output on the short card and under-estimate it.
+  test("a cap set to an estimate holds every call it counted, either side of 100K tokens", async () => {
+    const mixes = [
+      [
+        { chars: 300_003, maxTokens: 4000 },
+        { chars: 3, maxTokens: 10 },
+      ],
+      [
+        { chars: 300_000, maxTokens: 500 },
+        { chars: 300_001, maxTokens: 500 },
+        { chars: 299_999, maxTokens: 7 },
+        { chars: 1, maxTokens: 4000 },
+      ],
+    ];
+    for (const mix of mixes) {
+      const { client, calls } = counting();
+      const noUsage: PromptClient = {
+        complete: async (r) => {
+          await client.complete(r);
+          return { content: "{}" };
+        },
+      };
+      const budgeted = new BudgetedClient(
+        noUsage,
+        priceEstimate("claude-haiku-5-5", mix).estimatedUsd
+      );
+      for (const c of mix) await budgeted.complete(req(c.chars, c.maxTokens));
+      expect(calls).toHaveLength(mix.length);
+    }
   });
 });

@@ -18,9 +18,12 @@ export class BudgetExceededError extends PromptClientError {
 
 /**
  * What the estimates charge `request` at most: its input at characters ÷ 3 and
- * its whole max_tokens of output. Not a hard bound: text that tokenizes at under
- * 3 characters per token (CJK, base64, dense code) costs more input. Not rounded per call: the estimates round
- * the total once, and a cap set to an estimate must hold every call it counted.
+ * its whole max_tokens of output, on the rate card that input selects. Not a
+ * hard bound: text that tokenizes at under 3 characters per token (CJK, base64,
+ * dense code) costs more input, and near 100K tokens it can also move the call
+ * to a long-context card that bills several times more. Not rounded per call:
+ * the estimates round each card's input once, and a cap set to an estimate must
+ * hold every call it counted.
  */
 export function worstCaseUsd(request: PromptRequest): number {
   const chars = request.messages.reduce((n, m) => n + m.content.length, 0);

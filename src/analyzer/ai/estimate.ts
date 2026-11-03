@@ -11,14 +11,15 @@ export function estimateLinterCost(
   contexts: AnalysisContext[],
   model: string = AI_LINTER_MODEL
 ): CostEstimate {
-  let calls = 0;
-  const chars: number[] = [];
+  const perCall: Array<{ chars: number; maxTokens: number }> = [];
   for (const ctx of contexts) {
     for (const d of ctx.ast.declarations) {
       if (d.kind !== "PromptDeclaration") continue;
-      calls++;
-      chars.push(AI_LINTER_SYSTEM_PROMPT.length + buildAnalysisUserMessage(d).length);
+      perCall.push({
+        chars: AI_LINTER_SYSTEM_PROMPT.length + buildAnalysisUserMessage(d).length,
+        maxTokens: AI_LINTER_MAX_TOKENS,
+      });
     }
   }
-  return priceEstimate(model, calls, chars, calls * AI_LINTER_MAX_TOKENS);
+  return priceEstimate(model, perCall);
 }

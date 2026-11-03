@@ -87,6 +87,7 @@ export interface EvalRecord {
   charged_usd: number;
   /** False when the run was interrupted: the cases not run are absent from `results`. */
   complete: boolean;
+  /** The short-prompt card; each call in `cost_usd` is priced on the card its prompt selects. */
   price_usd_per_mtok: { input: number; output: number };
   latency_ms: { n: number; p50: number | null; p95: number | null };
   calls: Array<{

@@ -65,36 +65,37 @@ export interface CostEstimate {
 export class UnpricedModelError extends Error {}
 
 /**
- * Prices `calls` requests to `model`: `inputChars[i]` of text (÷ 3) for call i,
- * and `maxOutputTokens` in all, shared equally. The rate card is chosen per call,
- * since a long-context rate applies to a call's own prompt, then the input of
- * each card is rounded up once, so a cap set to the estimate holds every call.
+ * Prices one request per entry of `perCall`: its `chars` of text (÷ 3) and its
+ * whole `maxTokens` of output, on the rate card its own prompt length selects.
+ * The input of each card is rounded up once, not per call, so a cap set to the
+ * estimate holds every call it counted (see `worstCaseUsd`).
  */
 export function priceEstimate(
   model: string,
-  calls: number,
-  inputChars: readonly number[],
-  maxOutputTokens: number
+  perCall: ReadonlyArray<{ chars: number; maxTokens: number }>
 ): CostEstimate {
   if (!pricePerMTok(model)) {
     throw new UnpricedModelError(
       `no price is recorded for model ${model} (priced: ${Object.keys(PRICES_USD_PER_MTOK).join(", ")})`
     );
   }
-  const perCallOutput = calls === 0 ? 0 : maxOutputTokens / calls;
-  const byCard = new Map<RateCard, { chars: number; calls: number }>();
-  for (const chars of inputChars) {
+  const inputCharsByCard = new Map<RateCard, number>();
+  let outputUsd = 0;
+  for (const { chars, maxTokens } of perCall) {
     const card = pricePerMTok(model, chars / CHARS_PER_TOKEN)!;
-    const sum = byCard.get(card) ?? { chars: 0, calls: 0 };
-    byCard.set(card, { chars: sum.chars + chars, calls: sum.calls + 1 });
+    inputCharsByCard.set(card, (inputCharsByCard.get(card) ?? 0) + chars);
+    outputUsd += (maxTokens * card[1]) / 1_000_000;
   }
-  let estimatedUsd = 0;
-  for (const [card, sum] of byCard) {
-    const input = Math.ceil(sum.chars / CHARS_PER_TOKEN);
-    estimatedUsd += (input * card[0] + sum.calls * perCallOutput * card[1]) / 1_000_000;
-  }
-  const inputTokens = Math.ceil(inputChars.reduce((n, c) => n + c, 0) / CHARS_PER_TOKEN);
-  return { model, calls, inputTokens, maxOutputTokens, estimatedUsd };
+  let inputUsd = 0;
+  for (const [card, chars] of inputCharsByCard)
+    inputUsd += (Math.ceil(chars / CHARS_PER_TOKEN) * card[0]) / 1_000_000;
+  return {
+    model,
+    calls: perCall.length,
+    inputTokens: Math.ceil(perCall.reduce((n, c) => n + c.chars, 0) / CHARS_PER_TOKEN),
+    maxOutputTokens: perCall.reduce((n, c) => n + c.maxTokens, 0),
+    estimatedUsd: inputUsd + outputUsd,
+  };
 }
 
 /**
@@ -213,19 +214,17 @@ export function estimateLiveCost(program: Program): CostEstimate | null {
   const maxTokens = program.metadata.find((m) => m.kind === "MaxTokensMetadata")?.value;
   const perCallOutput = typeof maxTokens === "number" ? maxTokens : DEFAULT_MAX_TOKENS;
 
-  let calls = 0;
-  const inputChars: number[] = [];
+  const perCall: Array<{ chars: number; maxTokens: number }> = [];
   for (const t of tests) {
     const call = t.input as CallExpression;
     const reached = promptsReached(program, call.callee);
     const direct = reached.length === 1 && reached[0]!.prompt.name === call.callee;
     for (const [i, r] of reached.entries()) {
-      calls++;
       const step = direct
         ? null
         : { literals: r.literals, earlierSteps: i, maxTokens: perCallOutput };
-      inputChars.push(renderedChars(call, r.prompt, step));
+      perCall.push({ chars: renderedChars(call, r.prompt, step), maxTokens: perCallOutput });
     }
   }
-  return priceEstimate(model, calls, inputChars, calls * perCallOutput);
+  return priceEstimate(model, perCall);
 }

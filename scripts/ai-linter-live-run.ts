@@ -60,6 +60,7 @@ export interface RunRecord {
   calls: Array<{ input_tokens: number; output_tokens: number }>;
   usage: { input_tokens: number; output_tokens: number };
   cost_usd: number;
+  /** The short-prompt card; each call in `cost_usd` is priced on the card its prompt selects. */
   price_usd_per_mtok: { input: number; output: number };
   issues: Array<{ file: string; rule: string; severity: string; message: string }>;
   /** "ok", or "provider-errors" when at least one call failed (see ai:request-failure issues). */

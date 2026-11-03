@@ -509,7 +509,44 @@ describe("compile --emit-tsconfig", () => {
     restore();
     const content = JSON.parse(await Bun.file(`${EMIT_OUT}/tsconfig.json`).text());
     const paths = content.compilerOptions?.paths?.["@promptlang/core/runtime"] as string[];
-    expect(paths[0]).toBe("node_modules/@promptlang/core/dist/runtime/index.js");
+    // Without baseUrl, TypeScript rejects a non-relative paths entry (TS5090).
+    expect(paths[0]).toBe("./node_modules/@promptlang/core/dist/runtime/index.js");
+  });
+
+  test("emitted tsconfig sets no baseUrl, which TypeScript 7 rejects (TS5102)", async () => {
+    const restore = silenceAll();
+    await main([
+      "bun",
+      "cli",
+      "compile",
+      "docs/examples/classify-ticket.prompt",
+      "--out",
+      EMIT_OUT,
+      "--emit-tsconfig",
+    ]);
+    restore();
+    const content = JSON.parse(await Bun.file(`${EMIT_OUT}/tsconfig.json`).text());
+    expect(content.compilerOptions).not.toHaveProperty("baseUrl");
+  });
+
+  test("--runtime-path keeps a path that is already relative or absolute", async () => {
+    for (const given of ["../src/runtime/index.ts", "./rt/index.ts", "/abs/rt/index.ts"]) {
+      const restore = silenceAll();
+      await main([
+        "bun",
+        "cli",
+        "compile",
+        "docs/examples/classify-ticket.prompt",
+        "--out",
+        EMIT_OUT,
+        "--emit-tsconfig",
+        "--runtime-path",
+        given,
+      ]);
+      restore();
+      const content = JSON.parse(await Bun.file(`${EMIT_OUT}/tsconfig.json`).text());
+      expect(content.compilerOptions.paths["@promptlang/core/runtime"][0]).toBe(given);
+    }
   });
 
   test("help mentions --emit-tsconfig flag", async () => {

@@ -45,8 +45,8 @@ jobs:
         with:
           node-version: "lts/*"
           registry-url: "https://registry.npmjs.org"
-      # Trusted publishing needs npm >= 11.5.1 and Node >= 22.14.0. The npm bundled
-      # with "lts/*" moves and may be older, so a pinned npm is installed, and both
+      # Trusted publishing needs npm >= 11.5.1 and Node >= 22.14.0. "lts/*" moves,
+      # and so does the npm it bundles, so the npm that publishes is pinned, and both
       # versions are checked before anything is packed.
       - name: Install the npm that trusted publishing needs
         run: npm install -g npm@11.21.1

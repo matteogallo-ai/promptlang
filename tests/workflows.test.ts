@@ -158,9 +158,13 @@ describe.skipIf(typeof Bun.YAML === "undefined")("GitHub Actions workflows", () 
     expect(text).not.toMatch(/NODE_AUTH_TOKEN|NPM_TOKEN/);
     type Step = { run?: string };
     const release = Bun.YAML.parse(text) as {
-      jobs: { publish: { permissions: Record<string, string>; steps: Step[] } };
+      jobs: {
+        publish: { environment: string; permissions: Record<string, string>; steps: Step[] };
+      };
     };
-    const { permissions, steps } = release.jobs.publish;
+    const { environment, permissions, steps } = release.jobs.publish;
+    // The trusted publisher on npmjs.com names this environment; another one is refused.
+    expect(environment).toBe("npm");
     expect(permissions["id-token"]).toBe("write");
     const install = steps.findIndex((s) => /npm install -g npm@\d/.test(s.run ?? ""));
     const publish = steps.findIndex((s) => /npm publish/.test(s.run ?? ""));

@@ -11,17 +11,19 @@ from 3.0.0 needs the 3.0.0 runtime.
 
 - **`compile` can refuse a folder that compiled before**, and then writes no file
   at all (exit 1): two sources that would produce the same output file (case
-  ignored), or two modules that would export the same name (`sentiment` in two
+  ignored) or a file `compile` writes itself (`index`), or two modules that would
+  export the same name (`sentiment` in two
   folders, `foo_bar` beside `fooBar`). Rename one, or compile them into different
   `--out` folders.
 - **More names are compile errors**, each with its position: a reserved word where
-  the generated code binds the name (`prompt delete`, a Python parameter `class`),
-  a `-` outside `@model`, a Python name starting with `__`, a Python type, prompt
+  the generated code binds the name (`prompt delete`, a step `if`, a Python
+  parameter `class`), any name containing `-`, a Python name starting with `__`, a Python type, prompt
   or chain starting with `_promptlang_`, a type, prompt or chain named after what the generated module imports
   (`PromptClient`, `Promise`, Python's `TypedDict`, `str`...), a TypeScript prompt
   or chain named `globalThis` or `undefined`, a step, prompt or
-  chain named `client`, and two declarations that generate the same name (a type
-  `FooInput` beside a prompt `foo`). Rename the declaration; the list is in
+  chain named `client`, a step named after a prompt of the file, a parameter of
+  its chain or an earlier step, and two declarations that generate the same name
+  (a type `FooInput` beside a prompt `foo`; in Python, enums `Foo` and `foo`). Rename the declaration; the list is in
   `docs/syntax-reference.md`.
 - **Python modules are renamed** to importable names: `sentiment.v2.prompt` →
   `sentiment_v2.py`, `2x.prompt` → `_2x.py`, `class.prompt` → `class_.py`. Update
@@ -41,7 +43,9 @@ from 3.0.0 needs the 3.0.0 runtime.
   field of the wrong type, a `number` not in decimal notation, a `date` that is
   not a real day. In Python it subclasses `ValueError`, so existing `except
   ValueError` blocks still catch it. In `promptlang test`, a `mock:` answer outside
-  the type is now a failure: fix the mock.
+  the type is now a failure: fix the mock. `expect schema` messages give the kind
+  of the wrong value (`got a string`) instead of quoting it, and count undeclared
+  fields instead of naming them: update tests that match on that text.
 - **Generated TypeScript imports `parseOutput` from `@promptlang/core/runtime` as
   a value**, so the runtime must be installed at run time, not only for types.
 - **A struct parameter is inserted as JSON** (`{"plan":"pro","seats":3}`), where
@@ -51,7 +55,9 @@ from 3.0.0 needs the 3.0.0 runtime.
   an answer cut at `max_tokens`, refused, stopped early or with no text. 2.x
   returned the text as a success; an OpenAI `content: null` read as `""`. Catch it
   where you handled empty or truncated output; its `reason` says which case, and
-  `usage` what was billed.
+  `usage` what was billed. An OpenAI-compatible server that ends a successful
+  answer with a non-standard `finish_reason` now raises it, with `reason`
+  `unexpected_stop`.
 - **A 404 from `AnthropicClient` or `OpenAIClient` raises `NotFoundError`**, not
   `InvalidRequestError`. Code that caught `InvalidRequestError` for a missing
   model catches `NotFoundError`.

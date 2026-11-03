@@ -85,10 +85,16 @@ matches its SHA256SUMS: a labelled case cannot change unnoticed".
 linter; (3) prompt text written into generated source code.
 
 *Mitigation:*
-1. Generated code parses the output against the declared type (enum value, JSON
-   struct, number) and throws on a mismatch instead of passing it on:
-   `src/compiler/compiler.test.ts` "enum return type generates validation",
-   "struct return type generates JSON.parse validation".
+1. Generated TypeScript and Python check the output against the declared type
+   (enum value, every struct field at any depth, number, date) and raise
+   `InvalidOutputError` on a mismatch instead of passing it on; the message never
+   quotes the output, and an answer nested too deep to check is rejected, not a
+   crash: `tests/generated-output-validation.test.ts` "a field of the wrong type
+   or a field not declared is an InvalidOutputError", "the message names the
+   mismatches but not the output; the output is on the error", "an answer nested
+   deeper than the checker can follow is an InvalidOutputError", and "generated
+   Python checks the answer exactly as generated TypeScript does", which runs
+   the same answers through both.
 2. A linter answer that is not the expected JSON becomes an `ai:parse-failure`
    warning, never an empty result: `src/analyzer/ai/issue-parser.test.ts` "returns
    parse-failure issue on malformed JSON", "valid JSON of the wrong shape is a parse

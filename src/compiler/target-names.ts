@@ -5,6 +5,13 @@ import { toConstName, toPascalCase } from "./type-mapper";
 export type Target = "typescript" | "python";
 
 /** ECMAScript reserved words, strict mode (generated modules are strict) included. */
+/**
+ * The globals generated TypeScript bodies read: `globalThis.JSON` inserts a struct
+ * parameter, `undefined` tests an optional one. Only a value hides them, so they
+ * bind prompts and chains; any other global name, `JSON` included, is free.
+ */
+const TYPESCRIPT_VALUE_GLOBALS = new Set(["globalThis", "undefined"]);
+
 const TYPESCRIPT_RESERVED = new Set(
   (
     "await break case catch class const continue debugger default delete do else enum " +
@@ -39,9 +46,9 @@ const CHAIN_PARAMETERS = new Set(["client"]);
 const LANGUAGE: Record<Target, string> = { typescript: "TypeScript", python: "Python" };
 
 /**
- * Names the generated module imports. A declaration of the same name would
- * shadow one; in Python a type is a value too. The function bodies call no global
- * by its bare name, so a prompt may be named `JSON` or `ValueError`.
+ * Names the generated module imports or relies on (`Promise` for its async
+ * functions, the builtins Python type aliases evaluate). A declaration of the
+ * same name would shadow one; in Python a type is a value too.
  */
 const GENERATED_IMPORTS: Record<Target, ReadonlySet<string>> = {
   typescript: new Set(["PromptClient", "PromptRequest", "Promise"]),
@@ -78,7 +85,7 @@ interface Emitted {
 /**
  * The module-level names the generated code declares for each declaration of
  * `program`: its own name, `FooInput` and `foo_meta` (Python: `FOO_META`) for a
- * prompt or chain, `FOO_VALUES` (Python: `_FOO_VALUES`) for an enum.
+ * prompt or chain, and in Python `_FOO_VALUES` for an enum.
  */
 function emittedNames(program: Program, target: Target): Emitted[] {
   const out: Emitted[] = [];
@@ -87,9 +94,9 @@ function emittedNames(program: Program, target: Target): Emitted[] {
     if (d.kind === "TypeDeclaration") {
       const source = `the type ${d.name}`;
       out.push({ name: d.name, source, node: d, space: type, exported: true });
-      if (d.definition.kind === "EnumType")
+      if (d.definition.kind === "EnumType" && target === "python")
         out.push({
-          name: target === "python" ? `_${toConstName(d.name)}` : toConstName(d.name),
+          name: `_${toConstName(d.name)}`,
           source,
           node: d,
           space: "value",
@@ -194,7 +201,11 @@ export function checkTargetNames(program: Program, target: Target): void {
       problem = `it is a reserved word in ${language}`;
     else if (target === "typescript" && role === "a type" && TYPESCRIPT_TYPE_NAMES.has(name))
       problem = `TypeScript reserves it as a type name`;
-    else if ((callable || role === "a type") && GENERATED_IMPORTS[target].has(name))
+    else if (
+      (callable || role === "a type") &&
+      (GENERATED_IMPORTS[target].has(name) ||
+        (target === "typescript" && callable && TYPESCRIPT_VALUE_GLOBALS.has(name)))
+    )
       problem = `the generated ${language} uses that name`;
     else if ((callable || role === "a step") && CHAIN_PARAMETERS.has(name))
       problem = "the generated chain's parameters use that name";

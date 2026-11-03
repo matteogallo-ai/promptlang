@@ -26,10 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   binds the name (`prompt delete`, a step `if`, a Python parameter `class`),
   any name with `-`, a Python name starting with `__`, a type, prompt or chain
   named after what the generated module imports (`PromptClient`, `Promise`,
-  Python's `TypedDict`, `str`...), a step, prompt or chain named
+  Python's `TypedDict`, `str`...), a TypeScript prompt or chain named
+  `globalThis` or `undefined`, a step, prompt or chain named
   `client`, a step named after a prompt of the file, a parameter of its chain or
   an earlier step, and two declarations generating the same name (a type
-  `FooInput` beside a prompt `foo`, enums `Foo` and `foo`). Each compiled to a
+  `FooInput` beside a prompt `foo`, Python enums `Foo` and `foo`). Each compiled to a
   module that does not parse or type-check, or that silently shadowed a name,
   with exit 0.
 - **Generated headers no longer carry a `Generated at` timestamp**, so the same

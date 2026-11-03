@@ -138,16 +138,18 @@ prompt classify_ticket(ticket: string) -> Category {
     module level);
   - a type, prompt or chain named after something the generated module imports
     (`PromptClient`, `Promise`; in Python also `TypedDict`, `Literal`, `str`...). A
-    parameter or field may use these names, and a prompt may share a global's name
-    (`JSON`, `ValueError`): the generated code calls no global by its bare name;
+    parameter or field may use these names;
+  - in TypeScript, a prompt or chain named `globalThis` or `undefined`, the two
+    globals the generated code reads. Any other global name is allowed (`JSON`,
+    `Number`; in Python `ValueError`);
   - a step, prompt or chain named `client`, a parameter of every generated chain,
     even when no chain of the file calls that prompt: one added later would;
   - a step named after a prompt or chain of the file, after a parameter of its
     chain (a reference would read the parameter), or after an earlier step;
   - two declarations that generate the same name: a prompt `foo` generates `foo`,
-    `FooInput` and `foo_meta` (`FOO_META` in Python), an enum `Foo` generates
-    `FOO_VALUES` (`_FOO_VALUES` in Python), so a type `FooInput` beside the
-    prompt, or an enum `foo` beside the enum, is refused. TypeScript keeps types
+    `FooInput` and `foo_meta` (`FOO_META` in Python), and in Python an enum `Foo`
+    generates `_FOO_VALUES`, so a type `FooInput` beside the prompt is refused,
+    and in Python an enum `foo` beside the enum. TypeScript keeps types
     and values apart, so a type and a value of the same name are allowed there.
 
 ### Generated output handling

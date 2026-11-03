@@ -110,22 +110,23 @@ describe("names the target language cannot hold are compile errors", () => {
       );
   });
 
-  // Each of these compiled with exit 0 to TypeScript that does not type-check.
+  // Python declares _FOO_VALUES for an enum Foo; TypeScript declares no constant.
   test("an enum and a name equal to the constant generated for it", () => {
+    const beside = `type Foo = enum { a, b }
+prompt _FOO_VALUES(x: string) -> Foo { user: "<a>{{x}}</a>" }`;
+    expect(refusal("python", beside)).toBe(
+      "3:1 '_FOO_VALUES' is generated twice: for the type Foo and for the prompt _FOO_VALUES"
+    );
+    const twoEnums = `type Foo = enum { a, b }
+type foo = enum { c }`;
+    expect(refusal("python", twoEnums)).toContain("'_FOO_VALUES' is generated twice");
+    expect(refusal("typescript", twoEnums)).toBeUndefined();
     expect(
       refusal(
         "typescript",
-        `type Foo = enum { a, b }
-prompt FOO_VALUES(x: string) -> Foo { user: "<a>{{x}}</a>" }`
+        `type Foo = enum { a, b }\nprompt FOO_VALUES(x: string) -> Foo { user: "<a>{{x}}</a>" }`
       )
-    ).toBe("3:1 'FOO_VALUES' is generated twice: for the type Foo and for the prompt FOO_VALUES");
-    expect(
-      refusal(
-        "typescript",
-        `type Foo = enum { a, b }
-type foo = enum { c }`
-      )
-    ).toBe("3:1 'FOO_VALUES' is generated twice: for the type Foo and for the type foo");
+    ).toBeUndefined();
   });
 
   // Inside a generated chain, `client` is a parameter: a step of that name
@@ -151,6 +152,20 @@ type foo = enum { c }`
     expect(refusal("python", prompt("ValueError"))).toBeUndefined();
   });
 
+  // A struct parameter is inserted with globalThis.JSON, and an optional one is
+  // compared with undefined: a module-level function of either name breaks that.
+  test("a prompt or chain cannot take a global the generated code reads", () => {
+    for (const name of ["globalThis", "undefined"]) {
+      expect(refusal("typescript", prompt(name))).toBe(
+        `2:1 '${name}' cannot name a prompt: the generated TypeScript uses that name`
+      );
+      const chain = `${prompt("p")}\nchain ${name}(x: string) -> string {\n  step s = p(x: x)\n  return s\n}`;
+      expect(refusal("typescript", chain)).toContain(
+        `'${name}' cannot name a chain: the generated TypeScript uses that name`
+      );
+    }
+  });
+
   // A TypedDict attribute does not bind a module name, so it shadows nothing.
   test("a Python field or parameter may share a builtin's name", () => {
     const body = `type T = struct { list: string }\nprompt p(str: string, t: T) -> string { user: "<a>{{str}}</a>" }`;
@@ -165,12 +180,6 @@ type foo = enum { c }`
     expect(
       refusal("typescript", `type FOO_VALUES = string\ntype Foo = enum { a }`)
     ).toBeUndefined();
-    expect(
-      refusal(
-        "typescript",
-        `type Foo = enum { a, b }\nprompt FOO_VALUES(x: string) -> Foo { user: "<a>{{x}}</a>" }`
-      )
-    ).toContain("is generated twice");
   });
 
   test("the enum constant is not exported, so two files may each have one", () => {

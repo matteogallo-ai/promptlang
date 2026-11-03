@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { tokenize } from "../lexer/lexer";
 import { parse } from "../parser/parser";
+import type { PromptClient } from "../runtime/client";
+import { BudgetedClient } from "./budget";
 import { estimateLiveCost, UnpricedModelError } from "./cost";
+import { runTests } from "./runner";
 
 const est = (source: string) => estimateLiveCost(parse(tokenize(source)));
 // 30 characters of text plus the 5 of "{{x}}", where the argument is inserted.
@@ -37,9 +40,9 @@ describe("estimateLiveCost", () => {
     const t = `test "t" {\n  input: c("x")\n  expect: x\n}\n`;
     const e = est(`@model claude-haiku-5-5\n@max_tokens 100\n${PROMPT}${chain}${t}`);
     expect(e?.calls).toBe(2);
-    // Step a: 35 chars + the longest argument (1). Step b's "{{x}}" may insert step
-    // a's output: ≤100 tokens at up to 6 characters each.
-    expect(e?.inputTokens).toBe(Math.ceil((36 + 35 + 600) / 3));
+    // Step a: 35 chars + at least the 15 of "[object Object]" for its "{{x}}". Step b's
+    // "{{x}}" may insert step a's output: ≤100 tokens at up to 6 characters each.
+    expect(e?.inputTokens).toBe(Math.ceil((35 + 15 + 35 + 600) / 3));
   });
 
   test("numbers, booleans and enum members count as the text they are inserted as", () => {
@@ -61,4 +64,62 @@ describe("estimateLiveCost", () => {
     expect(() => est(`@model llama3.1\n${PROMPT}${TEST}`)).toThrow(UnpricedModelError);
     expect(() => est(`${PROMPT}${TEST}`)).toThrow("no @model");
   });
+});
+
+describe("the estimate as a cap, end to end", () => {
+  // Each program's test runs through the real generated code with the cap set to its
+  // estimate; the provider answers every call with its whole max_tokens, as estimated.
+  const p = (n = 1) => `prompt p(x: string) -> string {\n  user: "${"{{x}}".repeat(n)}"\n}\n`;
+  const cases: Array<[string, string, number]> = [
+    [
+      "a call in the return expression",
+      `${p()}chain c(x: string) -> string {\n  step a = p(x: x)\n  return p(x: a)\n}\n`,
+      10,
+    ],
+    [
+      "a call nested in an argument",
+      `${p()}chain c(x: string) -> string {\n  step a = p(x: p(x: x))\n  return a\n}\n`,
+      10,
+    ],
+    [
+      "an absent optional argument, inserted as undefined",
+      `prompt q(x: string, y?: string) -> string {\n  user: "{{x}}${"{{y}}".repeat(6)}"\n}\nchain c(x: string, y?: string) -> string {\n  step a = q(x: x, y: y)\n  return a\n}\n`,
+      10,
+    ],
+    [
+      "a member of a string, inserted as undefined",
+      `${p(6)}chain c(x: string) -> string {\n  step a = p(x: x.foo)\n  return a\n}\n`,
+      10,
+    ],
+    [
+      "a struct output inserted whole",
+      `prompt o(x: string) -> struct { a: string } {\n  user: "{{x}}"\n}\n${p(4)}chain c(x: string) -> string {\n  step s = o(x: x)\n  step b = p(x: s)\n  return b\n}\n`,
+      1,
+    ],
+  ];
+  for (const [name, decls, maxTokens] of cases) {
+    test(`${name}: every call fits`, async () => {
+      const source = `@model claude-haiku-5-5\n@max_tokens ${maxTokens}\n${decls}test "t" {\n  input: c("h")\n  expect: x\n}\n`;
+      const program = parse(tokenize(source));
+      const estimate = estimateLiveCost(program)!;
+      let sent = 0;
+      const client: PromptClient = {
+        async complete(req) {
+          sent++;
+          const chars = req.messages.reduce((n, m) => n + m.content.length, 0);
+          const struct = req.messages.some((m) => m.content === "h");
+          return {
+            content: struct ? '{"a":"w"}' : "w".repeat(maxTokens * 6),
+            usage: { input_tokens: Math.ceil(chars / 3), output_tokens: maxTokens },
+          };
+        },
+      };
+      const [result] = await runTests(program, "t.prompt", {
+        kind: "live",
+        client: new BudgetedClient(client, estimate.estimatedUsd),
+      });
+      expect(result!.providerError).toBeUndefined();
+      expect(sent).toBe(estimate.calls);
+    });
+  }
 });

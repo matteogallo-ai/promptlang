@@ -1,4 +1,10 @@
-import type { CallExpression, Program, PromptDeclaration, TestDeclaration } from "../ast/nodes";
+import type {
+  CallExpression,
+  Expression,
+  Program,
+  PromptDeclaration,
+  TestDeclaration,
+} from "../ast/nodes";
 import { extractTemplateVars } from "../compiler/template-compiler";
 
 /**
@@ -70,6 +76,13 @@ export function priceEstimate(
  */
 const CARRIED_CHARS_PER_TOKEN = 6;
 
+/**
+ * A chain can insert a value its test did not give (an absent optional argument,
+ * a missing member: "undefined") or a struct output whole ("[object Object]"):
+ * no placeholder in a chain step is counted shorter than that.
+ */
+const ABSENT_OR_OBJECT_CHARS = "[object Object]".length;
+
 /** The text a literal argument is inserted as: numbers and booleans as String() writes them. */
 function literalText(a: CallExpression["arguments"][number]): string | null {
   const v = a.kind === "NamedArgument" ? a.value : a;
@@ -91,7 +104,7 @@ function literalText(a: CallExpression["arguments"][number]): string | null {
  * `{{name}}` counted each time it appears. A direct call inserts its own
  * arguments by name. A chain step can insert a chain argument, a literal of the
  * step or an earlier step's output, so each placeholder counts as the longest of
- * those: an upper bound, because the cap refuses a call longer than estimated.
+ * those. It has to be an upper bound: the cap refuses a call longer than estimated.
  */
 function renderedChars(
   call: CallExpression,
@@ -106,7 +119,7 @@ function renderedChars(
     if (name) byName.set(name, value.length);
   });
   const longest = Math.max(
-    0,
+    step ? ABSENT_OR_OBJECT_CHARS : 0,
     ...call.arguments.map((a) => literalText(a)?.length ?? 0),
     ...(step?.literals ?? []),
     step && step.earlierSteps > 0 ? step.maxTokens * CARRIED_CHARS_PER_TOKEN : 0
@@ -121,7 +134,18 @@ function renderedChars(
   return n;
 }
 
-/** The prompts one call reaches, with the literal arguments of the step that calls each. */
+/** The calls in `e`, arguments before the call that receives them, as the generated code runs them. */
+function callsIn(e: Expression | CallExpression["arguments"][number]): CallExpression[] {
+  const v = e.kind === "NamedArgument" ? e.value : e;
+  if (v.kind !== "CallExpression") return [];
+  return [...v.arguments.flatMap(callsIn), v];
+}
+
+/**
+ * The prompts one call reaches, in call order, each with the literal arguments
+ * of the calls on its way: itself, or every call in a chain's steps and return
+ * expression, nested ones included.
+ */
 function promptsReached(
   program: Program,
   callee: string
@@ -129,13 +153,13 @@ function promptsReached(
   for (const d of program.declarations) {
     if (d.kind === "PromptDeclaration" && d.name === callee) return [{ prompt: d, literals: [] }];
     if (d.kind === "ChainDeclaration" && d.name === callee) {
-      return d.steps.flatMap((s) => {
-        if (s.expression.kind !== "CallExpression") return [];
-        const literals = s.expression.arguments.flatMap((a) => {
+      const calls = [...d.steps.map((s) => s.expression), d.returnExpression].flatMap(callsIn);
+      return calls.flatMap((call) => {
+        const literals = call.arguments.flatMap((a) => {
           const t = literalText(a);
           return t === null ? [] : [t.length];
         });
-        return promptsReached(program, s.expression.callee).map((r) => ({
+        return promptsReached(program, call.callee).map((r) => ({
           prompt: r.prompt,
           literals: [...r.literals, ...literals],
         }));

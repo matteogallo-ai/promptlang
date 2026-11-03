@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Property-based tests and fuzzing with fast-check (a devDependency) on the lexer,
+  the parser, `src/semver` and `@promptlang/yaml-parser`; see `docs/CLAIMS.md`.
+- Mutation testing with Stryker on `src/lexer`, `src/parser` and `src/semver`:
+  `bun run mutation`, run locally, results in `docs/mutation/`.
+
+### Fixed
+- Lexer: a string ending in a backslash at end of input or line is reported as an
+  unterminated string, not as the escape `'\undefined'` or an escaped newline.
+- Parser: an `import` after a declaration reports that imports must come first, as one
+  after metadata already did, instead of "Expected a declaration ... but found 'import'".
+- `promptlang.yaml` (through `@promptlang/yaml-parser`): a `__proto__` key is kept as
+  data instead of being dropped or replacing the object's prototype, and a backslash
+  in a single-quoted string is literal.
+
 ## [2.0.0] - 2026-11-02
 
 Remediation after the 2026-11-02 external audit, and the first release of

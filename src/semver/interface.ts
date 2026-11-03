@@ -166,7 +166,7 @@ function diffParams(name: string, base: Callable, cur: Callable, push: (c: Chang
  * Output rule: the schema is what consumers read and what the model must
  * produce, so any change is major except adding optional struct fields.
  * `subject` names what is compared in the messages: a prompt's output, or a
- * declared type, which consumers read the same way.
+ * declared type (`lead` prefixes its messages), which consumers read the same way.
  */
 function diffOutput(
   name: string | undefined,
@@ -174,11 +174,16 @@ function diffOutput(
   cur: Shape,
   push: (c: Change) => void,
   prefix = "",
-  subject: { whole: string; field: string } = { whole: "output type", field: "output field" }
+  subject: { lead?: string; whole: string; field: string } = {
+    whole: "output type",
+    field: "output field",
+  }
 ): void {
   if (render(base) === render(cur)) return;
-  const at = (c: Omit<Change, "declaration">): Change =>
-    name === undefined ? c : { ...c, declaration: name };
+  const at = (c: Omit<Change, "declaration">): Change => {
+    const described = { ...c, description: `${subject.lead ?? ""}${c.description}` };
+    return name === undefined ? described : { ...described, declaration: name };
+  };
   if (base.kind !== "struct" || cur.kind !== "struct") {
     const what = prefix === "" ? subject.whole : `${subject.field} '${prefix.slice(0, -1)}' type`;
     push(at({ level: "major", description: `${what} changed: ${render(base)} → ${render(cur)}` }));
@@ -234,8 +239,9 @@ function diffTypes(base: Program, current: Program, push: (c: Change) => void): 
     // Seeded with its own name, a recursive type is compared once, not unrolled into itself.
     const own = () => new Set([name]);
     diffOutput(undefined, shapeOf(def, b, own()), shapeOf(now, c, own()), push, "", {
-      whole: `type '${name}'`,
-      field: `type '${name}' field`,
+      lead: `type '${name}': `,
+      whole: "definition",
+      field: "field",
     });
   }
   for (const name of c.keys())

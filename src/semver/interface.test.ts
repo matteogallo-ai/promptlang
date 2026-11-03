@@ -148,11 +148,11 @@ describe("diffPrograms — minor", () => {
       `type Inner = struct { ${inner} }\n${PROMPT("x: string", "struct { inner: Inner }")}`;
     expect(levels(out("a: string"), out("a: string, b?: string"))).toEqual([
       "minor: p: optional output field 'inner.b' added",
-      "minor: optional type 'Inner' field 'b' added",
+      "minor: type 'Inner': optional field 'b' added",
     ]);
     expect(levels(out("a: string, b: string"), out("a: string"))).toEqual([
       "major: p: output field 'inner.b' removed",
-      "major: type 'Inner' field 'b' removed",
+      "major: type 'Inner': field 'b' removed",
     ]);
   });
 
@@ -259,7 +259,7 @@ describe("diffPrograms — boundaries", () => {
     const tree = (leaf: string) => `type T = struct { next?: T, v: ${leaf} }\n${PROMPT("x: T")}`;
     expect(levels(tree("string"), tree("number"))).toEqual([
       "major: p: parameter 'x' type changed: struct { next?: T, v: string } → struct { next?: T, v: number }",
-      "major: type 'T' field 'v' type changed: string → number",
+      "major: type 'T': field 'v' type changed: string → number",
     ]);
   });
 });
@@ -285,7 +285,7 @@ describe("diffPrograms — declared types", () => {
   test("changing a type no prompt uses is still major: it is exported", () => {
     const base = `type T = enum { a, b }\n${PROMPT("x: string")}`;
     expect(levels(base, `type T = enum { a }\n${PROMPT("x: string")}`)).toEqual([
-      "major: type 'T' changed: enum { a, b } → enum { a }",
+      "major: type 'T': definition changed: enum { a, b } → enum { a }",
     ]);
   });
 
@@ -293,7 +293,7 @@ describe("diffPrograms — declared types", () => {
   // itself, so the type's own change must carry the level.
   const T2 = "type T = enum { a, b }\n";
   const T1 = "type T = enum { a }\n";
-  const narrowed = "major: type 'T' changed: enum { a, b } → enum { a }";
+  const narrowed = "major: type 'T': definition changed: enum { a, b } → enum { a }";
   const reached: Array<[string, string, string]> = [
     [
       "a prompt using it is added",
@@ -333,7 +333,7 @@ describe("diffPrograms — declared types", () => {
     const base = `type S = struct { a: string }\n${PROMPT("x: string")}`;
     expect(
       levels(base, `type S = struct { a: string, b?: string }\n${PROMPT("x: string")}`)
-    ).toEqual(["minor: optional type 'S' field 'b' added"]);
+    ).toEqual(["minor: type 'S': optional field 'b' added"]);
   });
 
   test("a type reached through another declared type is compared through it", () => {
@@ -341,8 +341,8 @@ describe("diffPrograms — declared types", () => {
       `type B = ${b}\ntype A = struct { b: B }\n${PROMPT("x: string", "A")}`;
     expect(levels(file("enum { x, y }"), file("enum { x }"))).toEqual([
       "major: p: output field 'b' type changed: enum { x, y } → enum { x }",
-      "major: type 'B' changed: enum { x, y } → enum { x }",
-      "major: type 'A' field 'b' type changed: enum { x, y } → enum { x }",
+      "major: type 'B': definition changed: enum { x, y } → enum { x }",
+      "major: type 'A': field 'b' type changed: enum { x, y } → enum { x }",
     ]);
   });
 });

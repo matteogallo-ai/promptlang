@@ -10,7 +10,8 @@ export const AI_LINTER_MODEL = "claude-haiku-5-5";
 /**
  * Haiku 5.5 thinks adaptively by default and thinking counts against
  * max_tokens, so the limit leaves room for it on top of the JSON answer. A
- * truncated answer surfaces as an ai:parse-failure issue, never as "no issues".
+ * truncated answer raises IncompleteResponseError and surfaces as an
+ * ai:request-failure issue, never as "no issues".
  */
 export const AI_LINTER_MAX_TOKENS = 4096;
 

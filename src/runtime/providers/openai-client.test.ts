@@ -116,12 +116,14 @@ describe("OpenAIClient — request body", () => {
     expect(body.temperature).toBe(0.5);
   });
 
-  test("maps max_tokens when provided", async () => {
+  // GPT-5 and the o-series answer 400 to max_tokens; every current chat model reads max_completion_tokens.
+  test("sends max_tokens as max_completion_tokens", async () => {
     fetchSpy.mockResolvedValueOnce(okResponse());
     await new OpenAIClient({ apiKey: "key" }).complete({ ...BASE_REQUEST, max_tokens: 256 });
     const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
     const body = JSON.parse(init.body as string) as Record<string, unknown>;
-    expect(body.max_tokens).toBe(256);
+    expect(body.max_completion_tokens).toBe(256);
+    expect(body).not.toHaveProperty("max_tokens");
   });
 });
 

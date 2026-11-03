@@ -24,6 +24,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   instead of naming them. `promptlang test` reports a mock outside the type as a
   failure before the test's assertions run.
 
+- **`RoutingClient` falls back only when a provider could not serve the
+  request** (outage, rate limit, timeout, network, 404, malformed body). A 400
+  and any error that is not a `PromptClientError` used to send the same request,
+  and the user's data, to the next provider; they are now thrown at once, like
+  `AuthenticationError`.
+- **A 404 from `AnthropicClient` or `OpenAIClient` raises `NotFoundError`**, as
+  `OllamaClient` already did, instead of `InvalidRequestError`, so a model or
+  endpoint one provider lacks falls back while a malformed request does not.
+  Code that catches `InvalidRequestError` for a 404 catches `NotFoundError`.
+
 ### Fixed
 - **Struct outputs are no longer cast unchecked.** Generated TypeScript
   `JSON.parse`d and cast the answer, and generated Python returned `json.loads`'
@@ -33,6 +43,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Answers that cannot be checked are refused, not crashes.** A recursive type
   nested past the call stack raised `RangeError` (TypeScript) or
   `RecursionError` (Python); it is now an `InvalidOutputError`.
+- **`OpenAIClient` sends `max_completion_tokens`, not `max_tokens`** (TypeScript
+  and Python). GPT-5 and the o-series, which the routing example falls back to,
+  answer `max_tokens` with a 400. The `@temperature` warning now says those
+  models refuse any value but 1.
+- **An incomplete answer is an error, not a result.** The TypeScript and Python
+  runtimes returned whatever text a 2xx body held, so an answer cut at
+  `max_tokens` (or a thinking-only body with no text), a refusal, or an empty
+  answer reached the caller as a success; a struct prompt then failed later with
+  a misleading parse error. They now raise `IncompleteResponseError` with a
+  `reason` (`max_tokens`, `refusal`, `unexpected_stop`, `empty`) and the `usage`
+  the provider billed. It is never retried and `RoutingClient` does not send it
+  to a fallback, so a refusal is not routed around. `promptlang test --live`
+  reports it as a configuration failure and still counts its tokens. Visible
+  changes: an OpenAI body with `content: null` or blank text now raises instead
+  of reading as `""`, and an OpenAI-compatible server that ends a successful
+  answer with a non-standard `finish_reason` now raises `unexpected_stop`.
 
 ## [2.0.0] - 2026-11-03
 

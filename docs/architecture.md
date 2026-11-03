@@ -270,8 +270,9 @@ All runtime errors extend `PromptClientError → Error`. Sub-classes:
 | `TimeoutError` | Yes | AbortController fires |
 | `NetworkError` | Yes | Low-level fetch failure |
 | `ConnectionError` | Yes | ECONNREFUSED (Ollama) |
-| `NotFoundError` | Never | 404 (Ollama model missing) |
+| `NotFoundError` | Never | 404 (unknown model or endpoint; Ollama: model not pulled) |
 | `InvalidResponseError` | Never | 2xx body that is not JSON or lacks the documented fields |
+| `IncompleteResponseError` | Never | Well-formed 2xx that is not a complete answer; `reason` is `max_tokens` (Anthropic `stop_reason`, OpenAI `finish_reason: length`, Ollama `done_reason: length`), `refusal` (Anthropic `refusal`, OpenAI `content_filter` or `message.refusal`), `unexpected_stop` (any other stop value, e.g. `pause_turn`, `model_context_window_exceeded`, `tool_calls`, or a non-standard `finish_reason` from an OpenAI-compatible server) or `empty` (no text, or only whitespace); carries `usage`; `RoutingClient` does not fall back on it |
 | `AllProvidersFailedError` | — | All RoutingClient providers failed |
 
 **Provider clients** (`providers/`):
@@ -279,7 +280,7 @@ All runtime errors extend `PromptClientError → Error`. Sub-classes:
 - `AnthropicClient` — POST `/v1/messages`; separates system messages into the top-level `system` field; max_tokens defaults to 1024.
 - `OpenAIClient` — POST `/v1/chat/completions`; messages forwarded unchanged; normalizes `prompt_tokens`/`completion_tokens` to `input_tokens`/`output_tokens`.
 - `OllamaClient` — POST `/api/chat`; no auth; maps `options.temperature` / `options.num_predict`; `stream: false`; pedagogical errors for ECONNREFUSED and 404.
-- `RoutingClient` — tries `primary`, then each `fallback` in order, each with an optional `modelMap` from the requested model to its own; `AuthenticationError` short-circuits without trying fallbacks; aggregates all errors in `AllProvidersFailedError`.
+- `RoutingClient` — tries `primary`, then each `fallback` in order, each with an optional `modelMap` from the requested model to its own; falls back only when a provider could not serve the request (`ServerError`, `RateLimitError`, `TimeoutError`, network errors, `NotFoundError`, `InvalidResponseError`, a missing model mapping). `AuthenticationError`, `IncompleteResponseError`, `InvalidRequestError` (a 400: the request itself is wrong) and any error that is not a `PromptClientError` (a bug) are thrown without trying fallbacks. A timed-out request may still be billed by the provider that timed out. All errors are aggregated in `AllProvidersFailedError`.
 
 All provider clients use a shared `withRetry` utility (exponential backoff, configurable `maxRetries` and `retryDelay`).
 

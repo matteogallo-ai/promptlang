@@ -168,6 +168,74 @@ describe("promptlang test --live", () => {
     expect(r.stdout).toContain("0 passed, 0 failed, 1 without a verdict (1 provider failure)");
   });
 
+  test("a call that overspends stops the next test: exit 3, a configuration error, nothing sent", async () => {
+    const file = await write("live-budget.prompt", passing + failing);
+    let sent = 0;
+    const deps: TestCommandDeps = {
+      createClient: () => ({
+        async complete() {
+          sent++;
+          return { content: "bug", usage: { input_tokens: 7, output_tokens: 1_000_000 } };
+        },
+      }),
+      confirm: () => true,
+    };
+    const r = await capture(() => runTest([file, "--live", "--yes"], deps));
+    expect(sent).toBe(1);
+    expect(r.code).toBe(3);
+    expect(r.stdout).toContain(
+      "configuration error, no verdict (fix the file, the key or the approved budget): BudgetExceededError: budget:"
+    );
+  });
+
+  test("a template using an input twice still fits the cap set to its estimate", async () => {
+    const twice = `@version "1.0.0"\n@model claude-haiku-4-5\n@max_tokens 10\ntype Kind = enum { bug, other }\nprompt classify(text: string) -> Kind {\n  user: "Classify: {{text}}. Again: {{text}}"\n}\ntest "long" {\n  input: classify("${"crash ".repeat(500)}")\n  mock: "bug"\n  expect: bug\n}\n`;
+    const file = join(dir, "live-twice.prompt");
+    await Bun.write(file, twice);
+    let sent = 0;
+    const deps: TestCommandDeps = {
+      createClient: () => ({
+        async complete() {
+          sent++;
+          return { content: "bug" };
+        },
+      }),
+      confirm: () => true,
+    };
+    const r = await capture(() => runTest([file, "--live", "--yes"], deps));
+    expect(r.stdout).not.toContain("BudgetExceededError");
+    expect(sent).toBe(1);
+    expect(r.code).toBe(0);
+  });
+
+  test("a chain step that inserts an earlier output, and a number argument, fit the cap set to the estimate", async () => {
+    // Step a answers its full 100 tokens as 450 characters (English, ~4.5 per token),
+    // which step b then sends: the estimate must allow for that text as the cap measures it.
+    const source = `@version "1.0.0"\n@model claude-haiku-5-5\n@max_tokens 100\nprompt p(x: string) -> string {\n  user: "Rewrite: {{x}}"\n}\nprompt q(n: number) -> string {\n  user: "Score {{n}}"\n}\nchain c(x: string) -> string {\n  step a = p(x: x)\n  step b = p(x: a)\n  return b\n}\ntest "chain" {\n  input: c("hi")\n  expect contains: "w"\n}\ntest "number" {\n  input: q(123456789012)\n  expect contains: "w"\n}\n`;
+    const file = join(dir, "live-chain.prompt");
+    await Bun.write(file, source);
+    let sent = 0;
+    const deps: TestCommandDeps = {
+      createClient: () => ({
+        async complete(req) {
+          sent++;
+          return {
+            content: "word ".repeat(90),
+            usage: {
+              input_tokens: Math.ceil(req.messages[0]!.content.length / 4),
+              output_tokens: 100,
+            },
+          };
+        },
+      }),
+      confirm: () => true,
+    };
+    const r = await capture(() => runTest([file, "--live", "--yes"], deps));
+    expect(r.stdout).not.toContain("BudgetExceededError");
+    expect(sent).toBe(3);
+    expect(r.code).toBe(0);
+  });
+
   test("a rejected request: exit 3, reported as a configuration error, not an outage", async () => {
     const file = await write("live-bad-request.prompt", passing);
     const deps: TestCommandDeps = {
@@ -181,7 +249,7 @@ describe("promptlang test --live", () => {
     const r = await capture(() => runTest([file, "--live", "--yes"], deps));
     expect(r.code).toBe(3);
     expect(r.stdout).toContain(
-      "configuration error, no verdict (fix the file or the key): InvalidRequestError: max_tokens: too large for this model"
+      "configuration error, no verdict (fix the file, the key or the approved budget): InvalidRequestError: max_tokens: too large for this model"
     );
     expect(r.stdout).toContain("0 passed, 0 failed, 1 without a verdict (1 configuration error)");
   });

@@ -87,7 +87,7 @@ def _require_api_key(api_key: object, client: str, env_var: str) -> str:
     return api_key
 
 
-def _raise_for_status(response: Any, provider: str) -> None:
+def _raise_for_status(response: Any, provider: str, api_key: str) -> None:
     status = response.status_code
     if 200 <= status < 300:
         return
@@ -99,6 +99,10 @@ def _raise_for_status(response: Any, provider: str) -> None:
     except ValueError:
         # An error body that is not JSON still gets classified by its status below.
         pass
+    # The message quotes the provider's body, which reaches logs; a provider or a
+    # proxy that echoes the key must not leak it there.
+    if isinstance(message, str):
+        message = message.replace(api_key, "[redacted]")
     if status == 401:
         raise AuthenticationError(message or "Authentication failed. Check that your API key is valid.", provider)
     if status == 429:
@@ -193,7 +197,7 @@ class AnthropicClient(PromptClient):
                 headers=headers,
                 timeout=60.0,
             )
-        _raise_for_status(response, "anthropic")
+        _raise_for_status(response, "anthropic", self.api_key)
         data = _read_json_object(response, "anthropic")
         blocks = data.get("content")
         if not isinstance(blocks, list):
@@ -253,7 +257,7 @@ class OpenAIClient(PromptClient):
                 headers=headers,
                 timeout=60.0,
             )
-        _raise_for_status(response, "openai")
+        _raise_for_status(response, "openai", self.api_key)
         data = _read_json_object(response, "openai")
         choices = data.get("choices")
         choice = choices[0] if isinstance(choices, list) and choices else None

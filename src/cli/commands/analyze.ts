@@ -1,5 +1,6 @@
 import { AiLinter } from "../../analyzer/ai/ai-linter";
 import { estimateLinterCost } from "../../analyzer/ai/estimate";
+import { BudgetedClient } from "../../testing/budget";
 import type { PromptClient } from "../../runtime/client";
 import { resolveFiles } from "../files";
 import { confirmInTerminal, createLiveClient } from "../live";
@@ -118,7 +119,8 @@ export async function runAnalyze(args: string[], deps: AnalyzeDeps = defaultDeps
         }
       }
       const aiLinter = new AiLinter({
-        client,
+        // The approved estimate is enforced in code: a call that would pass it is not sent.
+        client: new BudgetedClient(client, e.estimatedUsd),
         onProgress: (current, total) => {
           if (!jsonOutput) {
             process.stderr.write(`\r  AI analysis: ${current}/${total} prompts...`);

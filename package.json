@@ -78,5 +78,9 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "overrides": {
+    "qs": "6.16.1",
+    "minimatch": "11.0.1"
   }
 }

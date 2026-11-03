@@ -210,6 +210,12 @@ describe("Section keywords", () => {
     expect(types("input")).toEqual([TokenType.INPUT]);
   });
 
+  // The keyword table is a plain object: its prototype's keys are not keywords.
+  test("an Object.prototype key is an identifier", () => {
+    for (const word of ["toString", "constructor", "__proto__", "hasOwnProperty"])
+      expect(types(word)).toEqual([TokenType.IDENT]);
+  });
+
   test("expect keyword", () => {
     expect(types("expect")).toEqual([TokenType.EXPECT]);
   });

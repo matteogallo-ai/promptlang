@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeAll } from "bun:test";
-import { rm, mkdir } from "node:fs/promises";
+import { rm, mkdir, mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { SCRATCH } from "../../tests/support/scratch";
 import { runTsc, subprocessTest } from "../../tests/support/subprocess";
@@ -1041,5 +1042,137 @@ describe("compile — test and eval blocks", () => {
   test("@temperature on a non-Claude model compiles without that warning", async () => {
     const { warnings } = await compileSource(`@model gpt-5\n@temperature 0.2\n${PROMPT}`);
     expect(warnings).not.toContain("@temperature");
+  });
+});
+
+describe("compile — output names", () => {
+  let DIR = "";
+  beforeAll(async () => {
+    DIR = await mkdtemp(join(tmpdir(), "promptlang-output-names-"));
+  });
+  const prompt = (name: string) =>
+    `@version "1.0.0"\nprompt ${name}(t: string) -> string {\n  user: "<t>{{t}}</t>"\n}\ntest "t" {\n  input: ${name}("a")\n  mock: "x"\n  expect: "x"\n}\n`;
+
+  async function compileTree(files: Record<string, string>, extra: string[] = []) {
+    await rm(DIR, { recursive: true, force: true });
+    for (const [path, source] of Object.entries(files))
+      await Bun.write(join(DIR, "src", path), source);
+    const log = captureLog();
+    const err = captureError();
+    const code = await main([
+      "bun",
+      "cli",
+      "compile",
+      join(DIR, "src"),
+      "--out",
+      join(DIR, "out"),
+      ...extra,
+    ]);
+    const stderr = err.output();
+    err.restore();
+    log.restore();
+    const written = await Array.fromAsync(new Bun.Glob("*").scan({ cwd: join(DIR, "out") })).catch(
+      () => [] as string[]
+    );
+    return { code, stderr, written: written.sort() };
+  }
+
+  // A flat output folder has one file per name: the second source used to overwrite the first.
+  test("two sources that compile to the same file are an error and nothing is written", async () => {
+    const { code, stderr, written } = await compileTree({
+      "a/x.prompt": prompt("from_a"),
+      "b/x.prompt": prompt("from_b"),
+    });
+    expect(code).toBe(1);
+    expect(stderr).toContain("both compile to x.ts");
+    expect(stderr).toContain(join(DIR, "src", "a/x.prompt"));
+    expect(stderr).toContain(join(DIR, "src", "b/x.prompt"));
+    expect(written).toEqual([]);
+  });
+
+  // Case-insensitive file systems (macOS, Windows) hold one of X.ts and x.ts.
+  test("names that differ only by case collide", async () => {
+    const { code, stderr } = await compileTree({
+      "a/X.prompt": prompt("upper"),
+      "b/x.prompt": prompt("lower"),
+    });
+    expect(code).toBe(1);
+    expect(stderr).toMatch(/both compile to [Xx]\.ts/);
+  });
+
+  test("a name declared in two files is an error: the index cannot export both", async () => {
+    for (const target of ["typescript", "python"]) {
+      const { code, stderr, written } = await compileTree(
+        { "v1.prompt": prompt("sentiment"), "v2.prompt": prompt("sentiment") },
+        ["--target", target]
+      );
+      expect(code).toBe(1);
+      expect(stderr).toContain("'sentiment' is exported by both");
+      expect(written).toEqual([]);
+    }
+  });
+
+  test("a Python module is named after the file with every non-identifier character as _", async () => {
+    const { code, written } = await compileTree(
+      { "sentiment.v2.prompt": prompt("sentiment"), "2-fold.prompt": prompt("fold") },
+      ["--target", "python"]
+    );
+    expect(code).toBe(0);
+    expect(written).toEqual([
+      "_2_fold.py",
+      "__init__.py",
+      "promptlang_runtime.py",
+      "sentiment_v2.py",
+    ]);
+    const init = await Bun.file(join(DIR, "out", "__init__.py")).text();
+    expect(init.trimEnd().split("\n").sort()).toEqual([
+      "from ._2_fold import *",
+      "from .sentiment_v2 import *",
+    ]);
+  });
+
+  // compile writes these files itself; a source of that name was replaced by them.
+  test("a source named after a file compile writes itself is an error", async () => {
+    for (const [file, target, out] of [
+      ["index.prompt", "typescript", "index.ts"],
+      ["__init__.prompt", "python", "__init__.py"],
+      ["promptlang_runtime.prompt", "python", "promptlang_runtime.py"],
+    ] as const) {
+      const { code, stderr, written } = await compileTree({ [file]: prompt("p") }, [
+        "--target",
+        target,
+      ]);
+      expect(code).toBe(1);
+      expect(stderr).toContain(`compiles to ${out}, which compile writes itself`);
+      expect(written).toEqual([]);
+    }
+  });
+
+  // A derived name counts too: both prompts generate FooBarInput.
+  test("a name derived in two files is an error", async () => {
+    const { code, stderr } = await compileTree({
+      "a.prompt": prompt("foo_bar"),
+      "b.prompt": prompt("fooBar"),
+    });
+    expect(code).toBe(1);
+    expect(stderr).toContain("'FooBarInput' is exported by both");
+  });
+
+  test("a Python keyword as a file name gets a trailing _", async () => {
+    const { code, written } = await compileTree({ "class.prompt": prompt("p") }, [
+      "--target",
+      "python",
+    ]);
+    expect(code).toBe(0);
+    expect(written).toContain("class_.py");
+  });
+
+  subprocessTest("the compiled Python package imports", async () => {
+    await compileTree({ "sentiment.v2.prompt": prompt("sentiment") }, ["--target", "python"]);
+    const r = Bun.spawnSync(["python3", "-c", "import out; print(out.sentiment.__name__)"], {
+      cwd: DIR,
+    });
+    expect(r.stderr.toString()).toBe("");
+    expect(r.stdout.toString().trim()).toBe("sentiment");
   });
 });

@@ -180,10 +180,25 @@ describe("compile — header", () => {
     expect(out).toContain("my-file.prompt");
   });
 
-  test("header contains ISO timestamp", () => {
+  // Generated files can be committed and diffed: only a change of input or version changes them.
+  test("the same source compiles to the same bytes", async () => {
     const ast = parseSource(`prompt hello() -> string { user: "hi" output: string }`);
-    const out = compile(ast, "x.prompt");
-    expect(out).toMatch(/Generated at: \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+    const first = compile(ast, "x.prompt");
+    await Bun.sleep(5);
+    expect(compile(ast, "x.prompt")).toBe(first);
+  });
+
+  // A file name is user input; a newline in it would end the comment and start code.
+  test("a source path with a newline cannot leave the header comment", () => {
+    const ast = parseSource(`prompt hello() -> string { user: "hi" output: string }`);
+    const out = compile(ast, "a\nexport const pwned = 1;\n.prompt");
+    expect(out).not.toContain("\nexport const pwned");
+    expect(out).toContain("// Source: a\\nexport const pwned = 1;\\n.prompt");
+    // JavaScript also ends a line at U+2028 and U+2029, which JSON leaves as is.
+    for (const separator of ["\u2028", "\u2029"]) {
+      const sep = compile(ast, `a${separator}export const pwned = 1;//.prompt`);
+      expect(sep).not.toContain(separator);
+    }
   });
 
   test("header contains PromptLang version", () => {

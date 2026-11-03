@@ -128,6 +128,29 @@ prompt classify_ticket(ticket: string) -> Category {
   are printed by each language (`3.0` in Python for a `float`, `3` in TypeScript).
   A parameter whose type comes from an imported file is inserted as the target
   language prints it.
+- Compilation fails, with the position, on a name the generated code cannot hold:
+  - a `-` (allowed in `@model` only);
+  - a reserved word of the target where the generated code binds the name: prompt,
+    chain, step and type names in TypeScript (`delete`, `if`; types also not `any`,
+    `string`, `keyof`...), every name in Python, parameters and struct fields
+    included (`class`, `pass`);
+  - in Python, any name starting with `__` (mangled in a class body, special at
+    module level);
+  - a type, prompt or chain named after something the generated module imports
+    (`PromptClient`, `Promise`; in Python also `TypedDict`, `Literal`, `str`...). A
+    parameter or field may use these names;
+  - in TypeScript, a prompt or chain named `globalThis` or `undefined`, the two
+    globals the generated code reads. Any other global name is allowed (`JSON`,
+    `Number`; in Python `ValueError`);
+  - a step, prompt or chain named `client`, a parameter of every generated chain,
+    even when no chain of the file calls that prompt: one added later would;
+  - a step named after a prompt or chain of the file, after a parameter of its
+    chain (a reference would read the parameter), or after an earlier step;
+  - two declarations that generate the same name: a prompt `foo` generates `foo`,
+    `FooInput` and `foo_meta` (`FOO_META` in Python), and in Python an enum `Foo`
+    generates `_FOO_VALUES`, so a type `FooInput` beside the prompt is refused,
+    and in Python an enum `foo` beside the enum. TypeScript keeps types
+    and values apart, so a type and a value of the same name are allowed there.
 
 ### Generated output handling
 
@@ -414,6 +437,17 @@ async def classify_ticket(input: ClassifyTicketInput, client: PromptClient) -> C
 
 Plus `__init__.py` and a generated `promptlang_runtime.py` (its HTTP clients need
 `httpx`; `MockClient` needs nothing).
+
+### Output file names
+
+Each `.prompt` file compiles to one file in the `--out` folder, named after it:
+`x.prompt` → `x.ts`. For Python every character that cannot appear in a module name
+becomes `_` (`sentiment.v2.prompt` → `sentiment_v2.py`), with a leading `_` before a
+digit and a trailing `_` after a keyword (`class.prompt` → `class_.py`). The folder
+is flat and the index re-exports every module, so `compile` exits 1 and writes
+nothing when two sources would produce the same file (letter case ignored, as on
+macOS and Windows) or a file compile writes itself (`index.ts`, `__init__.py`,
+`promptlang_runtime.py`), or when two modules would export the same name.
 
 ---
 

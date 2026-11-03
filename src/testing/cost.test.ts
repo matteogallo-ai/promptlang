@@ -140,4 +140,11 @@ describe("the estimate as a cap, end to end", () => {
       expect(sent).toBe(estimate.calls);
     });
   }
+
+  test("a test whose prompt passes 100K tokens is estimated on the long-context card", () => {
+    const big = `test "t" {\n  input: p("${"b".repeat(300_000)}")\n  expect: x\n}\n`;
+    const e = est(`@model claude-haiku-5-5\n@max_tokens 100\n${PROMPT}${big}`);
+    // 35 + 300 000 chars → 100 012 tokens, over 100K: $0.5 / $2.5 per million.
+    expect(e?.estimatedUsd).toBeCloseTo((Math.ceil(300_035 / 3) * 0.5 + 100 * 2.5) / 1e6, 12);
+  });
 });

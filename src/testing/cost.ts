@@ -8,26 +8,42 @@ import type {
 import { buildTypeRegistry, structParamNames, type TypeRegistry } from "../compiler/code-generator";
 import { extractTemplateVars } from "../compiler/template-compiler";
 
+type RateCard = readonly [input: number, output: number];
+
 /**
  * Standard Claude API prices in USD per million tokens (input, output), from
- * Anthropic's model documentation as read on 2026-11-02. A model missing here
- * has no estimate, and `promptlang test --live` refuses to run it.
+ * Anthropic's model documentation as read on 2026-11-03. A model missing here
+ * has no estimate, and `promptlang test --live` refuses to run it. `long` is the
+ * card a model bills, input and output, for a prompt longer than `above` tokens.
  */
-const PRICES_USD_PER_MTOK: Readonly<Record<string, readonly [number, number]>> = {
-  "claude-fable-5-1": [10, 50],
-  "claude-opus-5-5": [4, 20],
-  "claude-opus-5": [5, 25],
-  "claude-opus-4-8": [5, 25],
-  "claude-sonnet-5-5": [2, 10],
-  "claude-sonnet-5": [2, 10],
-  // The 100K-tokens-or-fewer rate card; test prompts are far below that.
-  "claude-haiku-5-5": [0.1, 0.5],
-  "claude-haiku-4-5": [1, 5],
+const PRICES_USD_PER_MTOK: Readonly<
+  Record<string, { base: RateCard; long?: { above: number; card: RateCard } }>
+> = {
+  "claude-fable-5-1": { base: [10, 50] },
+  "claude-opus-5-5": { base: [4, 20] },
+  "claude-opus-5": { base: [5, 25] },
+  "claude-opus-4-8": { base: [5, 25] },
+  "claude-sonnet-5-5": { base: [2, 10] },
+  "claude-sonnet-5": { base: [2, 10] },
+  "claude-haiku-5-5": { base: [0.1, 0.5], long: { above: 100_000, card: [0.5, 2.5] } },
+  "claude-haiku-4-5": { base: [1, 5] },
 };
 
-/** USD per million (input, output) tokens for `model`, or undefined when not recorded. */
-export function pricePerMTok(model: string): readonly [number, number] | undefined {
-  return PRICES_USD_PER_MTOK[model];
+/**
+ * USD per million (input, output) tokens for a prompt of `inputTokens` to
+ * `model`, or undefined when the model is not recorded.
+ */
+export function pricePerMTok(model: string, inputTokens = 0): RateCard | undefined {
+  const price = PRICES_USD_PER_MTOK[model];
+  if (!price) return undefined;
+  return price.long && inputTokens > price.long.above ? price.long.card : price.base;
+}
+
+/** USD of one call to `model`, on the rate card its prompt length selects. */
+export function callUsd(model: string, inputTokens: number, outputTokens: number): number {
+  const price = pricePerMTok(model, inputTokens);
+  if (!price) throw new UnpricedModelError(`no price is recorded for model ${model}`);
+  return (inputTokens * price[0] + outputTokens * price[1]) / 1e6;
 }
 
 /** AnthropicClient's max_tokens when the file sets no @max_tokens. */
@@ -50,24 +66,37 @@ export interface CostEstimate {
 export class UnpricedModelError extends Error {}
 
 /**
- * Prices `calls` requests to `model`: `inputChars` of text (÷ 3) and
- * `maxOutputTokens` in all.
+ * Prices one request per entry of `perCall`: its `chars` of text (÷ 3) and its
+ * whole `maxTokens` of output, on the rate card its own prompt length selects.
+ * The input of each card is rounded up once, not per call, so a cap set to the
+ * estimate holds every call it counted (see `worstCaseUsd`).
  */
 export function priceEstimate(
   model: string,
-  calls: number,
-  inputChars: number,
-  maxOutputTokens: number
+  perCall: ReadonlyArray<{ chars: number; maxTokens: number }>
 ): CostEstimate {
-  const price = pricePerMTok(model);
-  if (!price) {
+  if (!pricePerMTok(model)) {
     throw new UnpricedModelError(
       `no price is recorded for model ${model} (priced: ${Object.keys(PRICES_USD_PER_MTOK).join(", ")})`
     );
   }
-  const inputTokens = Math.ceil(inputChars / CHARS_PER_TOKEN);
-  const estimatedUsd = (inputTokens * price[0] + maxOutputTokens * price[1]) / 1_000_000;
-  return { model, calls, inputTokens, maxOutputTokens, estimatedUsd };
+  const inputCharsByCard = new Map<RateCard, number>();
+  let outputUsd = 0;
+  for (const { chars, maxTokens } of perCall) {
+    const card = pricePerMTok(model, chars / CHARS_PER_TOKEN)!;
+    inputCharsByCard.set(card, (inputCharsByCard.get(card) ?? 0) + chars);
+    outputUsd += (maxTokens * card[1]) / 1_000_000;
+  }
+  let inputUsd = 0;
+  for (const [card, chars] of inputCharsByCard)
+    inputUsd += (Math.ceil(chars / CHARS_PER_TOKEN) * card[0]) / 1_000_000;
+  return {
+    model,
+    calls: perCall.length,
+    inputTokens: Math.ceil(perCall.reduce((n, c) => n + c.chars, 0) / CHARS_PER_TOKEN),
+    maxOutputTokens: perCall.reduce((n, c) => n + c.maxTokens, 0),
+    estimatedUsd: inputUsd + outputUsd,
+  };
 }
 
 /**
@@ -192,19 +221,20 @@ export function estimateLiveCost(program: Program): CostEstimate | null {
   const perCallOutput = typeof maxTokens === "number" ? maxTokens : DEFAULT_MAX_TOKENS;
 
   const registry = buildTypeRegistry(program);
-  let calls = 0;
-  let inputChars = 0;
+  const perCall: Array<{ chars: number; maxTokens: number }> = [];
   for (const t of tests) {
     const call = t.input as CallExpression;
     const reached = promptsReached(program, call.callee);
     const direct = reached.length === 1 && reached[0]!.prompt.name === call.callee;
     for (const [i, r] of reached.entries()) {
-      calls++;
       const step = direct
         ? null
         : { literals: r.literals, earlierSteps: i, maxTokens: perCallOutput };
-      inputChars += renderedChars(call, r.prompt, step, registry);
+      perCall.push({
+        chars: renderedChars(call, r.prompt, step, registry),
+        maxTokens: perCallOutput,
+      });
     }
   }
-  return priceEstimate(model, calls, inputChars, calls * perCallOutput);
+  return priceEstimate(model, perCall);
 }

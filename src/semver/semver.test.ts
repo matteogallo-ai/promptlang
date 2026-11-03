@@ -110,6 +110,21 @@ describe("satisfies", () => {
   });
 });
 
+describe("invalid input and parsed ranges", () => {
+  test("comparing or matching a malformed version throws a RangeError naming it", () => {
+    expect(() => compareVersions("x", "1.0.0")).toThrow(
+      new RangeError("'x' is not a valid SemVer 2.0.0 version")
+    );
+    expect(() => satisfies("1.0", "^1.0.0")).toThrow(RangeError);
+  });
+
+  test("satisfies accepts a range parsed once", () => {
+    const range = parseRange("^1.2.0");
+    expect(satisfies("1.4.0", range)).toBe(true);
+    expect(satisfies("2.0.0", range)).toBe(false);
+  });
+});
+
 describe("parseRange", () => {
   test("rejects malformed ranges with a message naming the bad part", () => {
     expect(() => parseRange("")).toThrow(/empty/);

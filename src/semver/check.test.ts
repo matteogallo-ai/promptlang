@@ -101,6 +101,31 @@ describe("checkVersion", () => {
   test("a file versioned for the first time passes", () => {
     expect(checkVersion(null, "1.0.0", [major]).ok).toBe(true);
   });
+
+  test("the strictest change sets the required level, whatever the order", () => {
+    expect(checkVersion("1.2.3", "1.2.4", [major, patch])).toMatchObject({
+      ok: false,
+      required: "major",
+    });
+    expect(checkVersion(null, null, [])).toMatchObject({ ok: true, actual: "none" });
+  });
+
+  test("leaving 0.y.z for 1.0.0 is a major bump", () => {
+    expect(checkVersion("0.5.0", "1.0.0", [major])).toMatchObject({ ok: true, actual: "major" });
+  });
+
+  test("the expected version below 1.0.0 follows ^: 0.0.z bumps the patch, 0.y.z the minor or patch", () => {
+    expect(checkVersion("0.0.3", "0.0.3", [major])).toMatchObject({ expected: "0.0.4" });
+    expect(checkVersion("0.2.3", "0.2.3", [minor])).toMatchObject({ expected: "0.2.4" });
+  });
+
+  test("an unparsable current version counts as no version", () => {
+    expect(checkVersion("1.0.0", "1.0", [patch])).toMatchObject({
+      ok: false,
+      actual: "none",
+      reason: "the file changed but declares no @version",
+    });
+  });
 });
 
 describe("checkFile", () => {
@@ -120,6 +145,16 @@ describe("checkFile", () => {
     });
   });
 
+  test("the version is read from @version, wherever it sits among the metadata", () => {
+    const body = `prompt p(x: string) -> string {\n  user: "Hi {{x}}"\n}\n`;
+    const base = `@model claude-opus-5-5\n@version "1.0.0"\n${body}`;
+    expect(checkFile("a.prompt", base, base)).toMatchObject({
+      status: "ok",
+      baseVersion: "1.0.0",
+      currentVersion: "1.0.0",
+    });
+  });
+
   test("a version that does not parse is an error naming which side", () => {
     const r = checkFile("a.prompt", "prompt {", v("1.0.0"));
     expect(r.status).toBe("error");
@@ -127,5 +162,6 @@ describe("checkFile", () => {
     expect(checkFile("a.prompt", v("1.0.0"), '@version "x"').error).toStartWith(
       "current version: "
     );
+    expect(checkFile("a.prompt", null, '@version "x"').status).toBe("error");
   });
 });

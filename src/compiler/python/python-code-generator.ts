@@ -11,6 +11,7 @@ import type {
 import { mapPythonType, toPythonPascalCase, toPythonConstName } from "./python-type-mapper";
 import { compilePythonStringLiteral } from "./python-template-compiler";
 import { CompilerError } from "../errors";
+import { sourceLabel } from "../source-label";
 import { optionalParamNames } from "../code-generator";
 import type { CallableRegistry } from "../chain-compiler";
 
@@ -94,7 +95,8 @@ export function generatePythonTypeDeclaration(decl: TypeDeclaration): string {
 export function generatePythonPromptDeclaration(
   decl: PromptDeclaration,
   meta: CompiledPythonMetadata,
-  registry: PythonTypeRegistry
+  registry: PythonTypeRegistry,
+  sourceFile: string
 ): string {
   const { name, parameters, returnType, sections } = decl;
   const pascalName = toPythonPascalCase(name);
@@ -132,7 +134,7 @@ export function generatePythonPromptDeclaration(
   parts.push(`    input: ${inputTypeName},`);
   parts.push(`    client: PromptClient,`);
   parts.push(`) -> ${returnPyType}:`);
-  parts.push(`    """Auto-generated from ${name}.prompt."""`);
+  parts.push(`    """Generated from ${sourceLabel(sourceFile)} by PromptLang."""`);
 
   const messages = sections.filter((s) => s.kind === "MessageSection");
   parts.push(`    request: PromptRequest = {`);
@@ -181,7 +183,8 @@ export function generatePythonPromptDeclaration(
 
 export function generatePythonChain(
   decl: ChainDeclaration,
-  callableRegistry: CallableRegistry
+  callableRegistry: CallableRegistry,
+  sourceFile: string
 ): string {
   const { name, parameters, returnType, steps, returnExpression } = decl;
   const pascalName = toPythonPascalCase(name);
@@ -209,7 +212,7 @@ export function generatePythonChain(
   parts.push(`    input: ${inputTypeName},`);
   parts.push(`    client: PromptClient,`);
   parts.push(`) -> ${returnPyType}:`);
-  parts.push(`    """Auto-generated chain from ${name}.prompt."""`);
+  parts.push(`    """Generated from ${sourceLabel(sourceFile)} by PromptLang."""`);
 
   const stepNames = new Set<string>();
   for (const step of steps) {

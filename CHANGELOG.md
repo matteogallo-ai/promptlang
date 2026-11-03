@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **A name the target language cannot hold is a compile error.** `prompt
   delete(...)`, a step named `if`, a Python parameter named `class` or any name
   with `-` compiled to a module that does not parse, with exit 0.
+- **Generated files are reproducible.** The `Generated at` timestamp is gone, so
+  the same source and PromptLang version give the same bytes. The source path in
+  headers and Python docstrings is escaped (a newline in a file name ended the
+  `//` comment), and docstrings name the source file instead of `<prompt>.prompt`.
 - The `--help` example and the benchmark compile `docs/examples/*.prompt`:
   the folder also holds the demo's two versions of one prompt, which are
   alternatives and do not compile together.

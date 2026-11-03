@@ -57,7 +57,13 @@ describe("names the target language cannot hold are compile errors", () => {
   });
 
   test("every Python keyword is refused as a prompt name", () => {
-    const r = Bun.spawnSync(["python3", "-c", "import keyword; print(' '.join(keyword.kwlist))"]);
+    // Generated files need Python 3.11+; 3.9's kwlist also holds a keyword since removed.
+    const r = Bun.spawnSync([
+      "python3",
+      "-c",
+      "import keyword, sys; assert sys.version_info >= (3, 11), sys.version; print(' '.join(keyword.kwlist))",
+    ]);
+    expect(r.stderr.toString()).toBe("");
     const kwlist = r.stdout.toString().trim().split(" ");
     expect(kwlist.length).toBeGreaterThan(30);
     // Some keywords are PromptLang keywords too and never reach the compiler.

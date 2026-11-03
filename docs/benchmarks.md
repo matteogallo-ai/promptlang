@@ -7,7 +7,7 @@ only comparable with runs on similar hardware.
 - Machine: Apple M4, 10 logical cores, 16 GB RAM
 - OS: darwin 27.0.0
 - Runtime: Bun 1.3.14
-- Date: 2026-11-02
+- Date: 2026-11-03
 
 ## In-process pipeline
 
@@ -15,9 +15,9 @@ Mean per iteration over 200 iterations after 10 warm-up iterations.
 
 | Example | Source bytes | Tokens | `tokenize` | `parse` (incl. tokenize) | `compile` (TS) | `compilePython` |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| classify-ticket | 3010 | 232 | 0.05 ms | 0.06 ms | 0.02 ms | 0.01 ms |
-| extract-invoice | 3337 | 225 | 0.05 ms | 0.07 ms | 0.01 ms | 0.01 ms |
-| summarize-and-translate | 3092 | 317 | 0.04 ms | 0.05 ms | 0.03 ms | 0.02 ms |
+| classify-ticket | 3010 | 232 | 0.05 ms | 0.06 ms | 0.01 ms | 0.01 ms |
+| extract-invoice | 3337 | 225 | 0.05 ms | 0.06 ms | 0.01 ms | 0.01 ms |
+| summarize-and-translate | 3092 | 317 | 0.04 ms | 0.05 ms | 0.02 ms | 0.02 ms |
 
 ## CLI end to end
 
@@ -26,8 +26,8 @@ Bun start-up, which dominates for single files.
 
 | Command | Median | Min | Max |
 | --- | ---: | ---: | ---: |
-| `version` | 19.22 ms | 17.05 ms | 22.88 ms |
-| `parse docs/examples/classify-ticket.prompt` | 21.95 ms | 20.20 ms | 29.74 ms |
-| `analyze docs/examples/` | 25.38 ms | 24.13 ms | 29.99 ms |
-| `compile docs/examples/classify-ticket.prompt --out <tmp>` | 22.44 ms | 21.81 ms | 24.70 ms |
-| `compile docs/examples/ --out <tmp> --target python` | 27.20 ms | 24.91 ms | 29.49 ms |
+| `version` | 18.85 ms | 18.13 ms | 19.47 ms |
+| `parse docs/examples/classify-ticket.prompt` | 21.15 ms | 20.73 ms | 21.65 ms |
+| `analyze docs/examples/` | 23.94 ms | 23.51 ms | 39.74 ms |
+| `compile docs/examples/classify-ticket.prompt --out <tmp>` | 22.65 ms | 21.88 ms | 23.25 ms |
+| `compile docs/examples/*.prompt --out <tmp> --target python` | 24.33 ms | 23.58 ms | 25.65 ms |

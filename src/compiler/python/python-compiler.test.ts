@@ -43,9 +43,17 @@ describe("Python compiler — header", () => {
     expect(out).toContain("Source: my-file.prompt");
   });
 
-  test("ISO timestamp appears in header", () => {
-    const out = compile(`@version "1.0.0"\nprompt greet() -> string { user: "Hi" }`);
-    expect(out).toMatch(/Generated at: \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+  test("the same source compiles to the same bytes", async () => {
+    const first = compile(`@version "1.0.0"\nprompt greet() -> string { user: "Hi" }`);
+    await Bun.sleep(5);
+    expect(compile(`@version "1.0.0"\nprompt greet() -> string { user: "Hi" }`)).toBe(first);
+  });
+
+  test("each function's docstring names the source file, escaped", () => {
+    const ast = parse(tokenize(`@version "1.0.0"\nprompt greet() -> string { user: "Hi" }`));
+    const out = compilePython(ast, 'dir/"""evil.prompt');
+    expect(out).toContain('    """Generated from dir/\\"\\"\\"evil.prompt by PromptLang."""');
+    expect(out).toContain('Source: dir/\\"\\"\\"evil.prompt');
   });
 
   test("from __future__ import annotations is present", () => {

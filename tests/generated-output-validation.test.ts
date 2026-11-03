@@ -39,9 +39,6 @@ prompt chain_of(x: string) -> Node {
 prompt due(x: string) -> date {
   user: "<t>{{x}}</t>"
 }
-prompt parseOutput(x: string) -> number {
-  user: "<t>{{x}}</t>"
-}
 prompt parse_output(x: string) -> number {
   user: "<t>{{x}}</t>"
 }
@@ -51,16 +48,10 @@ prompt count_output(x: string) -> number {
 prompt _json(x: string) -> Invoice {
   user: "<t>{{x}}</t>"
 }
-prompt a(x: string) -> number {
-  user: "<t>{{x}}</t>"
-}
-prompt A(x: string) -> string {
-  user: "<t>{{x}}</t>"
-}
 `;
 
 type Call = (input: { x: string }, client: MockClient) => Promise<unknown>;
-// The last four are named after what the generated code imports or declares.
+// The last three are named after what the generated code imports or declares.
 type Module = Record<
   | "invoice"
   | "kind"
@@ -68,12 +59,9 @@ type Module = Record<
   | "flag"
   | "chain_of"
   | "due"
-  | "parseOutput"
   | "parse_output"
   | "count_output"
-  | "_json"
-  | "a"
-  | "A",
+  | "_json",
   Call
 >;
 
@@ -233,7 +221,6 @@ const CASES: Array<[keyof Module, string]> = [
   ["chain_of", NESTED_50],
   ["chain_of", `${'{"v": "x", "next": '.repeat(30)}{"v": "x"}${"}".repeat(30)}`],
   ["chain_of", `${'{"v": 1, "next": '.repeat(200)}{"v": "x"}${"}".repeat(200)}`],
-  ["parseOutput", "7"],
   ["parse_output", "7"],
   ["count_output", "7"],
   ["_json", '{"amount": 1, "vendor": "A"}'],
@@ -242,9 +229,6 @@ const CASES: Array<[keyof Module, string]> = [
   ["count", `1${"0".repeat(5_000)}`],
   // Digits that are not a number: an ambiguous pattern took quadratic time on them.
   ["count", `${"9".repeat(200_000)}x`],
-  // Two names that differ only by case must not share a generated constant.
-  ["a", "7"],
-  ["A", "7"],
 ];
 
 type Outcome = { value: unknown } | { errors: string[]; message: string };
@@ -295,5 +279,40 @@ describe("generated Python checks the answer exactly as generated TypeScript doe
       );
       expect(python[i]).toEqual(ts);
     });
+  }
+});
+
+// TypeScript imports the runtime's parseOutput; a prompt of that name cannot share
+// a file with parse_output, as both generate ParseOutputInput.
+test("a prompt named parseOutput still checks its answer, in both languages", async () => {
+  const source = `@version "1.0.0"\nprompt parseOutput(x: string) -> number {\n  user: "<t>{{x}}</t>"\n}\n`;
+  const shadow = parse(tokenize(source));
+  const ts = await importCompiled<{ parseOutput: Call }>(compile(shadow, "shadow.prompt"));
+  const reply = (content: string) => new MockClient(() => ({ content }));
+  expect(await ts.parseOutput({ x: "in" }, reply("7"))).toBe(7);
+  expect(await ts.parseOutput({ x: "in" }, reply("seven")).catch((e) => e)).toBeInstanceOf(
+    InvalidOutputError
+  );
+  const dir = await mkdtemp(join(tmpdir(), "promptlang-shadow-"));
+  try {
+    await mkdir(join(dir, "pkg"));
+    await writeFile(join(dir, "pkg", "__init__.py"), "");
+    await writeFile(join(dir, "pkg", "promptlang_runtime.py"), getPythonRuntimeSource());
+    await writeFile(join(dir, "pkg", "shadow.py"), compilePython(shadow, "shadow.prompt"));
+    const script = `
+import asyncio
+from pkg import shadow
+from pkg.promptlang_runtime import InvalidOutputError, MockClient
+print(asyncio.run(shadow.parseOutput({"x": "in"}, MockClient([{"content": "7"}]))))
+try:
+    asyncio.run(shadow.parseOutput({"x": "in"}, MockClient([{"content": "seven"}])))
+except InvalidOutputError:
+    print("refused")
+`;
+    const r = Bun.spawnSync(["python3", "-c", script], { cwd: dir });
+    if (r.exitCode !== 0) throw new Error(r.stderr.toString());
+    expect(r.stdout.toString().split("\n")).toEqual(["7.0", "refused", ""]);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
   }
 });

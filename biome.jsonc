@@ -3,7 +3,15 @@
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
   "files": {
     // Markdown and .prompt sources are hand-formatted prose; Biome only owns code and JSON.
-    "includes": ["**/*.ts", "**/*.json", "**/*.jsonc", "!**/node_modules", "!bun.lock"]
+    // Live records are kept byte for byte as written: SHA256SUMS freezes them.
+    "includes": [
+      "**/*.ts",
+      "**/*.json",
+      "**/*.jsonc",
+      "!**/node_modules",
+      "!bun.lock",
+      "!runs/live/*.json"
+    ]
   },
   "formatter": {
     "enabled": true,

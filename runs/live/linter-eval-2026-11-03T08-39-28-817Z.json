@@ -1,0 +1,4693 @@
+{
+  "date": "2026-11-03T08:39:28.817Z",
+  "model": "claude-haiku-5-5",
+  "anthropic_version": "2026-10-21",
+  "corpus": {
+    "version": "1.1.0",
+    "sha256": "1caa6f07424e751fdd6656618bc2d27eb02b82800dab9e83500ba173d61dab8f",
+    "cases": 120
+  },
+  "repeats": 2,
+  "estimate_usd": 0.5148148,
+  "cost_usd": 0.20624740000000014,
+  "charged_usd": 0.20624739999999994,
+  "complete": true,
+  "price_usd_per_mtok": {
+    "input": 0.1,
+    "output": 0.5
+  },
+  "latency_ms": {
+    "n": 240,
+    "p50": 7156,
+    "p95": 8963
+  },
+  "calls": [
+    {
+      "case": "b00-clean",
+      "repeat": 1,
+      "latency_ms": 6610,
+      "input_tokens": 1145,
+      "output_tokens": 1368
+    },
+    {
+      "case": "b00-clean",
+      "repeat": 2,
+      "latency_ms": 6267,
+      "input_tokens": 1145,
+      "output_tokens": 1368
+    },
+    {
+      "case": "b00-vague-instructions",
+      "repeat": 1,
+      "latency_ms": 6742,
+      "input_tokens": 1128,
+      "output_tokens": 1424
+    },
+    {
+      "case": "b00-vague-instructions",
+      "repeat": 2,
+      "latency_ms": 5627,
+      "input_tokens": 1128,
+      "output_tokens": 1274
+    },
+    {
+      "case": "b00-missing-format-spec",
+      "repeat": 1,
+      "latency_ms": 8660,
+      "input_tokens": 1117,
+      "output_tokens": 1759
+    },
+    {
+      "case": "b00-missing-format-spec",
+      "repeat": 2,
+      "latency_ms": 6024,
+      "input_tokens": 1117,
+      "output_tokens": 1224
+    },
+    {
+      "case": "b00-conflicting-instructions",
+      "repeat": 1,
+      "latency_ms": 7450,
+      "input_tokens": 1170,
+      "output_tokens": 1580
+    },
+    {
+      "case": "b00-conflicting-instructions",
+      "repeat": 2,
+      "latency_ms": 4932,
+      "input_tokens": 1170,
+      "output_tokens": 1153
+    },
+    {
+      "case": "b01-clean",
+      "repeat": 1,
+      "latency_ms": 8695,
+      "input_tokens": 1147,
+      "output_tokens": 2079
+    },
+    {
+      "case": "b01-clean",
+      "repeat": 2,
+      "latency_ms": 6576,
+      "input_tokens": 1147,
+      "output_tokens": 1416
+    },
+    {
+      "case": "b01-undefined-terms",
+      "repeat": 1,
+      "latency_ms": 7588,
+      "input_tokens": 1162,
+      "output_tokens": 1762
+    },
+    {
+      "case": "b01-undefined-terms",
+      "repeat": 2,
+      "latency_ms": 12108,
+      "input_tokens": 1162,
+      "output_tokens": 2776
+    },
+    {
+      "case": "b01-potential-hallucination-risk",
+      "repeat": 1,
+      "latency_ms": 8144,
+      "input_tokens": 1156,
+      "output_tokens": 1676
+    },
+    {
+      "case": "b01-potential-hallucination-risk",
+      "repeat": 2,
+      "latency_ms": 7349,
+      "input_tokens": 1156,
+      "output_tokens": 1476
+    },
+    {
+      "case": "b01-token-inefficiency",
+      "repeat": 1,
+      "latency_ms": 7971,
+      "input_tokens": 1207,
+      "output_tokens": 1579
+    },
+    {
+      "case": "b01-token-inefficiency",
+      "repeat": 2,
+      "latency_ms": 6741,
+      "input_tokens": 1207,
+      "output_tokens": 1532
+    },
+    {
+      "case": "b02-clean",
+      "repeat": 1,
+      "latency_ms": 7156,
+      "input_tokens": 1119,
+      "output_tokens": 1428
+    },
+    {
+      "case": "b02-clean",
+      "repeat": 2,
+      "latency_ms": 8511,
+      "input_tokens": 1119,
+      "output_tokens": 1808
+    },
+    {
+      "case": "b02-missing-format-spec",
+      "repeat": 1,
+      "latency_ms": 7013,
+      "input_tokens": 1094,
+      "output_tokens": 1364
+    },
+    {
+      "case": "b02-missing-format-spec",
+      "repeat": 2,
+      "latency_ms": 5319,
+      "input_tokens": 1094,
+      "output_tokens": 1018
+    },
+    {
+      "case": "b02-conflicting-instructions",
+      "repeat": 1,
+      "latency_ms": 4809,
+      "input_tokens": 1139,
+      "output_tokens": 873
+    },
+    {
+      "case": "b02-conflicting-instructions",
+      "repeat": 2,
+      "latency_ms": 5386,
+      "input_tokens": 1139,
+      "output_tokens": 1021
+    },
+    {
+      "case": "b02-undefined-terms",
+      "repeat": 1,
+      "latency_ms": 7931,
+      "input_tokens": 1134,
+      "output_tokens": 1564
+    },
+    {
+      "case": "b02-undefined-terms",
+      "repeat": 2,
+      "latency_ms": 7898,
+      "input_tokens": 1134,
+      "output_tokens": 1826
+    },
+    {
+      "case": "b03-clean",
+      "repeat": 1,
+      "latency_ms": 6786,
+      "input_tokens": 1106,
+      "output_tokens": 1318
+    },
+    {
+      "case": "b03-clean",
+      "repeat": 2,
+      "latency_ms": 6000,
+      "input_tokens": 1106,
+      "output_tokens": 1231
+    },
+    {
+      "case": "b03-potential-hallucination-risk",
+      "repeat": 1,
+      "latency_ms": 8201,
+      "input_tokens": 1107,
+      "output_tokens": 1379
+    },
+    {
+      "case": "b03-potential-hallucination-risk",
+      "repeat": 2,
+      "latency_ms": 8025,
+      "input_tokens": 1107,
+      "output_tokens": 1366
+    },
+    {
+      "case": "b03-token-inefficiency",
+      "repeat": 1,
+      "latency_ms": 6873,
+      "input_tokens": 1173,
+      "output_tokens": 1584
+    },
+    {
+      "case": "b03-token-inefficiency",
+      "repeat": 2,
+      "latency_ms": 6091,
+      "input_tokens": 1173,
+      "output_tokens": 1411
+    },
+    {
+      "case": "b03-vague-instructions",
+      "repeat": 1,
+      "latency_ms": 6051,
+      "input_tokens": 1102,
+      "output_tokens": 1245
+    },
+    {
+      "case": "b03-vague-instructions",
+      "repeat": 2,
+      "latency_ms": 6544,
+      "input_tokens": 1102,
+      "output_tokens": 1344
+    },
+    {
+      "case": "b04-clean",
+      "repeat": 1,
+      "latency_ms": 7622,
+      "input_tokens": 1176,
+      "output_tokens": 1722
+    },
+    {
+      "case": "b04-clean",
+      "repeat": 2,
+      "latency_ms": 6150,
+      "input_tokens": 1176,
+      "output_tokens": 1420
+    },
+    {
+      "case": "b04-conflicting-instructions",
+      "repeat": 1,
+      "latency_ms": 7646,
+      "input_tokens": 1198,
+      "output_tokens": 1718
+    },
+    {
+      "case": "b04-conflicting-instructions",
+      "repeat": 2,
+      "latency_ms": 8036,
+      "input_tokens": 1198,
+      "output_tokens": 1810
+    },
+    {
+      "case": "b04-undefined-terms",
+      "repeat": 1,
+      "latency_ms": 8586,
+      "input_tokens": 1195,
+      "output_tokens": 1961
+    },
+    {
+      "case": "b04-undefined-terms",
+      "repeat": 2,
+      "latency_ms": 7271,
+      "input_tokens": 1195,
+      "output_tokens": 1632
+    },
+    {
+      "case": "b04-potential-hallucination-risk",
+      "repeat": 1,
+      "latency_ms": 6112,
+      "input_tokens": 1184,
+      "output_tokens": 1249
+    },
+    {
+      "case": "b04-potential-hallucination-risk",
+      "repeat": 2,
+      "latency_ms": 7323,
+      "input_tokens": 1184,
+      "output_tokens": 1613
+    },
+    {
+      "case": "b05-clean",
+      "repeat": 1,
+      "latency_ms": 5668,
+      "input_tokens": 1133,
+      "output_tokens": 1237
+    },
+    {
+      "case": "b05-clean",
+      "repeat": 2,
+      "latency_ms": 6678,
+      "input_tokens": 1133,
+      "output_tokens": 1185
+    },
+    {
+      "case": "b05-token-inefficiency",
+      "repeat": 1,
+      "latency_ms": 5784,
+      "input_tokens": 1204,
+      "output_tokens": 1224
+    },
+    {
+      "case": "b05-token-inefficiency",
+      "repeat": 2,
+      "latency_ms": 5877,
+      "input_tokens": 1204,
+      "output_tokens": 1243
+    },
+    {
+      "case": "b05-vague-instructions",
+      "repeat": 1,
+      "latency_ms": 8682,
+      "input_tokens": 1131,
+      "output_tokens": 1663
+    },
+    {
+      "case": "b05-vague-instructions",
+      "repeat": 2,
+      "latency_ms": 7989,
+      "input_tokens": 1131,
+      "output_tokens": 1642
+    },
+    {
+      "case": "b05-missing-format-spec",
+      "repeat": 1,
+      "latency_ms": 8183,
+      "input_tokens": 1100,
+      "output_tokens": 1598
+    },
+    {
+      "case": "b05-missing-format-spec",
+      "repeat": 2,
+      "latency_ms": 7925,
+      "input_tokens": 1100,
+      "output_tokens": 1551
+    },
+    {
+      "case": "b06-clean",
+      "repeat": 1,
+      "latency_ms": 7665,
+      "input_tokens": 1108,
+      "output_tokens": 1630
+    },
+    {
+      "case": "b06-clean",
+      "repeat": 2,
+      "latency_ms": 8295,
+      "input_tokens": 1108,
+      "output_tokens": 1877
+    },
+    {
+      "case": "b06-undefined-terms",
+      "repeat": 1,
+      "latency_ms": 8260,
+      "input_tokens": 1124,
+      "output_tokens": 1801
+    },
+    {
+      "case": "b06-undefined-terms",
+      "repeat": 2,
+      "latency_ms": 6954,
+      "input_tokens": 1124,
+      "output_tokens": 1556
+    },
+    {
+      "case": "b06-potential-hallucination-risk",
+      "repeat": 1,
+      "latency_ms": 7635,
+      "input_tokens": 1109,
+      "output_tokens": 1648
+    },
+    {
+      "case": "b06-potential-hallucination-risk",
+      "repeat": 2,
+      "latency_ms": 6936,
+      "input_tokens": 1109,
+      "output_tokens": 1554
+    },
+    {
+      "case": "b06-token-inefficiency",
+      "repeat": 1,
+      "latency_ms": 8627,
+      "input_tokens": 1161,
+      "output_tokens": 1882
+    },
+    {
+      "case": "b06-token-inefficiency",
+      "repeat": 2,
+      "latency_ms": 8207,
+      "input_tokens": 1161,
+      "output_tokens": 1948
+    },
+    {
+      "case": "b07-clean",
+      "repeat": 1,
+      "latency_ms": 4799,
+      "input_tokens": 1142,
+      "output_tokens": 953
+    },
+    {
+      "case": "b07-clean",
+      "repeat": 2,
+      "latency_ms": 4297,
+      "input_tokens": 1142,
+      "output_tokens": 868
+    },
+    {
+      "case": "b07-vague-instructions",
+      "repeat": 1,
+      "latency_ms": 6287,
+      "input_tokens": 1137,
+      "output_tokens": 1322
+    },
+    {
+      "case": "b07-vague-instructions",
+      "repeat": 2,
+      "latency_ms": 5725,
+      "input_tokens": 1137,
+      "output_tokens": 1209
+    },
+    {
+      "case": "b07-missing-format-spec",
+      "repeat": 1,
+      "latency_ms": 5184,
+      "input_tokens": 1107,
+      "output_tokens": 1129
+    },
+    {
+      "case": "b07-missing-format-spec",
+      "repeat": 2,
+      "latency_ms": 6006,
+      "input_tokens": 1107,
+      "output_tokens": 1229
+    },
+    {
+      "case": "b07-conflicting-instructions",
+      "repeat": 1,
+      "latency_ms": 4555,
+      "input_tokens": 1165,
+      "output_tokens": 958
+    },
+    {
+      "case": "b07-conflicting-instructions",
+      "repeat": 2,
+      "latency_ms": 4514,
+      "input_tokens": 1165,
+      "output_tokens": 779
+    },
+    {
+      "case": "b08-clean",
+      "repeat": 1,
+      "latency_ms": 7608,
+      "input_tokens": 1165,
+      "output_tokens": 1625
+    },
+    {
+      "case": "b08-clean",
+      "repeat": 2,
+      "latency_ms": 7378,
+      "input_tokens": 1165,
+      "output_tokens": 1654
+    },
+    {
+      "case": "b08-potential-hallucination-risk",
+      "repeat": 1,
+      "latency_ms": 7859,
+      "input_tokens": 1168,
+      "output_tokens": 1796
+    },
+    {
+      "case": "b08-potential-hallucination-risk",
+      "repeat": 2,
+      "latency_ms": 6123,
+      "input_tokens": 1168,
+      "output_tokens": 1328
+    },
+    {
+      "case": "b08-token-inefficiency",
+      "repeat": 1,
+      "latency_ms": 7579,
+      "input_tokens": 1234,
+      "output_tokens": 1576
+    },
+    {
+      "case": "b08-token-inefficiency",
+      "repeat": 2,
+      "latency_ms": 7835,
+      "input_tokens": 1234,
+      "output_tokens": 1763
+    },
+    {
+      "case": "b08-vague-instructions",
+      "repeat": 1,
+      "latency_ms": 8315,
+      "input_tokens": 1157,
+      "output_tokens": 1869
+    },
+    {
+      "case": "b08-vague-instructions",
+      "repeat": 2,
+      "latency_ms": 8808,
+      "input_tokens": 1157,
+      "output_tokens": 2038
+    },
+    {
+      "case": "b09-clean",
+      "repeat": 1,
+      "latency_ms": 5361,
+      "input_tokens": 1115,
+      "output_tokens": 1105
+    },
+    {
+      "case": "b09-clean",
+      "repeat": 2,
+      "latency_ms": 7360,
+      "input_tokens": 1115,
+      "output_tokens": 1649
+    },
+    {
+      "case": "b09-missing-format-spec",
+      "repeat": 1,
+      "latency_ms": 6287,
+      "input_tokens": 1087,
+      "output_tokens": 1195
+    },
+    {
+      "case": "b09-missing-format-spec",
+      "repeat": 2,
+      "latency_ms": 7986,
+      "input_tokens": 1087,
+      "output_tokens": 1546
+    },
+    {
+      "case": "b09-conflicting-instructions",
+      "repeat": 1,
+      "latency_ms": 5308,
+      "input_tokens": 1137,
+      "output_tokens": 1049
+    },
+    {
+      "case": "b09-conflicting-instructions",
+      "repeat": 2,
+      "latency_ms": 6035,
+      "input_tokens": 1137,
+      "output_tokens": 1097
+    },
+    {
+      "case": "b09-undefined-terms",
+      "repeat": 1,
+      "latency_ms": 6818,
+      "input_tokens": 1133,
+      "output_tokens": 1497
+    },
+    {
+      "case": "b09-undefined-terms",
+      "repeat": 2,
+      "latency_ms": 7117,
+      "input_tokens": 1133,
+      "output_tokens": 1463
+    },
+    {
+      "case": "b10-clean",
+      "repeat": 1,
+      "latency_ms": 6030,
+      "input_tokens": 1161,
+      "output_tokens": 1264
+    },
+    {
+      "case": "b10-clean",
+      "repeat": 2,
+      "latency_ms": 9883,
+      "input_tokens": 1161,
+      "output_tokens": 1962
+    },
+    {
+      "case": "b10-token-inefficiency",
+      "repeat": 1,
+      "latency_ms": 8237,
+      "input_tokens": 1209,
+      "output_tokens": 1764
+    },
+    {
+      "case": "b10-token-inefficiency",
+      "repeat": 2,
+      "latency_ms": 8846,
+      "input_tokens": 1209,
+      "output_tokens": 1958
+    },
+    {
+      "case": "b10-vague-instructions",
+      "repeat": 1,
+      "latency_ms": 9770,
+      "input_tokens": 1151,
+      "output_tokens": 2011
+    },
+    {
+      "case": "b10-vague-instructions",
+      "repeat": 2,
+      "latency_ms": 9729,
+      "input_tokens": 1151,
+      "output_tokens": 2082
+    },
+    {
+      "case": "b10-missing-format-spec",
+      "repeat": 1,
+      "latency_ms": 8217,
+      "input_tokens": 1132,
+      "output_tokens": 1639
+    },
+    {
+      "case": "b10-missing-format-spec",
+      "repeat": 2,
+      "latency_ms": 7857,
+      "input_tokens": 1132,
+      "output_tokens": 1714
+    },
+    {
+      "case": "b11-clean",
+      "repeat": 1,
+      "latency_ms": 5418,
+      "input_tokens": 1176,
+      "output_tokens": 1129
+    },
+    {
+      "case": "b11-clean",
+      "repeat": 2,
+      "latency_ms": 6804,
+      "input_tokens": 1176,
+      "output_tokens": 1490
+    },
+    {
+      "case": "b11-conflicting-instructions",
+      "repeat": 1,
+      "latency_ms": 8741,
+      "input_tokens": 1192,
+      "output_tokens": 1748
+    },
+    {
+      "case": "b11-conflicting-instructions",
+      "repeat": 2,
+      "latency_ms": 8966,
+      "input_tokens": 1192,
+      "output_tokens": 1981
+    },
+    {
+      "case": "b11-undefined-terms",
+      "repeat": 1,
+      "latency_ms": 9560,
+      "input_tokens": 1190,
+      "output_tokens": 2168
+    },
+    {
+      "case": "b11-undefined-terms",
+      "repeat": 2,
+      "latency_ms": 7832,
+      "input_tokens": 1190,
+      "output_tokens": 1718
+    },
+    {
+      "case": "b11-potential-hallucination-risk",
+      "repeat": 1,
+      "latency_ms": 8264,
+      "input_tokens": 1172,
+      "output_tokens": 1857
+    },
+    {
+      "case": "b11-potential-hallucination-risk",
+      "repeat": 2,
+      "latency_ms": 9187,
+      "input_tokens": 1172,
+      "output_tokens": 2145
+    },
+    {
+      "case": "b12-clean",
+      "repeat": 1,
+      "latency_ms": 8869,
+      "input_tokens": 1157,
+      "output_tokens": 2048
+    },
+    {
+      "case": "b12-clean",
+      "repeat": 2,
+      "latency_ms": 8891,
+      "input_tokens": 1157,
+      "output_tokens": 1938
+    },
+    {
+      "case": "b12-vague-instructions",
+      "repeat": 1,
+      "latency_ms": 5966,
+      "input_tokens": 1148,
+      "output_tokens": 1319
+    },
+    {
+      "case": "b12-vague-instructions",
+      "repeat": 2,
+      "latency_ms": 8792,
+      "input_tokens": 1148,
+      "output_tokens": 1888
+    },
+    {
+      "case": "b12-missing-format-spec",
+      "repeat": 1,
+      "latency_ms": 7779,
+      "input_tokens": 1129,
+      "output_tokens": 1681
+    },
+    {
+      "case": "b12-missing-format-spec",
+      "repeat": 2,
+      "latency_ms": 6950,
+      "input_tokens": 1129,
+      "output_tokens": 1524
+    },
+    {
+      "case": "b12-conflicting-instructions",
+      "repeat": 1,
+      "latency_ms": 7879,
+      "input_tokens": 1174,
+      "output_tokens": 1540
+    },
+    {
+      "case": "b12-conflicting-instructions",
+      "repeat": 2,
+      "latency_ms": 8615,
+      "input_tokens": 1174,
+      "output_tokens": 1819
+    },
+    {
+      "case": "b13-clean",
+      "repeat": 1,
+      "latency_ms": 5029,
+      "input_tokens": 1149,
+      "output_tokens": 935
+    },
+    {
+      "case": "b13-clean",
+      "repeat": 2,
+      "latency_ms": 6824,
+      "input_tokens": 1149,
+      "output_tokens": 1347
+    },
+    {
+      "case": "b13-undefined-terms",
+      "repeat": 1,
+      "latency_ms": 7707,
+      "input_tokens": 1168,
+      "output_tokens": 1671
+    },
+    {
+      "case": "b13-undefined-terms",
+      "repeat": 2,
+      "latency_ms": 8681,
+      "input_tokens": 1168,
+      "output_tokens": 1776
+    },
+    {
+      "case": "b13-potential-hallucination-risk",
+      "repeat": 1,
+      "latency_ms": 7687,
+      "input_tokens": 1151,
+      "output_tokens": 1728
+    },
+    {
+      "case": "b13-potential-hallucination-risk",
+      "repeat": 2,
+      "latency_ms": 7056,
+      "input_tokens": 1151,
+      "output_tokens": 1629
+    },
+    {
+      "case": "b13-token-inefficiency",
+      "repeat": 1,
+      "latency_ms": 7427,
+      "input_tokens": 1214,
+      "output_tokens": 1466
+    },
+    {
+      "case": "b13-token-inefficiency",
+      "repeat": 2,
+      "latency_ms": 7495,
+      "input_tokens": 1214,
+      "output_tokens": 1576
+    },
+    {
+      "case": "b14-clean",
+      "repeat": 1,
+      "latency_ms": 6356,
+      "input_tokens": 1161,
+      "output_tokens": 1300
+    },
+    {
+      "case": "b14-clean",
+      "repeat": 2,
+      "latency_ms": 6714,
+      "input_tokens": 1161,
+      "output_tokens": 1467
+    },
+    {
+      "case": "b14-missing-format-spec",
+      "repeat": 1,
+      "latency_ms": 5483,
+      "input_tokens": 1133,
+      "output_tokens": 1174
+    },
+    {
+      "case": "b14-missing-format-spec",
+      "repeat": 2,
+      "latency_ms": 7940,
+      "input_tokens": 1133,
+      "output_tokens": 1749
+    },
+    {
+      "case": "b14-conflicting-instructions",
+      "repeat": 1,
+      "latency_ms": 8944,
+      "input_tokens": 1183,
+      "output_tokens": 1966
+    },
+    {
+      "case": "b14-conflicting-instructions",
+      "repeat": 2,
+      "latency_ms": 7987,
+      "input_tokens": 1183,
+      "output_tokens": 1850
+    },
+    {
+      "case": "b14-undefined-terms",
+      "repeat": 1,
+      "latency_ms": 6887,
+      "input_tokens": 1177,
+      "output_tokens": 1557
+    },
+    {
+      "case": "b14-undefined-terms",
+      "repeat": 2,
+      "latency_ms": 8217,
+      "input_tokens": 1177,
+      "output_tokens": 1859
+    },
+    {
+      "case": "b15-clean",
+      "repeat": 1,
+      "latency_ms": 4929,
+      "input_tokens": 1136,
+      "output_tokens": 820
+    },
+    {
+      "case": "b15-clean",
+      "repeat": 2,
+      "latency_ms": 9294,
+      "input_tokens": 1136,
+      "output_tokens": 1997
+    },
+    {
+      "case": "b15-potential-hallucination-risk",
+      "repeat": 1,
+      "latency_ms": 8879,
+      "input_tokens": 1137,
+      "output_tokens": 1776
+    },
+    {
+      "case": "b15-potential-hallucination-risk",
+      "repeat": 2,
+      "latency_ms": 7750,
+      "input_tokens": 1137,
+      "output_tokens": 1451
+    },
+    {
+      "case": "b15-token-inefficiency",
+      "repeat": 1,
+      "latency_ms": 8956,
+      "input_tokens": 1186,
+      "output_tokens": 1900
+    },
+    {
+      "case": "b15-token-inefficiency",
+      "repeat": 2,
+      "latency_ms": 7432,
+      "input_tokens": 1186,
+      "output_tokens": 1692
+    },
+    {
+      "case": "b15-vague-instructions",
+      "repeat": 1,
+      "latency_ms": 6832,
+      "input_tokens": 1136,
+      "output_tokens": 1356
+    },
+    {
+      "case": "b15-vague-instructions",
+      "repeat": 2,
+      "latency_ms": 8529,
+      "input_tokens": 1136,
+      "output_tokens": 1782
+    },
+    {
+      "case": "b16-clean",
+      "repeat": 1,
+      "latency_ms": 5647,
+      "input_tokens": 1168,
+      "output_tokens": 1185
+    },
+    {
+      "case": "b16-clean",
+      "repeat": 2,
+      "latency_ms": 6460,
+      "input_tokens": 1168,
+      "output_tokens": 1364
+    },
+    {
+      "case": "b16-conflicting-instructions",
+      "repeat": 1,
+      "latency_ms": 8841,
+      "input_tokens": 1188,
+      "output_tokens": 1704
+    },
+    {
+      "case": "b16-conflicting-instructions",
+      "repeat": 2,
+      "latency_ms": 6680,
+      "input_tokens": 1188,
+      "output_tokens": 955
+    },
+    {
+      "case": "b16-undefined-terms",
+      "repeat": 1,
+      "latency_ms": 7339,
+      "input_tokens": 1185,
+      "output_tokens": 1512
+    },
+    {
+      "case": "b16-undefined-terms",
+      "repeat": 2,
+      "latency_ms": 6779,
+      "input_tokens": 1185,
+      "output_tokens": 1464
+    },
+    {
+      "case": "b16-potential-hallucination-risk",
+      "repeat": 1,
+      "latency_ms": 8916,
+      "input_tokens": 1165,
+      "output_tokens": 1712
+    },
+    {
+      "case": "b16-potential-hallucination-risk",
+      "repeat": 2,
+      "latency_ms": 4676,
+      "input_tokens": 1165,
+      "output_tokens": 867
+    },
+    {
+      "case": "b17-clean",
+      "repeat": 1,
+      "latency_ms": 5173,
+      "input_tokens": 1135,
+      "output_tokens": 1069
+    },
+    {
+      "case": "b17-clean",
+      "repeat": 2,
+      "latency_ms": 6726,
+      "input_tokens": 1135,
+      "output_tokens": 1407
+    },
+    {
+      "case": "b17-token-inefficiency",
+      "repeat": 1,
+      "latency_ms": 7308,
+      "input_tokens": 1188,
+      "output_tokens": 1562
+    },
+    {
+      "case": "b17-token-inefficiency",
+      "repeat": 2,
+      "latency_ms": 6334,
+      "input_tokens": 1188,
+      "output_tokens": 1367
+    },
+    {
+      "case": "b17-vague-instructions",
+      "repeat": 1,
+      "latency_ms": 6591,
+      "input_tokens": 1127,
+      "output_tokens": 1370
+    },
+    {
+      "case": "b17-vague-instructions",
+      "repeat": 2,
+      "latency_ms": 5385,
+      "input_tokens": 1127,
+      "output_tokens": 1134
+    },
+    {
+      "case": "b17-missing-format-spec",
+      "repeat": 1,
+      "latency_ms": 7760,
+      "input_tokens": 1101,
+      "output_tokens": 1551
+    },
+    {
+      "case": "b17-missing-format-spec",
+      "repeat": 2,
+      "latency_ms": 6492,
+      "input_tokens": 1101,
+      "output_tokens": 1420
+    },
+    {
+      "case": "b18-clean",
+      "repeat": 1,
+      "latency_ms": 7159,
+      "input_tokens": 1128,
+      "output_tokens": 1484
+    },
+    {
+      "case": "b18-clean",
+      "repeat": 2,
+      "latency_ms": 6794,
+      "input_tokens": 1128,
+      "output_tokens": 1363
+    },
+    {
+      "case": "b18-undefined-terms",
+      "repeat": 1,
+      "latency_ms": 7350,
+      "input_tokens": 1141,
+      "output_tokens": 1409
+    },
+    {
+      "case": "b18-undefined-terms",
+      "repeat": 2,
+      "latency_ms": 8130,
+      "input_tokens": 1141,
+      "output_tokens": 1599
+    },
+    {
+      "case": "b18-potential-hallucination-risk",
+      "repeat": 1,
+      "latency_ms": 6525,
+      "input_tokens": 1135,
+      "output_tokens": 1419
+    },
+    {
+      "case": "b18-potential-hallucination-risk",
+      "repeat": 2,
+      "latency_ms": 4728,
+      "input_tokens": 1135,
+      "output_tokens": 991
+    },
+    {
+      "case": "b18-token-inefficiency",
+      "repeat": 1,
+      "latency_ms": 8565,
+      "input_tokens": 1189,
+      "output_tokens": 1857
+    },
+    {
+      "case": "b18-token-inefficiency",
+      "repeat": 2,
+      "latency_ms": 7586,
+      "input_tokens": 1189,
+      "output_tokens": 1595
+    },
+    {
+      "case": "b19-clean",
+      "repeat": 1,
+      "latency_ms": 4564,
+      "input_tokens": 1171,
+      "output_tokens": 974
+    },
+    {
+      "case": "b19-clean",
+      "repeat": 2,
+      "latency_ms": 6047,
+      "input_tokens": 1171,
+      "output_tokens": 1292
+    },
+    {
+      "case": "b19-vague-instructions",
+      "repeat": 1,
+      "latency_ms": 8936,
+      "input_tokens": 1172,
+      "output_tokens": 1822
+    },
+    {
+      "case": "b19-vague-instructions",
+      "repeat": 2,
+      "latency_ms": 8664,
+      "input_tokens": 1172,
+      "output_tokens": 1741
+    },
+    {
+      "case": "b19-missing-format-spec",
+      "repeat": 1,
+      "latency_ms": 7506,
+      "input_tokens": 1137,
+      "output_tokens": 1509
+    },
+    {
+      "case": "b19-missing-format-spec",
+      "repeat": 2,
+      "latency_ms": 6545,
+      "input_tokens": 1137,
+      "output_tokens": 1442
+    },
+    {
+      "case": "b19-conflicting-instructions",
+      "repeat": 1,
+      "latency_ms": 7086,
+      "input_tokens": 1189,
+      "output_tokens": 1503
+    },
+    {
+      "case": "b19-conflicting-instructions",
+      "repeat": 2,
+      "latency_ms": 7678,
+      "input_tokens": 1189,
+      "output_tokens": 1490
+    },
+    {
+      "case": "b20-clean",
+      "repeat": 1,
+      "latency_ms": 6438,
+      "input_tokens": 1119,
+      "output_tokens": 1135
+    },
+    {
+      "case": "b20-clean",
+      "repeat": 2,
+      "latency_ms": 6146,
+      "input_tokens": 1119,
+      "output_tokens": 1097
+    },
+    {
+      "case": "b20-potential-hallucination-risk",
+      "repeat": 1,
+      "latency_ms": 4782,
+      "input_tokens": 1118,
+      "output_tokens": 1024
+    },
+    {
+      "case": "b20-potential-hallucination-risk",
+      "repeat": 2,
+      "latency_ms": 5954,
+      "input_tokens": 1118,
+      "output_tokens": 1160
+    },
+    {
+      "case": "b20-token-inefficiency",
+      "repeat": 1,
+      "latency_ms": 6967,
+      "input_tokens": 1164,
+      "output_tokens": 1263
+    },
+    {
+      "case": "b20-token-inefficiency",
+      "repeat": 2,
+      "latency_ms": 6836,
+      "input_tokens": 1164,
+      "output_tokens": 1346
+    },
+    {
+      "case": "b20-vague-instructions",
+      "repeat": 1,
+      "latency_ms": 5835,
+      "input_tokens": 1112,
+      "output_tokens": 1113
+    },
+    {
+      "case": "b20-vague-instructions",
+      "repeat": 2,
+      "latency_ms": 7373,
+      "input_tokens": 1112,
+      "output_tokens": 1589
+    },
+    {
+      "case": "b21-clean",
+      "repeat": 1,
+      "latency_ms": 6526,
+      "input_tokens": 1184,
+      "output_tokens": 1499
+    },
+    {
+      "case": "b21-clean",
+      "repeat": 2,
+      "latency_ms": 6535,
+      "input_tokens": 1184,
+      "output_tokens": 1364
+    },
+    {
+      "case": "b21-missing-format-spec",
+      "repeat": 1,
+      "latency_ms": 7706,
+      "input_tokens": 1153,
+      "output_tokens": 1715
+    },
+    {
+      "case": "b21-missing-format-spec",
+      "repeat": 2,
+      "latency_ms": 7539,
+      "input_tokens": 1153,
+      "output_tokens": 1644
+    },
+    {
+      "case": "b21-conflicting-instructions",
+      "repeat": 1,
+      "latency_ms": 9306,
+      "input_tokens": 1202,
+      "output_tokens": 2084
+    },
+    {
+      "case": "b21-conflicting-instructions",
+      "repeat": 2,
+      "latency_ms": 6648,
+      "input_tokens": 1202,
+      "output_tokens": 1597
+    },
+    {
+      "case": "b21-undefined-terms",
+      "repeat": 1,
+      "latency_ms": 7809,
+      "input_tokens": 1201,
+      "output_tokens": 1545
+    },
+    {
+      "case": "b21-undefined-terms",
+      "repeat": 2,
+      "latency_ms": 9317,
+      "input_tokens": 1201,
+      "output_tokens": 1839
+    },
+    {
+      "case": "b22-clean",
+      "repeat": 1,
+      "latency_ms": 5748,
+      "input_tokens": 1141,
+      "output_tokens": 1198
+    },
+    {
+      "case": "b22-clean",
+      "repeat": 2,
+      "latency_ms": 6147,
+      "input_tokens": 1141,
+      "output_tokens": 1214
+    },
+    {
+      "case": "b22-token-inefficiency",
+      "repeat": 1,
+      "latency_ms": 5523,
+      "input_tokens": 1187,
+      "output_tokens": 974
+    },
+    {
+      "case": "b22-token-inefficiency",
+      "repeat": 2,
+      "latency_ms": 6315,
+      "input_tokens": 1187,
+      "output_tokens": 1326
+    },
+    {
+      "case": "b22-vague-instructions",
+      "repeat": 1,
+      "latency_ms": 5907,
+      "input_tokens": 1129,
+      "output_tokens": 1077
+    },
+    {
+      "case": "b22-vague-instructions",
+      "repeat": 2,
+      "latency_ms": 6332,
+      "input_tokens": 1129,
+      "output_tokens": 1135
+    },
+    {
+      "case": "b22-missing-format-spec",
+      "repeat": 1,
+      "latency_ms": 6205,
+      "input_tokens": 1108,
+      "output_tokens": 1277
+    },
+    {
+      "case": "b22-missing-format-spec",
+      "repeat": 2,
+      "latency_ms": 5867,
+      "input_tokens": 1108,
+      "output_tokens": 1245
+    },
+    {
+      "case": "b23-clean",
+      "repeat": 1,
+      "latency_ms": 6001,
+      "input_tokens": 1131,
+      "output_tokens": 1135
+    },
+    {
+      "case": "b23-clean",
+      "repeat": 2,
+      "latency_ms": 6996,
+      "input_tokens": 1131,
+      "output_tokens": 1327
+    },
+    {
+      "case": "b23-conflicting-instructions",
+      "repeat": 1,
+      "latency_ms": 5123,
+      "input_tokens": 1149,
+      "output_tokens": 858
+    },
+    {
+      "case": "b23-conflicting-instructions",
+      "repeat": 2,
+      "latency_ms": 6343,
+      "input_tokens": 1149,
+      "output_tokens": 1384
+    },
+    {
+      "case": "b23-undefined-terms",
+      "repeat": 1,
+      "latency_ms": 7661,
+      "input_tokens": 1149,
+      "output_tokens": 1780
+    },
+    {
+      "case": "b23-undefined-terms",
+      "repeat": 2,
+      "latency_ms": 5636,
+      "input_tokens": 1149,
+      "output_tokens": 1227
+    },
+    {
+      "case": "b23-potential-hallucination-risk",
+      "repeat": 1,
+      "latency_ms": 7449,
+      "input_tokens": 1130,
+      "output_tokens": 1673
+    },
+    {
+      "case": "b23-potential-hallucination-risk",
+      "repeat": 2,
+      "latency_ms": 5628,
+      "input_tokens": 1130,
+      "output_tokens": 1256
+    },
+    {
+      "case": "b24-clean",
+      "repeat": 1,
+      "latency_ms": 6513,
+      "input_tokens": 1151,
+      "output_tokens": 1324
+    },
+    {
+      "case": "b24-clean",
+      "repeat": 2,
+      "latency_ms": 7378,
+      "input_tokens": 1151,
+      "output_tokens": 1587
+    },
+    {
+      "case": "b24-vague-instructions",
+      "repeat": 1,
+      "latency_ms": 8963,
+      "input_tokens": 1138,
+      "output_tokens": 1988
+    },
+    {
+      "case": "b24-vague-instructions",
+      "repeat": 2,
+      "latency_ms": 7470,
+      "input_tokens": 1138,
+      "output_tokens": 1613
+    },
+    {
+      "case": "b24-missing-format-spec",
+      "repeat": 1,
+      "latency_ms": 5115,
+      "input_tokens": 1120,
+      "output_tokens": 1162
+    },
+    {
+      "case": "b24-missing-format-spec",
+      "repeat": 2,
+      "latency_ms": 6940,
+      "input_tokens": 1120,
+      "output_tokens": 1434
+    },
+    {
+      "case": "b24-conflicting-instructions",
+      "repeat": 1,
+      "latency_ms": 8504,
+      "input_tokens": 1168,
+      "output_tokens": 1245
+    },
+    {
+      "case": "b24-conflicting-instructions",
+      "repeat": 2,
+      "latency_ms": 3831,
+      "input_tokens": 1168,
+      "output_tokens": 757
+    },
+    {
+      "case": "b25-clean",
+      "repeat": 1,
+      "latency_ms": 6240,
+      "input_tokens": 1166,
+      "output_tokens": 1303
+    },
+    {
+      "case": "b25-clean",
+      "repeat": 2,
+      "latency_ms": 7740,
+      "input_tokens": 1166,
+      "output_tokens": 1739
+    },
+    {
+      "case": "b25-undefined-terms",
+      "repeat": 1,
+      "latency_ms": 7609,
+      "input_tokens": 1179,
+      "output_tokens": 1530
+    },
+    {
+      "case": "b25-undefined-terms",
+      "repeat": 2,
+      "latency_ms": 6823,
+      "input_tokens": 1179,
+      "output_tokens": 1366
+    },
+    {
+      "case": "b25-potential-hallucination-risk",
+      "repeat": 1,
+      "latency_ms": 6580,
+      "input_tokens": 1166,
+      "output_tokens": 1394
+    },
+    {
+      "case": "b25-potential-hallucination-risk",
+      "repeat": 2,
+      "latency_ms": 7207,
+      "input_tokens": 1166,
+      "output_tokens": 1571
+    },
+    {
+      "case": "b25-token-inefficiency",
+      "repeat": 1,
+      "latency_ms": 8848,
+      "input_tokens": 1207,
+      "output_tokens": 1738
+    },
+    {
+      "case": "b25-token-inefficiency",
+      "repeat": 2,
+      "latency_ms": 7995,
+      "input_tokens": 1207,
+      "output_tokens": 1768
+    },
+    {
+      "case": "b26-clean",
+      "repeat": 1,
+      "latency_ms": 9562,
+      "input_tokens": 1114,
+      "output_tokens": 1939
+    },
+    {
+      "case": "b26-clean",
+      "repeat": 2,
+      "latency_ms": 6874,
+      "input_tokens": 1114,
+      "output_tokens": 1442
+    },
+    {
+      "case": "b26-missing-format-spec",
+      "repeat": 1,
+      "latency_ms": 7695,
+      "input_tokens": 1086,
+      "output_tokens": 1630
+    },
+    {
+      "case": "b26-missing-format-spec",
+      "repeat": 2,
+      "latency_ms": 6038,
+      "input_tokens": 1086,
+      "output_tokens": 1259
+    },
+    {
+      "case": "b26-conflicting-instructions",
+      "repeat": 1,
+      "latency_ms": 7622,
+      "input_tokens": 1135,
+      "output_tokens": 1377
+    },
+    {
+      "case": "b26-conflicting-instructions",
+      "repeat": 2,
+      "latency_ms": 8840,
+      "input_tokens": 1135,
+      "output_tokens": 1720
+    },
+    {
+      "case": "b26-undefined-terms",
+      "repeat": 1,
+      "latency_ms": 7886,
+      "input_tokens": 1131,
+      "output_tokens": 1738
+    },
+    {
+      "case": "b26-undefined-terms",
+      "repeat": 2,
+      "latency_ms": 8379,
+      "input_tokens": 1131,
+      "output_tokens": 1815
+    },
+    {
+      "case": "b27-clean",
+      "repeat": 1,
+      "latency_ms": 6427,
+      "input_tokens": 1169,
+      "output_tokens": 1392
+    },
+    {
+      "case": "b27-clean",
+      "repeat": 2,
+      "latency_ms": 5962,
+      "input_tokens": 1169,
+      "output_tokens": 1207
+    },
+    {
+      "case": "b27-potential-hallucination-risk",
+      "repeat": 1,
+      "latency_ms": 8434,
+      "input_tokens": 1168,
+      "output_tokens": 1883
+    },
+    {
+      "case": "b27-potential-hallucination-risk",
+      "repeat": 2,
+      "latency_ms": 8700,
+      "input_tokens": 1168,
+      "output_tokens": 1963
+    },
+    {
+      "case": "b27-token-inefficiency",
+      "repeat": 1,
+      "latency_ms": 7310,
+      "input_tokens": 1221,
+      "output_tokens": 1718
+    },
+    {
+      "case": "b27-token-inefficiency",
+      "repeat": 2,
+      "latency_ms": 7696,
+      "input_tokens": 1221,
+      "output_tokens": 1702
+    },
+    {
+      "case": "b27-vague-instructions",
+      "repeat": 1,
+      "latency_ms": 10224,
+      "input_tokens": 1156,
+      "output_tokens": 1996
+    },
+    {
+      "case": "b27-vague-instructions",
+      "repeat": 2,
+      "latency_ms": 8880,
+      "input_tokens": 1156,
+      "output_tokens": 1772
+    },
+    {
+      "case": "b28-clean",
+      "repeat": 1,
+      "latency_ms": 5616,
+      "input_tokens": 1137,
+      "output_tokens": 1163
+    },
+    {
+      "case": "b28-clean",
+      "repeat": 2,
+      "latency_ms": 6484,
+      "input_tokens": 1137,
+      "output_tokens": 1315
+    },
+    {
+      "case": "b28-conflicting-instructions",
+      "repeat": 1,
+      "latency_ms": 4147,
+      "input_tokens": 1156,
+      "output_tokens": 591
+    },
+    {
+      "case": "b28-conflicting-instructions",
+      "repeat": 2,
+      "latency_ms": 3774,
+      "input_tokens": 1156,
+      "output_tokens": 698
+    },
+    {
+      "case": "b28-undefined-terms",
+      "repeat": 1,
+      "latency_ms": 5197,
+      "input_tokens": 1156,
+      "output_tokens": 971
+    },
+    {
+      "case": "b28-undefined-terms",
+      "repeat": 2,
+      "latency_ms": 6893,
+      "input_tokens": 1156,
+      "output_tokens": 1443
+    },
+    {
+      "case": "b28-potential-hallucination-risk",
+      "repeat": 1,
+      "latency_ms": 8124,
+      "input_tokens": 1140,
+      "output_tokens": 1770
+    },
+    {
+      "case": "b28-potential-hallucination-risk",
+      "repeat": 2,
+      "latency_ms": 7857,
+      "input_tokens": 1140,
+      "output_tokens": 1796
+    },
+    {
+      "case": "b29-clean",
+      "repeat": 1,
+      "latency_ms": 6320,
+      "input_tokens": 1147,
+      "output_tokens": 1160
+    },
+    {
+      "case": "b29-clean",
+      "repeat": 2,
+      "latency_ms": 6655,
+      "input_tokens": 1147,
+      "output_tokens": 1230
+    },
+    {
+      "case": "b29-token-inefficiency",
+      "repeat": 1,
+      "latency_ms": 5354,
+      "input_tokens": 1209,
+      "output_tokens": 1023
+    },
+    {
+      "case": "b29-token-inefficiency",
+      "repeat": 2,
+      "latency_ms": 7510,
+      "input_tokens": 1209,
+      "output_tokens": 1699
+    },
+    {
+      "case": "b29-vague-instructions",
+      "repeat": 1,
+      "latency_ms": 5433,
+      "input_tokens": 1132,
+      "output_tokens": 1117
+    },
+    {
+      "case": "b29-vague-instructions",
+      "repeat": 2,
+      "latency_ms": 7658,
+      "input_tokens": 1132,
+      "output_tokens": 1645
+    },
+    {
+      "case": "b29-missing-format-spec",
+      "repeat": 1,
+      "latency_ms": 6204,
+      "input_tokens": 1116,
+      "output_tokens": 1163
+    },
+    {
+      "case": "b29-missing-format-spec",
+      "repeat": 2,
+      "latency_ms": 7235,
+      "input_tokens": 1116,
+      "output_tokens": 1603
+    }
+  ],
+  "results": [
+    {
+      "repeat": 1,
+      "case": "b00-clean",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b00-clean",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b00-vague-instructions",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b00-vague-instructions",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b00-missing-format-spec",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b00-missing-format-spec",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b00-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b00-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b01-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b01-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b01-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b01-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b01-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b01-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b01-token-inefficiency",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b01-token-inefficiency",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b02-clean",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b02-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b02-missing-format-spec",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b02-missing-format-spec",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b02-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b02-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b02-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b02-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b03-clean",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b03-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b03-potential-hallucination-risk",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b03-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b03-token-inefficiency",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b03-token-inefficiency",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b03-vague-instructions",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b03-vague-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b04-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b04-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b04-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b04-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b04-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b04-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b04-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b04-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b05-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b05-clean",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b05-token-inefficiency",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b05-token-inefficiency",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b05-vague-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b05-vague-instructions",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b05-missing-format-spec",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b05-missing-format-spec",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b06-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b06-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b06-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b06-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b06-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b06-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b06-token-inefficiency",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b06-token-inefficiency",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b07-clean",
+      "predicted": [
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b07-clean",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b07-vague-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b07-vague-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b07-missing-format-spec",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b07-missing-format-spec",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b07-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b07-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b08-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b08-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b08-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b08-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b08-token-inefficiency",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b08-token-inefficiency",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b08-vague-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b08-vague-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b09-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b09-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b09-missing-format-spec",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b09-missing-format-spec",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b09-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b09-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b09-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b09-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b10-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b10-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b10-token-inefficiency",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b10-token-inefficiency",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b10-vague-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b10-vague-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b10-missing-format-spec",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b10-missing-format-spec",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b11-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b11-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b11-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b11-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b11-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b11-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b11-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b11-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b12-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b12-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b12-vague-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b12-vague-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b12-missing-format-spec",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b12-missing-format-spec",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b12-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b12-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b13-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b13-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b13-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b13-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b13-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b13-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b13-token-inefficiency",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b13-token-inefficiency",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b14-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b14-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b14-missing-format-spec",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b14-missing-format-spec",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b14-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b14-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "TOKEN_INEFFICIENCY",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b14-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b14-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b15-clean",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b15-clean",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b15-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b15-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b15-token-inefficiency",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b15-token-inefficiency",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b15-vague-instructions",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b15-vague-instructions",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b16-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b16-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b16-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b16-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b16-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b16-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b16-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b16-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b17-clean",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b17-clean",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b17-token-inefficiency",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b17-token-inefficiency",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b17-vague-instructions",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b17-vague-instructions",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b17-missing-format-spec",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b17-missing-format-spec",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b18-clean",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b18-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b18-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b18-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b18-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b18-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b18-token-inefficiency",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b18-token-inefficiency",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b19-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b19-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b19-vague-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b19-vague-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b19-missing-format-spec",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b19-missing-format-spec",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b19-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b19-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b20-clean",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b20-clean",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b20-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b20-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b20-token-inefficiency",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b20-token-inefficiency",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b20-vague-instructions",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b20-vague-instructions",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b21-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b21-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b21-missing-format-spec",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b21-missing-format-spec",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b21-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b21-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b21-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b21-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b22-clean",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b22-clean",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b22-token-inefficiency",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b22-token-inefficiency",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b22-vague-instructions",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b22-vague-instructions",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b22-missing-format-spec",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b22-missing-format-spec",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b23-clean",
+      "predicted": [
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b23-clean",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b23-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b23-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b23-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b23-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b23-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b23-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b24-clean",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b24-clean",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b24-vague-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b24-vague-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b24-missing-format-spec",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b24-missing-format-spec",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b24-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b24-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b25-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b25-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b25-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b25-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b25-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b25-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b25-token-inefficiency",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b25-token-inefficiency",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b26-clean",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b26-clean",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b26-missing-format-spec",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b26-missing-format-spec",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b26-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b26-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b26-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b26-undefined-terms",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b27-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b27-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b27-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b27-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b27-token-inefficiency",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b27-token-inefficiency",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b27-vague-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b27-vague-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b28-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b28-clean",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b28-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b28-conflicting-instructions",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b28-undefined-terms",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b28-undefined-terms",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b28-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b28-potential-hallucination-risk",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b29-clean",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b29-clean",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b29-token-inefficiency",
+      "predicted": [
+        "TOKEN_INEFFICIENCY",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b29-token-inefficiency",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "TOKEN_INEFFICIENCY",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b29-vague-instructions",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b29-vague-instructions",
+      "predicted": [
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 1,
+      "case": "b29-missing-format-spec",
+      "predicted": [
+        "POTENTIAL_HALLUCINATION_RISK",
+        "VAGUE_INSTRUCTIONS"
+      ]
+    },
+    {
+      "repeat": 2,
+      "case": "b29-missing-format-spec",
+      "predicted": [
+        "CONFLICTING_INSTRUCTIONS",
+        "MISSING_FORMAT_SPEC",
+        "POTENTIAL_HALLUCINATION_RISK",
+        "UNDEFINED_TERMS"
+      ]
+    }
+  ],
+  "metrics": [
+    {
+      "repeat": 1,
+      "dev": {
+        "cases": 60,
+        "failed": [],
+        "overall": {
+          "precision": {
+            "k": 45,
+            "n": 222,
+            "value": 0.20270270270270271,
+            "ci95": [
+              0.15508552852787638,
+              0.2604336562406731
+            ]
+          },
+          "recall": {
+            "k": 45,
+            "n": 45,
+            "value": 1,
+            "ci95": [
+              0.921348400123914,
+              0.9999999999999999
+            ]
+          }
+        },
+        "per_category": {
+          "VAGUE_INSTRUCTIONS": {
+            "precision": {
+              "k": 7,
+              "n": 45,
+              "value": 0.15555555555555556,
+              "ci95": [
+                0.07745423442616176,
+                0.2878390899329196
+              ]
+            },
+            "recall": {
+              "k": 7,
+              "n": 7,
+              "value": 1,
+              "ci95": [
+                0.6456695613241317,
+                1
+              ]
+            }
+          },
+          "MISSING_FORMAT_SPEC": {
+            "precision": {
+              "k": 8,
+              "n": 24,
+              "value": 0.3333333333333333,
+              "ci95": [
+                0.1797219023644938,
+                0.5329368331526154
+              ]
+            },
+            "recall": {
+              "k": 8,
+              "n": 8,
+              "value": 1,
+              "ci95": [
+                0.6755924316585924,
+                1
+              ]
+            }
+          },
+          "CONFLICTING_INSTRUCTIONS": {
+            "precision": {
+              "k": 8,
+              "n": 48,
+              "value": 0.16666666666666666,
+              "ci95": [
+                0.08695513532041114,
+                0.29577828517857574
+              ]
+            },
+            "recall": {
+              "k": 8,
+              "n": 8,
+              "value": 1,
+              "ci95": [
+                0.6755924316585924,
+                1
+              ]
+            }
+          },
+          "UNDEFINED_TERMS": {
+            "precision": {
+              "k": 8,
+              "n": 47,
+              "value": 0.1702127659574468,
+              "ci95": [
+                0.08886363831080747,
+                0.30139776090713377
+              ]
+            },
+            "recall": {
+              "k": 8,
+              "n": 8,
+              "value": 1,
+              "ci95": [
+                0.6755924316585924,
+                1
+              ]
+            }
+          },
+          "POTENTIAL_HALLUCINATION_RISK": {
+            "precision": {
+              "k": 7,
+              "n": 46,
+              "value": 0.15217391304347827,
+              "ci95": [
+                0.07572282186599014,
+                0.28224139671332116
+              ]
+            },
+            "recall": {
+              "k": 7,
+              "n": 7,
+              "value": 1,
+              "ci95": [
+                0.6456695613241317,
+                1
+              ]
+            }
+          },
+          "TOKEN_INEFFICIENCY": {
+            "precision": {
+              "k": 7,
+              "n": 12,
+              "value": 0.5833333333333334,
+              "ci95": [
+                0.31951131084242423,
+                0.8067396875653928
+              ]
+            },
+            "recall": {
+              "k": 7,
+              "n": 7,
+              "value": 1,
+              "ci95": [
+                0.6456695613241317,
+                1
+              ]
+            }
+          }
+        },
+        "clean_false_alarm": {
+          "k": 15,
+          "n": 15,
+          "value": 1,
+          "ci95": [
+            0.7961166964035129,
+            1
+          ]
+        }
+      },
+      "test": {
+        "cases": 60,
+        "failed": [],
+        "overall": {
+          "precision": {
+            "k": 44,
+            "n": 217,
+            "value": 0.20276497695852536,
+            "ci95": [
+              0.15465676368708492,
+              0.26121378592136296
+            ]
+          },
+          "recall": {
+            "k": 44,
+            "n": 45,
+            "value": 0.9777777777777777,
+            "ci95": [
+              0.8843331811799517,
+              0.9960664011606768
+            ]
+          }
+        },
+        "per_category": {
+          "VAGUE_INSTRUCTIONS": {
+            "precision": {
+              "k": 8,
+              "n": 49,
+              "value": 0.16326530612244897,
+              "ci95": [
+                0.08512698327209231,
+                0.29036338549059093
+              ]
+            },
+            "recall": {
+              "k": 8,
+              "n": 8,
+              "value": 1,
+              "ci95": [
+                0.6755924316585924,
+                1
+              ]
+            }
+          },
+          "MISSING_FORMAT_SPEC": {
+            "precision": {
+              "k": 6,
+              "n": 23,
+              "value": 0.2608695652173913,
+              "ci95": [
+                0.12548615971944993,
+                0.46470005002993314
+              ]
+            },
+            "recall": {
+              "k": 6,
+              "n": 7,
+              "value": 0.8571428571428571,
+              "ci95": [
+                0.486872167860775,
+                0.9743203759421759
+              ]
+            }
+          },
+          "CONFLICTING_INSTRUCTIONS": {
+            "precision": {
+              "k": 7,
+              "n": 36,
+              "value": 0.19444444444444445,
+              "ci95": [
+                0.0975309536595807,
+                0.3502804313214011
+              ]
+            },
+            "recall": {
+              "k": 7,
+              "n": 7,
+              "value": 1,
+              "ci95": [
+                0.6456695613241317,
+                1
+              ]
+            }
+          },
+          "UNDEFINED_TERMS": {
+            "precision": {
+              "k": 7,
+              "n": 43,
+              "value": 0.16279069767441862,
+              "ci95": [
+                0.08116627302914933,
+                0.29972406017992526
+              ]
+            },
+            "recall": {
+              "k": 7,
+              "n": 7,
+              "value": 1,
+              "ci95": [
+                0.6456695613241317,
+                1
+              ]
+            }
+          },
+          "POTENTIAL_HALLUCINATION_RISK": {
+            "precision": {
+              "k": 8,
+              "n": 50,
+              "value": 0.16,
+              "ci95": [
+                0.08337420635400901,
+                0.2851421617674486
+              ]
+            },
+            "recall": {
+              "k": 8,
+              "n": 8,
+              "value": 1,
+              "ci95": [
+                0.6755924316585924,
+                1
+              ]
+            }
+          },
+          "TOKEN_INEFFICIENCY": {
+            "precision": {
+              "k": 8,
+              "n": 16,
+              "value": 0.5,
+              "ci95": [
+                0.27999563470387406,
+                0.7200043652961259
+              ]
+            },
+            "recall": {
+              "k": 8,
+              "n": 8,
+              "value": 1,
+              "ci95": [
+                0.6755924316585924,
+                1
+              ]
+            }
+          }
+        },
+        "clean_false_alarm": {
+          "k": 15,
+          "n": 15,
+          "value": 1,
+          "ci95": [
+            0.7961166964035129,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "repeat": 2,
+      "dev": {
+        "cases": 60,
+        "failed": [],
+        "overall": {
+          "precision": {
+            "k": 43,
+            "n": 248,
+            "value": 0.17338709677419356,
+            "ci95": [
+              0.1313476998738356,
+              0.22539046103255533
+            ]
+          },
+          "recall": {
+            "k": 43,
+            "n": 45,
+            "value": 0.9555555555555556,
+            "ci95": [
+              0.8517248911534567,
+              0.987725873403887
+            ]
+          }
+        },
+        "per_category": {
+          "VAGUE_INSTRUCTIONS": {
+            "precision": {
+              "k": 7,
+              "n": 47,
+              "value": 0.14893617021276595,
+              "ci95": [
+                0.07406719956120218,
+                0.27685622541273525
+              ]
+            },
+            "recall": {
+              "k": 7,
+              "n": 7,
+              "value": 1,
+              "ci95": [
+                0.6456695613241317,
+                1
+              ]
+            }
+          },
+          "MISSING_FORMAT_SPEC": {
+            "precision": {
+              "k": 6,
+              "n": 26,
+              "value": 0.23076923076923078,
+              "ci95": [
+                0.11033849341513308,
+                0.4205155423848758
+              ]
+            },
+            "recall": {
+              "k": 6,
+              "n": 8,
+              "value": 0.75,
+              "ci95": [
+                0.40927542792725174,
+                0.9285207879020445
+              ]
+            }
+          },
+          "CONFLICTING_INSTRUCTIONS": {
+            "precision": {
+              "k": 8,
+              "n": 53,
+              "value": 0.1509433962264151,
+              "ci95": [
+                0.0785241781067037,
+                0.2705424938577089
+              ]
+            },
+            "recall": {
+              "k": 8,
+              "n": 8,
+              "value": 1,
+              "ci95": [
+                0.6755924316585924,
+                1
+              ]
+            }
+          },
+          "UNDEFINED_TERMS": {
+            "precision": {
+              "k": 8,
+              "n": 46,
+              "value": 0.17391304347826086,
+              "ci95": [
+                0.09085791655828837,
+                0.3072335383598159
+              ]
+            },
+            "recall": {
+              "k": 8,
+              "n": 8,
+              "value": 1,
+              "ci95": [
+                0.6755924316585924,
+                1
+              ]
+            }
+          },
+          "POTENTIAL_HALLUCINATION_RISK": {
+            "precision": {
+              "k": 7,
+              "n": 53,
+              "value": 0.1320754716981132,
+              "ci95": [
+                0.0654785324879857,
+                0.24840255417720597
+              ]
+            },
+            "recall": {
+              "k": 7,
+              "n": 7,
+              "value": 1,
+              "ci95": [
+                0.6456695613241317,
+                1
+              ]
+            }
+          },
+          "TOKEN_INEFFICIENCY": {
+            "precision": {
+              "k": 7,
+              "n": 23,
+              "value": 0.30434782608695654,
+              "ci95": [
+                0.1560402436889323,
+                0.5086575642878356
+              ]
+            },
+            "recall": {
+              "k": 7,
+              "n": 7,
+              "value": 1,
+              "ci95": [
+                0.6456695613241317,
+                1
+              ]
+            }
+          }
+        },
+        "clean_false_alarm": {
+          "k": 15,
+          "n": 15,
+          "value": 1,
+          "ci95": [
+            0.7961166964035129,
+            1
+          ]
+        }
+      },
+      "test": {
+        "cases": 60,
+        "failed": [],
+        "overall": {
+          "precision": {
+            "k": 45,
+            "n": 229,
+            "value": 0.1965065502183406,
+            "ci95": [
+              0.1502301505280786,
+              0.25279712533664167
+            ]
+          },
+          "recall": {
+            "k": 45,
+            "n": 45,
+            "value": 1,
+            "ci95": [
+              0.921348400123914,
+              0.9999999999999999
+            ]
+          }
+        },
+        "per_category": {
+          "VAGUE_INSTRUCTIONS": {
+            "precision": {
+              "k": 8,
+              "n": 42,
+              "value": 0.19047619047619047,
+              "ci95": [
+                0.09982008230706524,
+                0.33300774135959404
+              ]
+            },
+            "recall": {
+              "k": 8,
+              "n": 8,
+              "value": 1,
+              "ci95": [
+                0.6755924316585924,
+                1
+              ]
+            }
+          },
+          "MISSING_FORMAT_SPEC": {
+            "precision": {
+              "k": 7,
+              "n": 33,
+              "value": 0.21212121212121213,
+              "ci95": [
+                0.10676021475084824,
+                0.3775164513491988
+              ]
+            },
+            "recall": {
+              "k": 7,
+              "n": 7,
+              "value": 1,
+              "ci95": [
+                0.6456695613241317,
+                1
+              ]
+            }
+          },
+          "CONFLICTING_INSTRUCTIONS": {
+            "precision": {
+              "k": 7,
+              "n": 35,
+              "value": 0.2,
+              "ci95": [
+                0.10042446419270429,
+                0.3589161320454949
+              ]
+            },
+            "recall": {
+              "k": 7,
+              "n": 7,
+              "value": 1,
+              "ci95": [
+                0.6456695613241317,
+                1
+              ]
+            }
+          },
+          "UNDEFINED_TERMS": {
+            "precision": {
+              "k": 7,
+              "n": 46,
+              "value": 0.15217391304347827,
+              "ci95": [
+                0.07572282186599014,
+                0.28224139671332116
+              ]
+            },
+            "recall": {
+              "k": 7,
+              "n": 7,
+              "value": 1,
+              "ci95": [
+                0.6456695613241317,
+                1
+              ]
+            }
+          },
+          "POTENTIAL_HALLUCINATION_RISK": {
+            "precision": {
+              "k": 8,
+              "n": 54,
+              "value": 0.14814814814814814,
+              "ci95": [
+                0.07703063098186531,
+                0.2660011539185682
+              ]
+            },
+            "recall": {
+              "k": 8,
+              "n": 8,
+              "value": 1,
+              "ci95": [
+                0.6755924316585924,
+                1
+              ]
+            }
+          },
+          "TOKEN_INEFFICIENCY": {
+            "precision": {
+              "k": 8,
+              "n": 19,
+              "value": 0.42105263157894735,
+              "ci95": [
+                0.23141891166171535,
+                0.637240966168742
+              ]
+            },
+            "recall": {
+              "k": 8,
+              "n": 8,
+              "value": 1,
+              "ci95": [
+                0.6755924316585924,
+                1
+              ]
+            }
+          }
+        },
+        "clean_false_alarm": {
+          "k": 15,
+          "n": 15,
+          "value": 1,
+          "ci95": [
+            0.7961166964035129,
+            1
+          ]
+        }
+      }
+    }
+  ],
+  "note": "Labels are the defects each case was built with (evals/linter/README.md); a reported category that was not designed in counts as a false positive. Latency is measured around each provider call, from this machine. cost_usd counts the usage the API reported."
+}

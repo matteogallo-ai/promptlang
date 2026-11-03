@@ -1,6 +1,6 @@
 {
   "name": "@promptlang/yaml-parser",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Zero-dependency minimal YAML parser — the subset used by PromptLang and Praxis. Rejects anchors, block scalars, tags, and flow-style with line-aware errors.",
   "author": "Matteo Gallo <matteo.gallo@gallarti.io>",
   "license": "MIT",

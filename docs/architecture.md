@@ -192,7 +192,7 @@ Six semantic categories detected:
 - `POTENTIAL_HALLUCINATION_RISK` — instruction invites guessing vs. refusing
 - `TOKEN_INEFFICIENCY` — verbose phrasing that could be shortened
 
-**Meta-prompt design**: `AI_LINTER_SYSTEM_PROMPT` instructs Claude to respond with a strict JSON schema (`{"issues": [...]}`) with no surrounding text. The parser in `issue-parser.ts` strips markdown fences and returns a `ai:parse-failure` issue if the response is malformed.
+**Meta-prompt design**: `AI_LINTER_SYSTEM_PROMPT` instructs Claude to respond with a strict JSON schema (`{"issues": [...]}`) with no surrounding text. The parser in `issue-parser.ts` strips markdown fences and returns an `ai:parse-failure` warning if the response is not JSON or not an object with an array of issues.
 
 **Concurrency**: `AiLinter` processes prompts in configurable batches (default 3 at a time) using `Promise.allSettled`. A failing API call for one prompt does not block others.
 

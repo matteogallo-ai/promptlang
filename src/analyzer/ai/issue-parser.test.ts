@@ -97,15 +97,25 @@ describe("parseAiResponse", () => {
     const result = parseAiResponse("not json at all {{", PROMPT, FILE);
     expect(result).toHaveLength(1);
     expect(result[0].rule).toBe("ai:parse-failure");
-    expect(result[0].severity).toBe("info");
+    // A warning, like a request failure, so --strict fails on a prompt left unlinted.
+    expect(result[0].severity).toBe("warning");
     expect(result[0].message).toContain("classify_ticket");
     expect(result[0].file).toBe(FILE);
     expect(result[0].line).toBe(5);
   });
 
-  test("returns empty array when issues field is missing", () => {
-    const result = parseAiResponse('{"other": "data"}', PROMPT, FILE);
-    expect(result).toHaveLength(0);
+  test("valid JSON of the wrong shape is a parse failure, never an empty result", () => {
+    for (const raw of [
+      '{"other": "data"}',
+      '{"issues": "none"}',
+      "null",
+      "[]",
+      '{"issues": [{"confidence": "high"}]}',
+      '{"issues": [null]}',
+    ]) {
+      const result = parseAiResponse(raw, PROMPT, FILE);
+      expect(result.map((i) => i.rule)).toEqual(["ai:parse-failure"]);
+    }
   });
 
   test("category with underscores is converted to kebab-case in rule", () => {

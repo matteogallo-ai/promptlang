@@ -7,12 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **`prompt-injection-risk` warns in more places.** It now reads `system:` and
+  `assistant:` sections, and `date` and text-bearing struct parameters, so a file
+  that passed `analyze --strict` can now exit 1: for example a `{{tone}}` string
+  parameter in a system prompt. Remedy: declare a value from a fixed list as an
+  `enum`, or enclose the input in a delimiter pair.
+
 ### Fixed
 - **`prompt-injection-risk` checks what encloses each input.** It accepted a
   section with any `---` or `<tag>` anywhere (`Answer in <b>bold</b>. Here is:
   {{x}}` passed), and never looked at `system:` sections. It now flags each text
-  parameter (`string`, or an undeclared type) whose placeholder is not inside a
-  delimiter pair, in every role, and no longer flags numbers, booleans or enums.
+  parameter (`string`, `date`, a struct with a text field, or an undeclared
+  type) whose placeholder is not inside a delimiter pair, in every role, and no
+  longer flags numbers, booleans or enums.
 - **The example's injection test claimed a check it did not make.** Its comment
   said the mock checks the hostile text reaches the prompt inside `<ticket>`
   tags; nothing did. `tests/example-injection.test.ts` now checks it, and fails

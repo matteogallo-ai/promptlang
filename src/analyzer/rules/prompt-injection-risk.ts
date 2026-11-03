@@ -1,25 +1,35 @@
 import type { Rule, AnalysisContext, Issue } from "../analyzer";
 import type { Program, PromptDeclaration, TypeExpression } from "../../ast/nodes";
+import { templatePlaceholders } from "../../compiler/template-compiler";
 
 /**
  * True when the parameter's value can carry instructions. Numbers, booleans and
- * enums cannot; a struct is inserted as "[object Object]". A type the file does
- * not declare (imported) is treated as text, since nothing here can rule it out.
+ * enums cannot, provided the caller's type checker holds them to their type:
+ * nothing checks them at run time. `date` is a string nobody validates. A struct
+ * carries text when any field does: Python inserts its repr, fields included. A
+ * type the file does not declare, or an alias cycle, is treated as text, since
+ * nothing here can rule it out; a cycle through a struct adds no new field.
  */
-function carriesText(type: TypeExpression, program: Program, seen = new Set<string>()): boolean {
+function carriesText(
+  type: TypeExpression,
+  program: Program,
+  seen = new Set<string>(),
+  inStruct = false
+): boolean {
   switch (type.kind) {
     case "PrimitiveType":
-      return type.name === "string";
+      return type.name === "string" || type.name === "date";
     case "EnumType":
-    case "StructType":
       return false;
+    case "StructType":
+      return type.fields.some((f) => carriesText(f.type, program, seen, true));
     case "TypeReference": {
-      if (seen.has(type.name)) return false;
+      if (seen.has(type.name)) return !inStruct;
       const d = program.declarations.find(
         (x) => x.kind === "TypeDeclaration" && x.name === type.name
       );
       if (d?.kind !== "TypeDeclaration") return true;
-      return carriesText(d.definition, program, new Set([...seen, type.name]));
+      return carriesText(d.definition, program, new Set([...seen, type.name]), inStruct);
     }
   }
 }
@@ -32,6 +42,7 @@ function between(content: string, at: number, open: string, close: string): bool
   );
 }
 
+/** Whether an odd number of `fence` lines precede `at`, so one is open there, and one follows. */
 function insideFence(content: string, at: number, fence: RegExp): boolean {
   const before = [...content.slice(0, at).matchAll(fence)].length;
   return before % 2 === 1 && content.slice(at).match(fence) !== null;
@@ -40,13 +51,13 @@ function insideFence(content: string, at: number, fence: RegExp): boolean {
 /** Whether a `<name ...>` opened before `at` and still open there is closed after it. */
 function insideTag(content: string, at: number): boolean {
   const open: string[] = [];
-  for (const m of content.slice(0, at).matchAll(/<(\/?)([A-Za-z_][\w.-]*)(?:\s[^<>]*)?>/g)) {
+  for (const m of content.slice(0, at).matchAll(/<(\/?)([A-Za-z_][\w.:-]*)(?:\s[^<>]*)?>/g)) {
     const [, slash, name] = m;
     if (!slash) open.push(name!);
     else if (open.includes(name!)) open.splice(open.lastIndexOf(name!));
   }
   const after = content.slice(at);
-  return open.some((name) => after.includes(`</${name}>`));
+  return open.some((name) => new RegExp(`</${name.replace(/[.]/g, "\\.")}\\s*>`).test(after));
 }
 
 /**
@@ -90,9 +101,8 @@ export const promptInjectionRiskRule: Rule = {
         if (section.kind !== "MessageSection" || !section.content.isTemplate) continue;
         const content = section.content.value;
         const open = new Set<string>();
-        for (const m of content.matchAll(/\{\{(\w+)\}\}/g)) {
-          const name = m[1]!;
-          if (textParams.has(name) && !isEnclosed(content, m.index)) open.add(name);
+        for (const { name, index } of templatePlaceholders(content)) {
+          if (textParams.has(name) && !isEnclosed(content, index)) open.add(name);
         }
         if (open.size === 0) continue;
 
@@ -105,7 +115,7 @@ export const promptInjectionRiskRule: Rule = {
           column: section.content.column,
           message: `Template ${varList} in ${section.role} section is not enclosed in a delimiter.`,
           suggestion:
-            "Enclose the input in a pair such as <input>...</input>, --- lines or a code fence, and say in the instructions that the enclosed text is data, not instructions.",
+            "Enclose the input in a pair such as <input>...</input>, --- lines or a code fence, and say in the instructions that the enclosed text is data, not instructions. A value from a fixed list can be declared as an enum instead.",
         });
       }
     }

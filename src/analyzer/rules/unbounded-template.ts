@@ -1,11 +1,6 @@
 import type { Rule, AnalysisContext, Issue } from "../analyzer";
 import type { PromptDeclaration } from "../../ast/nodes";
-
-/** Extracts all {{variable}} references from a string. */
-function extractTemplateVars(content: string): string[] {
-  const matches = [...content.matchAll(/\{\{(\w+)\}\}/g)];
-  return matches.map((m) => m[1]);
-}
+import { extractTemplateVars } from "../../compiler/template-compiler";
 
 /**
  * Detects template variables inside prompt sections that are not declared

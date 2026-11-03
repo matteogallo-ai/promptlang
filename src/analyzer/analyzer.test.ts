@@ -227,6 +227,11 @@ describe("prompt-injection-risk: what encloses each placeholder", () => {
     ["an opening tag never closed", `  user: "<doc>{{x}}"`],
     ["a closing tag of another name", `  user: "<doc>{{x}}</other>"`],
     ["a string parameter in a system section", `  system: "Translate to {{x}}"`],
+    ["--- inside a line, not on its own", `  user: "a --- {{x}} --- b"`],
+    ["]] closing before the input", `  user: "[[a]] {{x}} ]]"`],
+    ["a code fence closed before the input", '  user: "```\\nrules\\n```\\n{{x}}\\n```"'],
+    ["a tag closed before the input, reopened after", `  user: "<d>a</d> {{x}} </d>"`],
+    ["the same placeholder once enclosed and once not", `  user: "<d>{{x}}</d> and {{x}}"`],
   ];
   for (const [name, body] of flagged) {
     test(`flags ${name}`, () => {
@@ -241,10 +246,30 @@ describe("prompt-injection-risk: what encloses each placeholder", () => {
     ["a code fence", '  user: "```\\n{{x}}\\n```"'],
     ["<BEGIN> and <END>", `  user: "<BEGIN>{{x}}<END>"`],
     ["[[ and ]]", `  user: "[[{{x}}]]"`],
+    ["a closing tag with a space", `  user: "<d>{{x}}</d >"`],
+    ["a namespaced tag", `  user: "<ns:doc>{{x}}</ns:doc>"`],
+    ["nested tags closed in order", `  user: "<a><b>{{x}}</b></a>"`],
   ];
   for (const [name, body] of delimited) {
     test(`accepts ${name}`, () => {
       expect(issuesFor("x: string", body)).toEqual([]);
+    });
+  }
+
+  // Text the caller supplies reaches the prompt as is, whatever the declared type says.
+  const textTypes: Array<[string, string, string]> = [
+    ["date", "x: date", ""],
+    ["a type the file does not declare", "x: Imported", ""],
+    ["an alias of string", "x: Name", "type Name = string\n"],
+    ["a recursive alias", "x: A", "type A = B\ntype B = A\n"],
+    // Python inserts a dict's repr, so its text fields reach the prompt verbatim.
+    ["a struct with a text field", "x: Note", "type Note = struct { body: string }\n"],
+  ];
+  for (const [name, params, types] of textTypes) {
+    test(`flags ${name}`, () => {
+      expect(issuesFor(params, `  user: "Use {{x}}"`, types).map((i) => i.rule)).toEqual([
+        "prompt-injection-risk",
+      ]);
     });
   }
 
@@ -254,6 +279,9 @@ describe("prompt-injection-risk: what encloses each placeholder", () => {
     );
     expect(
       issuesFor("l: Lang", `  user: "Translate to {{l}}"`, "type Lang = enum { fr, de }\n")
+    ).toEqual([]);
+    expect(
+      issuesFor("s: S", `  user: "Use {{s}}"`, "type S = struct { n: number, k: enum { a } }\n")
     ).toEqual([]);
   });
 

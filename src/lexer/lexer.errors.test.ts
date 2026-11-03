@@ -35,6 +35,7 @@ const CASES: Case[] = [
   ["\"a\\q\"", "Unknown escape sequence '\\q'", 1, 1],
   ["\"{{a\nb}}\"", "Unterminated template interpolation '{{...}}'", 1, 1],
   ["\"{{a", "Unterminated template interpolation '{{...}}'", 1, 1],
+  ["\"{{a}\" x\"", "Unterminated template interpolation '{{...}}'", 1, 1],
   ["\"\"\"abc", "Unterminated triple-quoted string", 1, 1],
   ["12ab", "Invalid numeric literal '12a...' — identifiers cannot start with a digit", 1, 1],
   ["1.5x", "Invalid numeric literal '1.5x...' — identifiers cannot start with a digit", 1, 1],

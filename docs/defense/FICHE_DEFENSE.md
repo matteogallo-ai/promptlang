@@ -17,7 +17,7 @@
 | Chiffre | Source | Comment il a été mesuré |
 |---|---|---|
 | Rappel du linter IA : **44/45** défauts | `docs/SYSTEM_CARD.md:45` | `scripts/linter-eval.ts`. Mesuré sur la partie test : 60 des 120 cas synthétiques, que j'ai écrits et étiquetés moi-même. La 2e répétition donne 45/45. |
-| Précision : **20,3 %** (44/217), contre **12,5 %** pour un linter qui signale tout | `docs/SYSTEM_CARD.md:45`, `:47` | Même exécution. Les intervalles à 95 % se chevauchent. C'est une borne basse : un défaut que personne n'a mis exprès compte comme une fausse alarme. |
+| Précision (relecture humaine pré-enregistrée) : **≈ 30 %**, IC 95 % 18–45 %, non distinguable de la borne basse **20,3 %** | `evals/linter/findings-review/score.json:4`, `docs/SYSTEM_CARD.md:45`, `:47` | 12/40 signalements tirés au hasard, protocole commité avant ma relecture ; un relecteur. Borne : 44/217 ; tout signaler : 12,5 % (IC qui se chevauchent). |
 | Coût : **0,21 $** pour 240 appels | `runs/live/linter-eval-2026-11-03T08-39-28-817Z.json:12` | 120 cas × 2 répétitions. Tokens renvoyés par l'API multipliés par le tarif enregistré dans le fichier. Ce n'est pas une facture. |
 | Score de mutation : **96,13 %** | `docs/mutation/README.md:28` | Stryker, exécuté en local, pas en CI. Ne porte que sur le lexer, le parser et SemVer (`stryker.config.json:5`). |
 
@@ -29,7 +29,7 @@
 - Étendre le mutation testing au runtime, au compilateur et à la CLI.
 
 **7. Questions pièges**
-1. *« 20 % de précision, c'est inutilisable. »* → Le linter signale trop : il lance une fausse alarme sur les 15 cas sans défaut (15/15). Son avance sur la référence n'est pas significative. Il fournit des pistes à quelqu'un qui relit, pas un critère pour bloquer une fusion (`docs/SYSTEM_CARD.md`).
+1. *« 30 % de précision, c'est inutilisable. »* → Pour bloquer une fusion, oui : 7 à 8 signalements sur 10 sont faux, et il alerte sur les 15 cas sans défaut. C'est une aide au relecteur, pas un gate : des avertissements, bloquants seulement avec `--strict` (`docs/SYSTEM_CARD.md`).
 2. *« 96 % de mutation, donc c'est solide ? »* → Non. La plupart des constats majeurs de l'audit sont dans du code non muté (runtime, compilateur, CLI). Et le constat C6 est dans `semver/interface.ts`, muté à 99 %. Ce score montre que les tests détectent les changements de code, pas que la spécification est juste.
 3. *« Qui l'utilise ? »* → Personne en production, à ma connaissance. C'est un projet publié, mesuré et audité, pas un produit qui a des clients.
 4. *« Tu as écrit le code ? »* → J'ai dirigé des agents de code. Ma part : la spec, les critères de « done », les contrôles CI, et un relecteur à contexte neuf sur les PR de correction (par exemple la PR #23). Je peux expliquer `budget.ts` ligne par ligne.

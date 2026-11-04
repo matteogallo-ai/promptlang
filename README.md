@@ -36,9 +36,10 @@ PromptLang treats prompts as first-class typed code:
 - **Multi-provider fallback**: `RoutingClient` tries providers in order, translating
   the model name per provider (`modelMap`), and never falls back on a bad key
 - **AI-powered linter**: `analyze --ai` sends each prompt to Claude for a semantic
-  review; measured on a labelled corpus, it finds almost every designed defect but
-  most of its findings are false alarms (precision about 20%, against 12.5% for
-  a linter that reports every category)
+  review, as an aid for the person reviewing the prompt, not a gate; measured on a
+  labelled corpus, it finds almost every designed defect but most of its findings
+  are false alarms (a pre-registered human review measured precision at about
+  30%, 95% CI 18–45%, not distinguishable from the 20% lower bound)
 - **No third-party runtime dependencies**: Bun + `fetch` + your own API keys
 
 Not delivered, and labelled as such everywhere in this repository (see
@@ -116,7 +117,7 @@ Each cell is checked against [`docs/CLAIMS.md`](docs/CLAIMS.md) by the `claims` 
 | Typed I/O                            | ✅ |
 | Native tests                         | ✅ (mock or live; no evals) |
 | SemVer for prompts                   | ✅ |
-| AI-powered linter                    | ✅ (measured; precision ~20%, baseline 12.5%) |
+| AI-powered linter                    | ✅ (reviewer aid, not a gate; precision ~30% human-reviewed, 18–45%) |
 | Multi-provider fallback              | ✅ (per-provider model map) |
 | Compile to TypeScript **and** Python | ✅ |
 | Static analysis (SonarQube-style)    | ✅ |
@@ -232,8 +233,12 @@ defects at 12.5% precision (95% CI 9.5–16.3%), so recall alone says little; th
 precision gain over that baseline is modest. The labels are set by construction;
 a human check of 30 cases (`evals/linter/human-review/`) confirmed 27/30 designed
 labels (95% CI 74–97%, kappa 0.80) and suggests that some reports scored as false
-alarms may be real defects, so the precision stays a lower bound. Read its
-findings as leads to check, not as defects; the six static rules of
+alarms may be real defects, so that 20% is a lower bound. A pre-registered human
+review of 40 of its findings (`evals/linter/findings-review/`) measured precision
+at about 30% (12/40, 95% CI 18–45%): not distinguishable from the 20% bound, and
+either way about seven findings in ten are wrong. The linter is an aid for the
+person reviewing a prompt, not a gate: read its findings as leads to check, not
+as defects, and do not fail a build on them; the six static rules of
 `promptlang analyze` do not depend on the model.
 
 ### Usage
@@ -535,7 +540,7 @@ Design decisions are recorded in [`docs/adr/`](docs/adr/).
 
 ### What I'd do differently
 
-**Evaluation before shipping.** The AI linter shipped before it had an evaluation set. Once measured on a held-out split, it caught 44/45 and 45/45 planted defects across two runs, but only 20% of its flags were correct (a lower bound, since a category nobody designed into a case counts as a false alarm, and a human check of the labels suggests some exist), against 12.5% for a linter that flags every category. Today, an AI feature ships with its eval set, metric and confidence interval, or it ships behind an explicit "unmeasured" label in [CLAIMS](docs/CLAIMS.md). ([#11](https://github.com/matteogallo-ai/promptlang/pull/11), [#14](https://github.com/matteogallo-ai/promptlang/pull/14))
+**Evaluation before shipping.** The AI linter shipped before it had an evaluation set. Once measured on a held-out split, it caught 44/45 and 45/45 planted defects across two runs, but only 20% of its flags were scored correct, against 12.5% for a linter that flags every category; a pre-registered human review of 40 flags measured about 30% (95% CI 18–45%), not distinguishable from that 20%. It stays a reviewer aid, not a gate. Today, an AI feature ships with its eval set, metric and confidence interval, or it ships behind an explicit "unmeasured" label in [CLAIMS](docs/CLAIMS.md). ([#11](https://github.com/matteogallo-ai/promptlang/pull/11), [#14](https://github.com/matteogallo-ai/promptlang/pull/14))
 
 **Claims enforced by CI, not by discipline.** Every feature the README advertises now maps to a passing test in `docs/CLAIMS.md`, and CI fails if one isn't backed. I'd have built that gate first. ([#1](https://github.com/matteogallo-ai/promptlang/pull/1))
 

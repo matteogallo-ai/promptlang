@@ -9,12 +9,13 @@ Claude and reports the defects it finds, next to the six deterministic rules of
 A second reader for prompt text, before review: it points at missing output
 formats, ambiguous instructions, contradictions and similar defects
 (`evals/linter/labels.json` lists the categories). A person reads each finding
-and decides.
+and decides: it is an aid for the reviewer, not a gate.
 
 ## Out of scope
 
 - Gating a merge or a release on its findings alone: they are model output,
-  with false alarms and misses.
+  with false alarms and misses. They are warnings or info, never errors, so
+  `analyze --ai` fails on them only under `--strict`; do not combine the two in CI.
 - Judging whether a prompt is safe against injection: the static rule
   `prompt-injection-risk` checks the one thing that is computable, and nothing
   measures the linter on attacks (`docs/THREAT_MODEL.md`, LLM01).
@@ -33,7 +34,11 @@ variants, split dev/test by base task so no task appears in both.
 
 Precision is over the categories the linter reported; a reported category that
 was not designed into the case counts as a false positive, so precision is a
-lower bound when a case has a defect nobody designed. Each proportion is given
+lower bound when a case has a defect nobody designed. A pre-registered human
+review of 40 of the test-split findings of repeat 1
+(`evals/linter/findings-review/RESULT.md`) measured precision at 30% (12/40,
+Wilson 95% CI 18.1%–45.4%); as pre-registered, the interval does not lie above
+the scored 20.3%, so the review does not tell the two apart. Each proportion is given
 with its numerator, denominator and Wilson 95% interval; two repeats of the same
 run show the noise between runs.
 
@@ -75,9 +80,10 @@ section and the record disagree. Latency, error rate and cost per call:
   instruction to fill every missing value contradicts the rule that a boolean is
   false unless shown. The decoys are drawn at random rather than from the
   linter's findings, so the check does not measure precision; the figures above
-  remain lower bounds. A human review of 40 of the linter's own findings is
-  pre-registered in `evals/linter/findings-review/PROTOCOL.md`, with no answers
-  recorded.
+  remain lower bounds. The human review of 40 of the linter's own findings
+  (`evals/linter/findings-review/`) measured 30% (12/40, 95% CI 18.1%–45.4%),
+  with one annotator and no control items: four findings scored wrong were
+  judged real (4/32), none scored right was rejected (0/8).
 - The corpus is synthetic and small: 45 defects per split, so an overall recall
   interval is up to ±14 points wide, and 7 or 8 per category per split, so the
   per-category figures separate only large differences.

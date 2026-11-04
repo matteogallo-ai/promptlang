@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- The result of the pre-registered human review of the AI linter's findings
+  (`evals/linter/findings-review/RESULT.md`): precision 30% (12/40, Wilson 95% CI
+  18.1%–45.4%), not distinguishable from the 20% lower bound, as the protocol
+  states the reading. The README and the system card present the linter as an
+  aid for the reviewer, not a gate.
 - A pre-registered human review of the AI linter's findings
   (`evals/linter/findings-review/`): 40 of the 217 test-split findings, stratified
   by category, seeded, committed unanswered with its analysis

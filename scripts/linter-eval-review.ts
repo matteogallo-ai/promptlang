@@ -41,7 +41,7 @@ export function definitions(): Map<string, string> {
 }
 
 /** mulberry32: a seeded PRNG, so the same seed always draws the same sample. */
-function rng(seed: number): () => number {
+export function rng(seed: number): () => number {
   let a = seed >>> 0;
   return () => {
     a = (a + 0x6d2b79f5) >>> 0;
@@ -52,7 +52,7 @@ function rng(seed: number): () => number {
   };
 }
 
-function shuffle<T>(xs: T[], rand: () => number): T[] {
+export function shuffle<T>(xs: T[], rand: () => number): T[] {
   const a = [...xs];
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1));

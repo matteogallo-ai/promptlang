@@ -75,7 +75,9 @@ section and the record disagree. Latency, error rate and cost per call:
   instruction to fill every missing value contradicts the rule that a boolean is
   false unless shown. The decoys are drawn at random rather than from the
   linter's findings, so the check does not measure precision; the figures above
-  remain lower bounds.
+  remain lower bounds. A human review of 40 of the linter's own findings is
+  pre-registered in `evals/linter/findings-review/PROTOCOL.md`, with no answers
+  recorded.
 - The corpus is synthetic and small: 45 defects per split, so an overall recall
   interval is up to ±14 points wide, and 7 or 8 per category per split, so the
   per-category figures separate only large differences.

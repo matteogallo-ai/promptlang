@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { PromptClient, PromptRequest } from "../runtime";
 import { BudgetExceededError, BudgetedClient, worstCaseUsd } from "./budget";
-import { priceEstimate } from "./cost";
+import { callUsd, priceEstimate } from "./cost";
 
 // claude-haiku-5-5 is priced $0.1 / $0.5 per million tokens (src/testing/cost.ts).
 const req = (chars: number, max_tokens = 1000): PromptRequest => ({
@@ -37,7 +37,10 @@ describe("BudgetedClient", () => {
         return { content: "{}" };
       },
     };
-    const cap = priceEstimate("claude-haiku-5-5", 2, 2000, 2000).estimatedUsd;
+    const cap = priceEstimate("claude-haiku-5-5", [
+      { chars: 1000, maxTokens: 1000 },
+      { chars: 1000, maxTokens: 1000 },
+    ]).estimatedUsd;
     const budgeted = new BudgetedClient(noUsage, cap);
     await budgeted.complete(req(1000));
     await budgeted.complete(req(1000));
@@ -104,5 +107,83 @@ describe("BudgetedClient", () => {
     await expect(refused).rejects.toBeInstanceOf(BudgetExceededError);
     await expect(refused).rejects.toThrow(/no price/);
     expect(calls).toHaveLength(0);
+  });
+});
+
+// Above a 100K-token prompt claude-haiku-5-5 bills $0.5 / $2.5 per million, five times its short rate.
+describe("long-context rate card", () => {
+  test("a prompt over 100K tokens is priced at the long-context rate, input and output", () => {
+    expect(callUsd("claude-haiku-5-5", 100_000, 1000)).toBeCloseTo(
+      (100_000 * 0.1 + 1000 * 0.5) / 1e6,
+      12
+    );
+    expect(callUsd("claude-haiku-5-5", 100_001, 1000)).toBeCloseTo(
+      (100_001 * 0.5 + 1000 * 2.5) / 1e6,
+      12
+    );
+    expect(callUsd("claude-haiku-4-5", 200_000, 1000)).toBeCloseTo(
+      (200_000 * 1 + 1000 * 5) / 1e6,
+      12
+    );
+  });
+
+  test("the worst case of a long request uses the long-context rate", () => {
+    // 330 000 chars → 110 000 tokens × $0.5/M + 1000 × $2.5/M
+    expect(worstCaseUsd(req(330_000))).toBeCloseTo(0.0575, 10);
+  });
+
+  test("a call charged from usage uses the rate of the prompt length the provider reports", async () => {
+    // Estimated short (3000 chars), reported long: the charge follows the report.
+    const { client } = counting({ input_tokens: 150_000, output_tokens: 100 });
+    const budgeted = new BudgetedClient(client, 1);
+    await budgeted.complete(req(3000));
+    expect(budgeted.spentUsd).toBeCloseTo((150_000 * 0.5 + 100 * 2.5) / 1e6, 12);
+  });
+
+  test("an estimate prices each call on its own rate card, not the total on one", () => {
+    // Two 60K-token prompts: each is short, though together they pass 100K.
+    const e = priceEstimate("claude-haiku-5-5", [
+      { chars: 180_000, maxTokens: 1000 },
+      { chars: 180_000, maxTokens: 1000 },
+    ]);
+    expect(e.estimatedUsd).toBeCloseTo((120_000 * 0.1 + 2000 * 0.5) / 1e6, 12);
+    expect(e).toMatchObject({ calls: 2, inputTokens: 120_000, maxOutputTokens: 2000 });
+  });
+
+  test("an estimate of a long prompt uses the long-context card, input and output", () => {
+    const e = priceEstimate("claude-haiku-5-5", [{ chars: 300_003, maxTokens: 1000 }]);
+    expect(e.estimatedUsd).toBeCloseTo((100_001 * 0.5 + 1000 * 2.5) / 1e6, 12);
+  });
+
+  // Each call's output is priced on its own card, so uneven max_tokens cannot
+  // put a long call's output on the short card and under-estimate it.
+  test("a cap set to an estimate holds every call it counted, either side of 100K tokens", async () => {
+    const mixes = [
+      [
+        { chars: 300_003, maxTokens: 4000 },
+        { chars: 3, maxTokens: 10 },
+      ],
+      [
+        { chars: 300_000, maxTokens: 500 },
+        { chars: 300_001, maxTokens: 500 },
+        { chars: 299_999, maxTokens: 7 },
+        { chars: 1, maxTokens: 4000 },
+      ],
+    ];
+    for (const mix of mixes) {
+      const { client, calls } = counting();
+      const noUsage: PromptClient = {
+        complete: async (r) => {
+          await client.complete(r);
+          return { content: "{}" };
+        },
+      };
+      const budgeted = new BudgetedClient(
+        noUsage,
+        priceEstimate("claude-haiku-5-5", mix).estimatedUsd
+      );
+      for (const c of mix) await budgeted.complete(req(c.chars, c.maxTokens));
+      expect(calls).toHaveLength(mix.length);
+    }
   });
 });

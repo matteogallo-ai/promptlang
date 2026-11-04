@@ -2,8 +2,9 @@ import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import { rm, mkdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { resolveImport, resolveGraph, ResolverError, VersionMismatchError } from "./resolver";
+import { SCRATCH } from "../../tests/support/scratch";
 
-const ROOT = "/tmp/promptlang-resolver-test";
+const ROOT = join(SCRATCH, "promptlang-resolver-test");
 const PROJECT = join(ROOT, "project");
 const PROMPTS = join(PROJECT, "prompts");
 const SHARED = join(PROJECT, "shared");

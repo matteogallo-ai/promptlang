@@ -2,8 +2,9 @@ import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import { rm, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { hashFile, hashString, buildIntegrity, verifyIntegrity, mergeIntegrity } from "./integrity";
+import { SCRATCH } from "../../tests/support/scratch";
 
-const ROOT = "/tmp/promptlang-integrity-test";
+const ROOT = join(SCRATCH, "promptlang-integrity-test");
 
 beforeAll(async () => {
   await rm(ROOT, { recursive: true, force: true });

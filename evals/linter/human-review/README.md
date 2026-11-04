@@ -14,10 +14,12 @@ person rather than assumed away.
 
 ## Annotate
 
-With verity's annotation tool, which reads this CSV as it is (same columns):
+With the annotation tool of [verity](https://github.com/matteogallo-ai/verity)
+(`scripts/annotate.py`), which reads this CSV as it is (same columns), from a
+verity clone:
 
 ```bash
-cd ~/dev/verity && uv run python scripts/annotate.py ~/dev/promptlang/evals/linter/human-review/review.csv
+uv run python scripts/annotate.py <path to this repo>/evals/linter/human-review/review.csv
 ```
 
 `s` supported (the prompt has what the claim says), `u` unsupported, `c` comment
@@ -44,4 +46,6 @@ disagreement is fixed in the generator, which makes a new corpus version.
 
 One annotator, 30 of 120 cases: at 30/30 the lower bound of the interval is about
 89%, so a small share of wrong labels can still go unseen. The decoy covers one
-other category per case, not all five.
+other category per case, not all five. The review is blind by discipline only:
+`key.json` and `../labels.json` sit in the same repository, since scoring reads
+the key and the corpus is versioned with its labels.

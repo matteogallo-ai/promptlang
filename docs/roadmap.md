@@ -59,13 +59,6 @@ Release history is in [`CHANGELOG.md`](../CHANGELOG.md).
 
 ---
 
-## In progress
-
-- [ ] **npm publication** of `@promptlang/core` (ESM build, type declarations, Node
-      consumer test)
-
----
-
 ## Not implemented, not scheduled
 
 - `eval` blocks: parsed, not executed (`compile` and `test` warn)
@@ -81,3 +74,7 @@ Release history is in [`CHANGELOG.md`](../CHANGELOG.md).
 - More provider clients (Google Gemini, Mistral, Cohere)
 - IDE support (VS Code syntax highlighting, LSP)
 - MCP server integration
+- Dedenting triple-quoted strings: their content is sent as written, indentation
+  included, and changing that would change what existing prompts send
+- Mutation testing of the compiler and the runtime (the mutation report covers the
+  lexer, the parser and `src/semver/`)

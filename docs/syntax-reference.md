@@ -122,17 +122,61 @@ prompt classify_ticket(ticket: string) -> Category {
 - Strings are `"double-quoted"` (with `\n`, `\"` escapes) or `"""triple-quoted"""`.
   Triple-quoted content is sent as written, indentation included.
 - `{{name}}` interpolates a parameter. The static rule `unbounded-template` warns when
-  `name` is not a declared parameter.
+  `name` is not a declared parameter. A parameter whose type is a struct declared in
+  the same file (directly or through an alias) is inserted as compact JSON. Strings,
+  booleans, `null` and nesting are the same text in TypeScript and Python; numbers
+  are printed by each language (`3.0` in Python for a `float`, `3` in TypeScript).
+  A parameter whose type comes from an imported file is inserted as the target
+  language prints it.
+- Compilation fails, with the position, on a name the generated code cannot hold:
+  - a `-` (allowed in `@model` only);
+  - a reserved word of the target where the generated code binds the name: prompt,
+    chain, step and type names in TypeScript (`delete`, `if`; types also not `any`,
+    `string`, `keyof`...), every name in Python, parameters and struct fields
+    included (`class`, `pass`);
+  - in Python, any name starting with `__` (mangled in a class body, special at
+    module level);
+  - a type, prompt or chain named after something the generated module imports
+    (`PromptClient`, `Promise`; in Python also `TypedDict`, `Literal`, `str`...). A
+    parameter or field may use these names;
+  - in TypeScript, a prompt or chain named `globalThis` or `undefined`, the two
+    globals the generated code reads. Any other global name is allowed (`JSON`,
+    `Number`; in Python `ValueError`);
+  - a step, prompt or chain named `client`, a parameter of every generated chain,
+    even when no chain of the file calls that prompt: one added later would;
+  - a step named after a prompt or chain of the file, after a parameter of its
+    chain (a reference would read the parameter), or after an earlier step;
+  - two declarations that generate the same name: a prompt `foo` generates `foo`,
+    `FooInput` and `foo_meta` (`FOO_META` in Python), and in Python an enum `Foo`
+    generates `_FOO_VALUES`, so a type `FooInput` beside the prompt is refused,
+    and in Python an enum `foo` beside the enum. TypeScript keeps types
+    and values apart, so a type and a value of the same name are allowed there.
 
 ### Generated output handling
 
-| Output type | Generated code does |
+The generated function passes the trimmed response text to `parseOutput`
+(`parse_output` in Python) with a schema derived from the declared type, and raises
+`InvalidOutputError` when the answer does not conform (in Python, a `ValueError`
+subclass). Its `errors` list every mismatch as `path: problem`; its message names
+them without quoting the answer, which is on `output`: values are described by
+their kind, and fields the type does not declare are counted, not named. At most 10
+errors are kept, each cut to 500 characters. Both languages apply the same rules and
+produce the same messages, except at the edges: each strips the answer with its own
+whitespace rule (`trim()`, `str.strip()`), which differ on a few control and format
+characters.
+
+| Output type | Accepted answer |
 | --- | --- |
-| `string` | returns the trimmed response text |
-| `number` | `Number(raw)`; throws if the result is `NaN` |
-| `boolean` | accepts `true` / `false` (case-insensitive); throws otherwise |
-| enum | throws unless the trimmed text is one of the members |
-| struct | `JSON.parse` (`json.loads` in Python) and a cast; field types are **not** validated |
+| `string` | any text |
+| `number` | decimal notation (`42`, `-1.5e3`), finite; not `0x10` or `Infinity` |
+| `boolean` | `true` / `false`, case-insensitive |
+| enum | one of the members, exactly |
+| `date` | a real calendar day as `YYYY-MM-DD` (`2024-02-30` is refused) |
+| struct | JSON, one surrounding code fence allowed; every field checked at every depth, required fields present, no field the type does not declare |
+
+A field whose type is imported from another file is not checked. Python follows a
+recursive type to a few hundred levels and TypeScript to several thousand, less when
+the call is already deep in the stack; an answer nested deeper is refused with `output: nested too deeply to check`.
 
 ---
 
@@ -218,7 +262,9 @@ with its message.
   `@model`, without retries. Before any call it prints an estimate per file (input ≈
   prompt and argument characters ÷ 3, plus, for a chain, every earlier step's full
   output; output = calls × `@max_tokens`, default 1024) priced
-  from a table of Claude models, and asks for confirmation; `--yes` approves without
+  from a table of Claude models, each call on the rate card its own prompt length
+  selects (Claude Haiku 5.5 bills five times its rate for a prompt over 100K
+  tokens), and asks for confirmation; `--yes` approves without
   asking and is required without a terminal. A model missing from the price table is
   refused. `mock:` is ignored.
 - `--json` prints `{ ok, mode, usage, files: [{ file, error?, results }] }`.
@@ -245,21 +291,27 @@ constrain it with `requires` (Section 1).
 `.prompt` file with its text at a Git ref (default `origin/main`, otherwise the
 most recent tag) and fails when `@version` did not move by at least what the
 changes require. The interface of a prompt or chain is its parameters (name, type,
-optional or not), its output type, and, for a prompt, the file's `@model`.
+optional or not), its output type, and, for a prompt, the file's `@model`; the
+file's interface also includes the name and structure of each declared type.
 
 | Change | Required bump |
 | --- | --- |
 | Required parameter added; parameter removed; parameter type changed; optional parameter made required | major |
 | Output type changed, including an enum gaining or losing a value; output struct field removed, retyped, made optional or required; required output field added | major |
 | `@model` changed; prompt or chain removed; prompt replaced by a chain of the same name | major |
-| Optional parameter added; required parameter made optional; optional output field added; prompt or chain added | minor |
+| Declared type removed or renamed; declared type changed by the output rules above (enum value added or removed, field removed, retyped, made optional or required, required field added) | major |
+| Optional parameter added; required parameter made optional; optional output field added; prompt or chain added; declared type added; optional field added to a declared struct | minor |
 | Message text changed; `@temperature` or `@max_tokens` changed; chain steps changed | patch |
 | Whitespace, comments, declaration order, parameter order | none |
 
 Struct output fields are compared at any depth: adding an optional field to a
-nested struct is minor and is reported with a dotted path (`inner.b`). Types are
-compared by structure: renaming `type Category` to `type Kind` with the
-same values is not a change. Below 1.0.0 the check reads bumps as `^` does: at
+nested struct is minor and is reported with a dotted path (`inner.b`). A prompt's
+parameters and output are compared by structure, so its own contract does not
+change when `type Category` becomes `type Kind` with the same values; but the
+generated code exports each declared type under its name, so the rename is
+reported as `type 'Category' removed` (major) and `type 'Kind' added`. A changed
+type is reported on the type itself, and also on each prompt whose contract
+changes with it. Below 1.0.0 the check reads bumps as `^` does: at
 0.0.z every bump counts as breaking; at 0.y.z a minor bump (`0.2.x → 0.3.0`)
 counts as breaking and a patch bump as compatible. A lower version fails. From a
 pre-release, a later pre-release or the release itself (`2.0.0-rc.1 → 2.0.0-rc.2`)
@@ -288,7 +340,7 @@ output, `--strict` to exit 1 on warnings):
 | --- | --- | --- |
 | `missing-tests` | warning | a prompt with no `test` block calling it |
 | `unbounded-template` | warning | `{{var}}` where `var` is not a parameter |
-| `prompt-injection-risk` | warning | a `user` section that interpolates a variable and contains no delimiter (`---`, triple backticks, `<tag>`, `<BEGIN>`/`<END>`, `[[ ]]`) |
+| `prompt-injection-risk` | warning | a message section of any role that inserts a text parameter (`string`, `date`, a struct with a text field, or a type the file does not declare) outside a delimiter pair enclosing it: `<tag>`…`</tag>`, `---` lines, a code fence, `<BEGIN>`/`<END>`, `[[ ]]`. Numbers, booleans and enums are not flagged: that relies on the caller's type checker, as nothing checks them at run time. A delimiter is not escaping: a value containing the closing delimiter still closes it. Not recognised as delimiters: HTML comments; an unclosed tag such as `<br>` is matched with a later `</br>` |
 | `token-cost-estimate` | info | a prompt whose static text is estimated above 500 tokens |
 | `chain-complexity` | info | a chain with more than 5 steps |
 | `duplicate-prompts` | warning | the same prompt name declared in several files |
@@ -385,6 +437,17 @@ async def classify_ticket(input: ClassifyTicketInput, client: PromptClient) -> C
 
 Plus `__init__.py` and a generated `promptlang_runtime.py` (its HTTP clients need
 `httpx`; `MockClient` needs nothing).
+
+### Output file names
+
+Each `.prompt` file compiles to one file in the `--out` folder, named after it:
+`x.prompt` → `x.ts`. For Python every character that cannot appear in a module name
+becomes `_` (`sentiment.v2.prompt` → `sentiment_v2.py`), with a leading `_` before a
+digit and a trailing `_` after a keyword (`class.prompt` → `class_.py`). The folder
+is flat and the index re-exports every module, so `compile` exits 1 and writes
+nothing when two sources would produce the same file (letter case ignored, as on
+macOS and Windows) or a file compile writes itself (`index.ts`, `__init__.py`,
+`promptlang_runtime.py`), or when two modules would export the same name.
 
 ---
 

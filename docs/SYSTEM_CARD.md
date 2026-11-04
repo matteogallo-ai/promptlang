@@ -66,9 +66,16 @@ section and the record disagree. Latency, error rate and cost per call:
 - It over-reports: on the measured run it names several categories for almost
   every prompt, clean ones included (table above). Its findings are leads for a
   reviewer, which is why gating on them is out of scope.
-- Precision counts every undesigned category as a false positive; until the
-  labels' human check (`evals/linter/human-review/`) is done, some of those may
-  be real defects the generator put in by accident.
+- Precision counts every undesigned category as a false positive, and some may
+  be real defects the generator put in by accident. The labels' human check
+  (`evals/linter/human-review/`, one annotator, 30 of 120 cases) confirmed 27/30
+  designed labels (90%, Wilson 95% CI 74.4%–96.5%) and rejected 27/30 decoys
+  (90%, same interval), kappa 0.80. Two of the three accepted decoys share one
+  cause: in 7 of the 15 hallucination cases, 2 of them on the test split, the
+  instruction to fill every missing value contradicts the rule that a boolean is
+  false unless shown. The decoys are drawn at random rather than from the
+  linter's findings, so the check does not measure precision; the figures above
+  remain lower bounds.
 - The corpus is synthetic and small: 45 defects per split, so an overall recall
   interval is up to ±14 points wide, and 7 or 8 per category per split, so the
   per-category figures separate only large differences.

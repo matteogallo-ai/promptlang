@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
 import { buildCorpus } from "../scripts/linter-eval-corpus";
+import { type EvalRecord, rescore } from "../scripts/linter-eval";
 import {
   buildReview,
   definitions,
@@ -68,6 +69,76 @@ describe("human review sample of the corpus labels", () => {
     }));
     expect(blank).toEqual(rows);
     expect(await Bun.file(join(DIR, "key.json")).json()).toEqual(key);
+  });
+
+  // The figures docs/SYSTEM_CARD.md, README.md and docs/CLAIMS.md publish, as scored
+  // from the committed answers: a change to an answer has to change them too.
+  test("the committed human review scores 27/30 labels held, 27/30 decoys rejected, kappa 0.80", async () => {
+    const answered = parseCsv(await Bun.file(join(DIR, "review.csv")).text());
+    const s = scoreReview(answered, key);
+    expect(s.annotated).toBe(60);
+    expect(s.designed_confirmed).toMatchObject({ k: 27, n: 30 });
+    expect(s.decoys_rejected).toMatchObject({ k: 27, n: 30 });
+    const [low, high] = s.designed_confirmed.ci95 ?? [Number.NaN, Number.NaN];
+    expect(low).toBeCloseTo(0.744, 3);
+    expect(high).toBeCloseTo(0.965, 3);
+    expect(s.kappa).toBeCloseTo(0.8, 10);
+    expect(s.disagreements.map((d) => d.item_id)).toEqual([
+      "r24",
+      "r40",
+      "r41",
+      "r54",
+      "r55",
+      "r59",
+    ]);
+  });
+
+  // evals/linter/human-review/README.md "Result" states these; the rescoring is a
+  // reading of what the collision costs, so it is pinned, not published as a measure.
+  test("the generator collision behind r41 and r59: 7 of 15 hallucination cases, and what it costs test precision", async () => {
+    const answered = parseCsv(await Bun.file(join(DIR, "review.csv")).text());
+    const s = scoreReview(answered, key);
+    const accepted = s.decoys_rejected.n - s.decoys_rejected.k;
+    expect(accepted).toBe(3);
+    const [low, high] = s.decoys_rejected.ci95 ?? [Number.NaN, Number.NaN];
+    expect(1 - high).toBeCloseTo(0.035, 3);
+    expect(1 - low).toBeCloseTo(0.256, 3);
+
+    const root = join(import.meta.dir, "../evals/linter");
+    const labels = await Bun.file(join(root, "labels.json")).json();
+    const hallucination = labels.cases.filter((c: { defects: string[] }) =>
+      c.defects.includes("POTENTIAL_HALLUCINATION_RISK")
+    );
+    const colliding: Array<{ id: string; split: string }> = [];
+    for (const c of hallucination)
+      if (/boolean field is false unless/.test(await Bun.file(join(root, c.file)).text()))
+        colliding.push(c);
+    expect(hallucination).toHaveLength(15);
+    expect(colliding.map((c) => `${c.id.slice(0, 3)} ${c.split}`)).toEqual([
+      "b01 dev",
+      "b04 dev",
+      "b08 dev",
+      "b11 dev",
+      "b13 dev",
+      "b25 test",
+      "b27 test",
+    ]);
+
+    const record: EvalRecord = await Bun.file(
+      join(import.meta.dir, "../runs/live/linter-eval-2026-11-03T08-39-28-817Z.json")
+    ).json();
+    const ids = new Set(colliding.map((c) => c.id));
+    for (const r of record.results.filter((r) => ids.has(r.case)))
+      expect(r.predicted).toContain("CONFLICTING_INSTRUCTIONS");
+    const asScored = rescore(record, labels).map((m) => m.test.overall.precision);
+    const withCollision = rescore(record, {
+      ...labels,
+      cases: labels.cases.map((c: { id: string; defects: string[] }) =>
+        ids.has(c.id) ? { ...c, defects: [...c.defects, "CONFLICTING_INSTRUCTIONS"] } : c
+      ),
+    }).map((m) => m.test.overall.precision);
+    expect(asScored.map((p) => `${p.k}/${p.n}`)).toEqual(["44/217", "45/229"]);
+    expect(withCollision.map((p) => `${p.k}/${p.n}`)).toEqual(["46/217", "47/229"]);
   });
 
   test("CSV fields with commas, quotes and newlines survive a round trip", () => {

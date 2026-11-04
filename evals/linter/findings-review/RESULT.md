@@ -40,7 +40,7 @@ judged real.
 
 ## What it means for the product
 
-About seven findings in ten are wrong, whichever figure is used. The linter is
+Seven to eight findings in ten are wrong, whichever figure is used. The linter is
 an aid for a person reviewing a prompt, who reads each finding and decides; it is
 not a gate. Its findings are warnings or info, never errors, so `analyze --ai`
 exits 1 on them only under `--strict`, which turns every warning into a failure;

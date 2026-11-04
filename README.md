@@ -236,7 +236,7 @@ labels (95% CI 74–97%, kappa 0.80) and suggests that some reports scored as fa
 alarms may be real defects, so that 20% is a lower bound. A pre-registered human
 review of 40 of its findings (`evals/linter/findings-review/`) measured precision
 at about 30% (12/40, 95% CI 18–45%): not distinguishable from the 20% bound, and
-either way about seven findings in ten are wrong. The linter is an aid for the
+either way seven to eight findings in ten are wrong. The linter is an aid for the
 person reviewing a prompt, not a gate: read its findings as leads to check, not
 as defects, and do not fail a build on them; the six static rules of
 `promptlang analyze` do not depend on the model.

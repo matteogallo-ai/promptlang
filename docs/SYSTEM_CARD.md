@@ -82,8 +82,9 @@ the two apart.
   cause: in 7 of the 15 hallucination cases, 2 of them on the test split, the
   instruction to fill every missing value contradicts the rule that a boolean is
   false unless shown. The decoys are drawn at random rather than from the
-  linter's findings, so the check does not measure precision; the figures above
-  remain lower bounds. The human review of 40 of the linter's own findings
+  linter's findings, so the check does not measure precision, and the scored
+  figures above stay lower bounds. What does measure it is the human review of
+  40 of the linter's own findings
   (`evals/linter/findings-review/`) measured 30% (12/40, 95% CI 18.1%–45.4%),
   with one annotator and no control items: four findings scored wrong were
   judged real (4/32), none scored right was rejected (0/8).

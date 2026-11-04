@@ -86,7 +86,8 @@ What follows from it:
   not a category the linter reported, so the review says how often an
   undesigned defect is present (3 decoys of 30 accepted, Wilson 95% CI
   3.5%–25.6%), not how many of the linter's findings are right. Precision on
-  the test split stays a lower bound.
+  the test split stays a lower bound; the review of the linter's own findings,
+  `../findings-review/RESULT.md`, measures it.
 
 ## Limits
 

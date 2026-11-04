@@ -12,6 +12,11 @@ implements it, the test that proves it, and its status. `scripts/check-claims.ts
 Statuses: `shipped` (implemented and tested), `partial` (implemented with a stated
 limitation; never shown as ✅), `roadmap` (not implemented).
 
+Definition of Done B7: a model-backed feature without an eval set, metric and 95%
+interval carries the "unmeasured" label, written as a `partial` row whose Notes
+start with `Unmeasured:`. The gate keeps a `partial` row from showing as ✅; it
+does not read the label or detect a model-backed row.
+
 The "Test name" column is passed, regex-escaped, to `bun test --test-name-pattern`,
 which matches it as a substring of the test's full name (describe blocks included).
 At least one matching test must pass.

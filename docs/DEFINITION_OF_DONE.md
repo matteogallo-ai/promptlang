@@ -23,6 +23,7 @@ A repo is "done" only when every line is checked, or marked N/A with a written r
 - B4 Every proportion reported with n and a 95% interval; noise band measured (same run repeated) before claiming an improvement.
 - B5 CI gate on deterministic metrics; live evals are manual, budget-capped, and committed.
 - B6 Live artefacts committed, immutable, checksummed.
+- B7 A model-backed feature ships with its eval set (B1), metric and 95% interval (B4), or its docs/CLAIMS.md row carries an explicit "unmeasured" label and the README never shows it as delivered.
 
 ## C. LLM security and system documentation
 - C1 docs/THREAT_MODEL.md: OWASP LLM Top 10 2025 item by item — applicable or not (why), mitigation, test that proves it.

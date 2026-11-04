@@ -9,7 +9,9 @@
  *
  * The estimate (every call at its full max_tokens, input ≈ characters ÷ 3, no
  * retries: the client is built with maxRetries 0) must be at or under
- * BUDGET_USD, the spend approved for this run, or nothing is called.
+ * BUDGET_USD, the spend approved for this run, or nothing is called. BUDGET_USD
+ * is then the cap of a BudgetedClient (ADR 0004): a call that would take the
+ * spend past it is not sent.
  */
 import { resolve } from "node:path";
 import { AI_LINTER_MODEL, AiLinter } from "../src/analyzer/ai/ai-linter";
@@ -22,6 +24,7 @@ import {
   AnthropicClient,
   DEFAULT_ANTHROPIC_VERSION,
 } from "../src/runtime/providers/anthropic-client";
+import { BudgetedClient } from "../src/testing/budget";
 import { callUsd, pricePerMTok } from "../src/testing/cost";
 
 export const BUDGET_USD = 0.05;
@@ -68,17 +71,24 @@ export interface RunRecord {
   note: string;
 }
 
-/** Runs the linter once through `client`, recording the usage of every call. */
+/**
+ * Runs the linter once through `client` capped at `budgetUsd`, recording the
+ * usage of every call that was sent.
+ */
 export async function run(
   client: PromptClient,
   contexts: AnalysisContext[],
   now: Date,
-  anthropicVersion: string
+  anthropicVersion: string,
+  budgetUsd: number
 ): Promise<RunRecord> {
+  // The pre-flight check bounds the run as estimated; the cap also bounds a
+  // provider that bills more than estimated.
+  const capped = new BudgetedClient(client, budgetUsd);
   const calls: RunRecord["calls"] = [];
   const metered: PromptClient = {
     async complete(req) {
-      const res = await client.complete(req);
+      const res = await capped.complete(req);
       calls.push({
         input_tokens: res.usage?.input_tokens ?? 0,
         output_tokens: res.usage?.output_tokens ?? 0,
@@ -143,7 +153,7 @@ if (import.meta.main) {
   }
   const now = new Date();
   const client = new AnthropicClient({ apiKey, maxRetries: 0, apiVersion: ANTHROPIC_VERSION });
-  const record = await run(client, contexts, now, ANTHROPIC_VERSION);
+  const record = await run(client, contexts, now, ANTHROPIC_VERSION, BUDGET_USD);
   // Failed runs are committed too: the name carries the time, so a second run never overwrites the first.
   const stamp = now.toISOString().replace(/[:.]/g, "-");
   const out = resolve(ROOT, `runs/live/ai-linter-${stamp}.json`);

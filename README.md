@@ -539,7 +539,7 @@ Design decisions are recorded in [`docs/adr/`](docs/adr/).
 
 **Supply-chain and test-quality gates from day one.** Signed releases with provenance, Scorecard, fuzzing and mutation testing on the lexer, parser and semver (96%) were added in a dedicated hardening pass. In a new project, Scorecard runs in CI from the first commit, and fuzzing, mutation testing and signed releases are [Definition of Done](docs/DEFINITION_OF_DONE.md) items (G1–G3). ([#5](https://github.com/matteogallo-ai/promptlang/pull/5), [#8](https://github.com/matteogallo-ai/promptlang/pull/8), [#10](https://github.com/matteogallo-ai/promptlang/pull/10), [#13](https://github.com/matteogallo-ai/promptlang/pull/13))
 
-**A per-call spending cap before the first paid call.** The first live linter run was guarded only by a check, in its script, that the whole run's worst-case estimate stayed under the approved $0.05; a cap checked before every call against the spend so far came after it. Now `analyze --ai`, `test --live` and the linter eval go through `BudgetedClient`, which does not send a call whose worst case would take the spend past the approved amount. ([ADR 0004](docs/adr/0004-spending-cap.md))
+**A per-call spending cap before the first paid call.** The first live linter run was guarded only by a check, in its script, that the whole run's worst-case estimate stayed under the approved $0.05; a cap checked before every call against the spend so far came after it. Now `analyze --ai`, `test --live`, the linter eval and the live linter run go through `BudgetedClient`, which does not send a call whose worst case would take the spend past the approved amount. ([ADR 0004](docs/adr/0004-spending-cap.md))
 
 ---
 

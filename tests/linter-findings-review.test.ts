@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
+import { createHash } from "node:crypto";
 import { join } from "node:path";
-import { parseCsv } from "../scripts/linter-eval-review";
+import { parseCsv, toCsv } from "../scripts/linter-eval-review";
 import {
   allocate,
   buildFindingsReview,
@@ -8,6 +9,7 @@ import {
   loadInputs,
   population,
   SAMPLE,
+  SEED,
   scoreFindings,
 } from "../scripts/linter-findings-review";
 
@@ -16,6 +18,8 @@ const inputs = await loadInputs();
 const sizes = new Map(inputs.labels.categories.map((c) => [c, 0]));
 for (const f of population(inputs.record, inputs.labels))
   sizes.set(f.category, sizes.get(f.category)! + 1);
+// The published lower bound the reading compares with: 44 of 217 scored right.
+const LOWER = 44 / 217;
 
 describe("human review of the linter's findings", () => {
   test("the population is the published test-split precision: 44 of 217 findings scored right", () => {
@@ -58,8 +62,21 @@ describe("human review of the linter's findings", () => {
     expect(() => allocate(new Map([["A", 2]]), 3)).toThrow("cannot draw 3 of 2");
   });
 
-  // The pre-registration: the sample is committed before any answer, and a later
-  // edit to it, or to the seed or the rule that drew it, fails here.
+  // The pre-registration is the commit that first added the sample; git history is
+  // what proves it came before the answers. These tests make a redraw visible: a
+  // new seed or rule changes the pinned digests, so it cannot pass unnoticed in a diff.
+  test("the sample is the one pre-registered: seed 20261104 and its SHA-256 digests", async () => {
+    const sha = (s: string) => createHash("sha256").update(s).digest("hex");
+    const { rows, key } = buildFindingsReview(inputs);
+    expect(SEED).toBe(20261104);
+    expect(sha(`${JSON.stringify(key, null, 2)}\n`)).toBe(
+      "54a7a53a5d5253edaa8ebe2dd6285e87f2f97ab553b3931c834aee941d0db5a3"
+    );
+    expect(sha(toCsv(rows))).toBe(
+      "34769ec4cba5b61da3c97fe756aa49c9a00f559257850920632b2e913e023e11"
+    );
+  });
+
   test("the committed sheet and key are exactly what build writes, while unannotated", async () => {
     const { rows, key } = buildFindingsReview(inputs);
     const committed = parseCsv(await Bun.file(join(DIR, "review.csv")).text());
@@ -102,7 +119,8 @@ describe("human review of the linter's findings", () => {
     const s = scoreFindings(
       answer((k) => (k.scored_correct ? "supported" : "unsupported")),
       key,
-      sizes
+      sizes,
+      LOWER
     );
     expect(s.annotated).toBe(40);
     expect(s.precision).toMatchObject({ k: 8, n: 40 });
@@ -115,7 +133,8 @@ describe("human review of the linter's findings", () => {
     const s = scoreFindings(
       answer(() => "supported"),
       key,
-      sizes
+      sizes,
+      LOWER
     );
     expect(s.precision).toMatchObject({ k: 40, n: 40, value: 1 });
     expect(s.precision_weighted).toBeCloseTo(1, 10);
@@ -123,22 +142,70 @@ describe("human review of the linter's findings", () => {
     const onlyToken = scoreFindings(
       answer((k) => (k.category === "TOKEN_INEFFICIENCY" ? "supported" : "unsupported")),
       key,
-      sizes
+      sizes,
+      LOWER
     );
     expect(onlyToken.precision).toMatchObject({ k: 3, n: 40 });
     expect(onlyToken.precision_weighted).toBeCloseTo(16 / 217, 10);
   });
 
+  test("a duplicated or missing row is an error, not a silent change of n", () => {
+    const all = answer(() => "supported");
+    expect(() => scoreFindings([...all, all[0]!], key, sizes, LOWER)).toThrow(
+      "item f01 appears twice"
+    );
+    expect(() => scoreFindings(all.slice(1), key, sizes, LOWER)).toThrow(
+      "item f01 is missing from the sheet"
+    );
+  });
+
+  test("a category with no finding in the population does not block the weighted estimate", () => {
+    const withEmpty = new Map([...sizes, ["NOT_REPORTED", 0]]);
+    const s = scoreFindings(
+      answer(() => "supported"),
+      key,
+      withEmpty,
+      LOWER
+    );
+    expect(s.precision_weighted).toBeCloseTo(1, 10);
+  });
+
+  // The reading is fixed before any answer: above the lower bound only when the
+  // whole interval is, and no reading at all on a partial sheet.
+  test("the pre-registered reading: complete sheet, interval above the scored 44/217", () => {
+    const agree = scoreFindings(
+      answer((k) => (k.scored_correct ? "supported" : "unsupported")),
+      key,
+      sizes,
+      LOWER
+    );
+    expect(agree).toMatchObject({ complete: true, above_scored_lower_bound: false });
+    const all = scoreFindings(
+      answer(() => "supported"),
+      key,
+      sizes,
+      LOWER
+    );
+    expect(all.above_scored_lower_bound).toBe(true);
+    const partial = scoreFindings(
+      answer((k) => (k.item_id === "f01" ? "supported" : "")),
+      key,
+      sizes,
+      LOWER
+    );
+    expect(partial).toMatchObject({ complete: false, above_scored_lower_bound: null });
+  });
+
   test("unanswered items are left out and counted; a wrong verdict or item is an error", () => {
     const partial = answer((k) => (k.item_id === "f01" ? "supported" : ""));
-    const s = scoreFindings(partial, key, sizes);
+    const s = scoreFindings(partial, key, sizes, LOWER);
     expect(s).toMatchObject({ annotated: 1, total: 40 });
     expect(s.precision_weighted).toBeNull();
     expect(() =>
-      scoreFindings([{ item_id: "f99", human_verdict: "supported" }], key, sizes)
+      scoreFindings([{ item_id: "f99", human_verdict: "supported" }], key, sizes, LOWER)
     ).toThrow("not in the key");
-    expect(() => scoreFindings([{ item_id: "f01", human_verdict: "yes" }], key, sizes)).toThrow(
-      "neither supported nor unsupported"
-    );
+    expect(() =>
+      scoreFindings([{ item_id: "f01", human_verdict: "yes" }], key, sizes, LOWER)
+    ).toThrow("neither supported nor unsupported");
   });
 });

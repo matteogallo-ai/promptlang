@@ -145,22 +145,37 @@ export interface FindingsScore {
   scored_wrong_but_supported: Rate;
   /** Findings scored right by construction that the annotator marked unsupported. */
   scored_right_but_unsupported: Rate;
+  /** Every item answered: the only case in which `precision` is read as a measure. */
+  complete: boolean;
+  /**
+   * The pre-registered reading: true when the whole interval lies above the
+   * population's scored precision (the published lower bound), false when it
+   * does not, null on a partial sheet.
+   */
+  above_scored_lower_bound: boolean | null;
 }
 
 export function scoreFindings(
   rows: Array<Record<string, string>>,
   key: KeyEntry[],
-  populationSizes: Map<string, number>
+  populationSizes: Map<string, number>,
+  scoredLowerBound: number
 ): FindingsScore {
   const byId = new Map(key.map((k) => [k.item_id, k]));
-  const answered = rows.filter((r) => r.human_verdict);
-  for (const r of answered) {
+  const seen = new Set<string>();
+  for (const r of rows) {
     if (!byId.has(r.item_id!)) throw new Error(`item ${r.item_id} is not in the key`);
-    if (r.human_verdict !== "supported" && r.human_verdict !== "unsupported")
+    // A repeated or deleted row would change n without anyone deciding it.
+    if (seen.has(r.item_id!)) throw new Error(`item ${r.item_id} appears twice in the sheet`);
+    seen.add(r.item_id!);
+    if (r.human_verdict && r.human_verdict !== "supported" && r.human_verdict !== "unsupported")
       throw new Error(
         `item ${r.item_id}: verdict "${r.human_verdict}" is neither supported nor unsupported`
       );
   }
+  for (const k of key)
+    if (!seen.has(k.item_id)) throw new Error(`item ${k.item_id} is missing from the sheet`);
+  const answered = rows.filter((r) => r.human_verdict);
   const pairs = answered.map((r) => ({
     k: byId.get(r.item_id!)!,
     yes: r.human_verdict === "supported",
@@ -172,6 +187,7 @@ export function scoreFindings(
   const all = [...populationSizes.values()].reduce((a, b) => a + b, 0);
   let weighted: number | null = 0;
   for (const [cat, n] of populationSizes) {
+    if (n === 0) continue;
     const v = per_category[cat]!.value;
     if (v === null) {
       weighted = null;
@@ -181,15 +197,19 @@ export function scoreFindings(
   }
   const wrong = pairs.filter((p) => !p.k.scored_correct);
   const right = pairs.filter((p) => p.k.scored_correct);
+  const precision = count(pairs);
+  const complete = pairs.length === key.length;
   return {
     annotated: pairs.length,
-    total: rows.length,
-    precision: count(pairs),
+    total: key.length,
+    precision,
     precision_weighted: pairs.length === 0 ? null : weighted,
     per_category,
     scored_precision: rate(right.length, pairs.length),
     scored_wrong_but_supported: count(wrong),
     scored_right_but_unsupported: rate(right.filter((p) => !p.yes).length, right.length),
+    complete,
+    above_scored_lower_bound: complete ? precision.ci95![0] > scoredLowerBound : null,
   };
 }
 
@@ -208,9 +228,10 @@ if (import.meta.main) {
     const rows = parseCsv(await Bun.file(resolve(DIR, "review.csv")).text());
     const key = (await Bun.file(resolve(DIR, "key.json")).json()) as KeyEntry[];
     const sizes = new Map(inputs.labels.categories.map((cat) => [cat, 0]));
-    for (const f of population(inputs.record, inputs.labels))
-      sizes.set(f.category, sizes.get(f.category)! + 1);
-    console.log(JSON.stringify(scoreFindings(rows, key, sizes), null, 2));
+    const pop = population(inputs.record, inputs.labels);
+    for (const f of pop) sizes.set(f.category, sizes.get(f.category)! + 1);
+    const lowerBound = pop.filter((f) => f.scored_correct).length / pop.length;
+    console.log(JSON.stringify(scoreFindings(rows, key, sizes, lowerBound), null, 2));
   } else {
     console.error("usage: linter-findings-review.ts build | score");
     process.exit(2);

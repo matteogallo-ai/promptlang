@@ -6,9 +6,13 @@ asks a person, for a random sample of the linter's own findings, whether the
 prompt has the defect the linter reported. The share confirmed is the precision.
 
 This file, `review.csv` (unanswered) and `key.json` are committed before any
-answer. `tests/linter-findings-review.test.ts` ("the committed sheet and key are
-exactly what build writes, while unannotated") fails if the sample, the seed or
-the rule that drew it changes afterwards.
+answer; the commit that first added them is the pre-registration, and git history
+is what shows it came first. `tests/linter-findings-review.test.ts` makes a redraw
+visible: "the sample is the one pre-registered: seed 20261104 and its SHA-256
+digests" pins the seed and the digests of the key and of the unanswered sheet,
+and "the committed sheet and key are exactly what build writes, while
+unannotated" ties the committed files to the code, so changing the sample means
+changing those constants in a reviewed diff.
 
 ## Population
 
@@ -47,7 +51,9 @@ beside the score, as for the label review (`../human-review/README.md`).
 `bun run scripts/linter-findings-review.ts score`, computed by
 `scoreFindings` as committed with this file:
 
-- **Headline:** precision = supported / answered, with a Wilson 95% interval.
+- **Headline:** precision = supported / answered, with a Wilson 95% interval,
+  read as a measure only when all 40 are answered (`complete`); a partial sheet
+  gives the number answered and no reading.
   The allocation is proportional, so the sample is self-weighting up to rounding;
   `precision_weighted`, each category weighted by its share of the 217, is
   reported beside it as a check.
@@ -56,13 +62,22 @@ beside the score, as for the label review (`../human-review/README.md`).
 - Against the construction, on the same 40: the scored precision, the findings
   scored wrong that the annotator supported, and the findings scored right that
   the annotator rejected.
-- The headline is reported as a measure only with all 40 answered; otherwise
-  the number answered is stated and the figure is partial.
+- **Reading, fixed before any answer:** the precision is above the published lower bound
+  only when the whole interval lies above the population's scored precision,
+  44/217 (`above_scored_lower_bound`); otherwise the review does not tell them
+  apart.
+- A repeated or missing row, an item not in the key, or a verdict other than
+  supported or unsupported stops `score` with an error.
 
 ## Limits
 
-- One annotator, 40 findings: at 8/40 the interval is about 10%–35% wide, so this
-  tells a lower bound of 20% from a precision near 50%, not 20% from 25%.
+- One annotator, 40 findings: at 8/40 the interval runs from about 10% to 35%,
+  so this tells a lower bound of 20% from a precision near 50%, not 20% from 25%.
+- The 40 findings fall on 31 prompts, so they are not independent: the Wilson
+  interval treats them as if they were and is somewhat too narrow.
+- The corpus builds each prompt from a base task, and the sample holds several
+  variants of the same base. Comparing them can show the sentence a variant
+  added, and so its designed defect. Judge each item on its own text.
 - The annotator knows every item is a linter finding, which can pull answers
   toward agreement or toward suspicion; there are no control items.
 - 22 of the 30 cases of the label review are on the test split, so some prompts

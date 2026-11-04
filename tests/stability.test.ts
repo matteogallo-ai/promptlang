@@ -3,14 +3,14 @@ import pkg from "../package.json";
 import { main } from "../src/cli/cli";
 
 /**
- * Regression tests pinning the 2.x package surface. If any of these fail, a
+ * Regression tests pinning the 3.x package surface. If any of these fail, a
  * documented stability promise is broken and the change needs a MAJOR
  * release, not a MINOR or PATCH.
  */
 
-describe("2.x stability: package metadata", () => {
-  test("package.json version is 2.0.0 or a 2.x compatible successor", () => {
-    expect(pkg.version).toMatch(/^2\.\d+\.\d+(-.+)?$/);
+describe("3.x stability: package metadata", () => {
+  test("package.json version is 3.0.0 or a 3.x compatible successor", () => {
+    expect(pkg.version).toMatch(/^3\.\d+\.\d+(-.+)?$/);
   });
 
   // The unscoped `promptlang` name on npm belongs to a third party, so the package is
@@ -62,7 +62,7 @@ describe("2.x stability: package metadata", () => {
   });
 });
 
-describe("2.x stability: CLI surface", () => {
+describe("3.x stability: CLI surface", () => {
   function captureLog(): { output: () => string; restore: () => void } {
     const lines: string[] = [];
     const orig = console.log;

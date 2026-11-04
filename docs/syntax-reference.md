@@ -135,7 +135,8 @@ prompt classify_ticket(ticket: string) -> Category {
     `string`, `keyof`...), every name in Python, parameters and struct fields
     included (`class`, `pass`);
   - in Python, any name starting with `__` (mangled in a class body, special at
-    module level);
+    module level), and a type, prompt or chain starting with `_promptlang_`, the
+    prefix of the generated module's own helpers;
   - a type, prompt or chain named after something the generated module imports
     (`PromptClient`, `Promise`; in Python also `TypedDict`, `Literal`, `str`...). A
     parameter or field may use these names;

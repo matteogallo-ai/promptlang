@@ -148,4 +148,33 @@ describe.skipIf(typeof Bun.YAML === "undefined")("GitHub Actions workflows", () 
       noBundle("d.yml"),
     ]);
   });
+
+  // npm trusted publishing (OIDC) replaces the npm token: once the packages
+  // disallow tokens, a release that reads one would fail at publish, after the
+  // tarball is packed and attested.
+  test("the release publishes through trusted publishing, with no npm token", async () => {
+    const text = await Bun.file(join(DIR, "release.yml")).text();
+    expect(text).not.toMatch(/secrets\./);
+    expect(text).not.toMatch(/NODE_AUTH_TOKEN|NPM_TOKEN/);
+    type Step = { run?: string };
+    const release = Bun.YAML.parse(text) as {
+      jobs: {
+        publish: { environment: string; permissions: Record<string, string>; steps: Step[] };
+      };
+    };
+    const { environment, permissions, steps } = release.jobs.publish;
+    // The trusted publisher on npmjs.com names this environment; another one is refused.
+    expect(environment).toBe("npm");
+    expect(permissions["id-token"]).toBe("write");
+    const install = steps.findIndex((s) => /npm install -g npm@\d/.test(s.run ?? ""));
+    const publish = steps.findIndex((s) => /npm publish/.test(s.run ?? ""));
+    expect(install).toBeGreaterThanOrEqual(0);
+    expect(install).toBeLessThan(publish);
+    const [major, minor, patch] = /npm@(\d+)\.(\d+)\.(\d+)/
+      .exec(steps[install]!.run!)!
+      .slice(1)
+      .map(Number) as [number, number, number];
+    // 11.5.1 is the first npm with trusted publishing.
+    expect(major * 1e6 + minor * 1e3 + patch).toBeGreaterThanOrEqual(11_005_001);
+  });
 });

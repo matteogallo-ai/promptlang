@@ -1,11 +1,18 @@
 # Changelog
 
-All notable changes to PromptLang will be documented in this file.
+All notable changes to PromptLang are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [3.0.0] - 2026-11-03
+
+The fixes for the F1 neutral audit (`docs/audit/`). Several refuse what 2.x
+accepted silently: an answer outside its declared type, an incomplete answer,
+outputs that overwrite each other, names the target cannot hold. Hence a major
+version; `docs/migration-guide.md` (2.x → 3.0.0) lists what to change.
 
 ### Added
 - `promptlang --version`, the same as `promptlang version`.
@@ -24,7 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   package `sentiment`), `2x.prompt` → `_2x.py`, `class.prompt` → `class_.py`.
 - **More names are compile errors**: reserved words where the generated code
   binds the name (`prompt delete`, a step `if`, a Python parameter `class`),
-  any name with `-`, a Python name starting with `__`, a type, prompt or chain
+  any name with `-`, a Python name starting with `__`, a Python type, prompt or
+  chain starting with `_promptlang_` (the generated helpers' prefix), a type, prompt or chain
   named after what the generated module imports (`PromptClient`, `Promise`,
   Python's `TypedDict`, `str`...), a TypeScript prompt or chain named
   `globalThis` or `undefined`, a step, prompt or chain named
@@ -40,7 +48,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   that passed `analyze --strict` can now exit 1: for example a `{{tone}}` string
   parameter in a system prompt. Remedy: declare a value from a fixed list as an
   `enum`, or enclose the input in a delimiter pair.
-
 
 - **Generated code checks every answer against its declared type** (breaking for
   code that relied on the old behaviour). Answers that used to pass now raise

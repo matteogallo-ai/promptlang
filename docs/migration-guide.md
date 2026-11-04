@@ -1,13 +1,77 @@
 # Migration Guide
 
-## Unreleased (after 2.0.0)
+## 2.x → 3.0.0
 
-- **Incomplete answers raise `IncompleteResponseError`** (TypeScript and Python
-  runtimes): an answer cut at `max_tokens`, refused, stopped early or with no
-  text. Before, the text was returned as a success; an OpenAI `content: null`
-  read as `""`. Catch it where you handled empty or truncated output; its
-  `reason` says which case, and `usage` what was billed. `RoutingClient` does not
-  fall back on it.
+These changes break existing setups, hence the major version; the full list is in
+`CHANGELOG.md` under `[3.0.0]`. Recompile every `.prompt` file and upgrade
+`@promptlang/core` in the project that runs the output together: generated code
+from 3.0.0 needs the 3.0.0 runtime.
+
+**Compiling**
+
+- **`compile` can refuse a folder that compiled before**, and then writes no file
+  at all (exit 1): two sources that would produce the same output file (case
+  ignored) or a file `compile` writes itself (`index`), or two modules that would
+  export the same name (`sentiment` in two
+  folders, `foo_bar` beside `fooBar`). Rename one, or compile them into different
+  `--out` folders.
+- **More names are compile errors**, each with its position: a reserved word where
+  the generated code binds the name (`prompt delete`, a step `if`, a Python
+  parameter `class`), any name containing `-`, a Python name starting with `__`, a Python type, prompt
+  or chain starting with `_promptlang_`, a type, prompt or chain named after what the generated module imports
+  (`PromptClient`, `Promise`, Python's `TypedDict`, `str`...), a TypeScript prompt
+  or chain named `globalThis` or `undefined`, a step, prompt or
+  chain named `client`, a step named after a prompt of the file, a parameter of
+  its chain or an earlier step, and two declarations that generate the same name
+  (a type `FooInput` beside a prompt `foo`; in Python, enums `Foo` and `foo`). Rename the declaration; the list is in
+  `docs/syntax-reference.md`.
+- **Python modules are renamed** to importable names: `sentiment.v2.prompt` →
+  `sentiment_v2.py`, `2x.prompt` → `_2x.py`, `class.prompt` → `class_.py`. Update
+  the imports.
+- **Generated headers have no `Generated at` timestamp**: a diff of the compiled
+  output now shows only real changes.
+- **`analyze --strict` may fail on a file that passed**: `prompt-injection-risk`
+  reads every role and judges each placeholder by the delimiters around it.
+  Enclose the input in a delimiter pair, or declare a value from a fixed list as
+  an `enum`.
+
+**Running generated code**
+
+- **Every answer is checked against the declared output type.** An answer that
+  does not conform raises `InvalidOutputError` (`prompt`, `errors`, `output`),
+  where 2.x returned it cast to the type: a struct with an undeclared field or a
+  field of the wrong type, a `number` not in decimal notation, a `date` that is
+  not a real day. In Python it subclasses `ValueError`, so existing `except
+  ValueError` blocks still catch it. In `promptlang test`, a `mock:` answer outside
+  the type is now a failure: fix the mock. `expect schema` messages give the kind
+  of the wrong value (`got a string`) instead of quoting it, and count undeclared
+  fields instead of naming them: update tests that match on that text.
+- **Generated TypeScript imports `parseOutput` from `@promptlang/core/runtime` as
+  a value**, so the runtime must be installed at run time, not only for types.
+- **A struct parameter is inserted as JSON** (`{"plan":"pro","seats":3}`), where
+  TypeScript sent `[object Object]` and Python a dict repr. A prompt that worked
+  around this changes what it sends.
+- **Incomplete answers raise `IncompleteResponseError`** (TypeScript and Python):
+  an answer cut at `max_tokens`, refused, stopped early or with no text. 2.x
+  returned the text as a success; an OpenAI `content: null` read as `""`. Catch it
+  where you handled empty or truncated output; its `reason` says which case, and
+  `usage` what was billed. An OpenAI-compatible server that ends a successful
+  answer with a non-standard `finish_reason` now raises it, with `reason`
+  `unexpected_stop`.
+- **A 404 from `AnthropicClient` or `OpenAIClient` raises `NotFoundError`**, not
+  `InvalidRequestError`. Code that caught `InvalidRequestError` for a missing
+  model catches `NotFoundError`.
+- **`RoutingClient` falls back only when a provider could not serve the request**
+  (outage, rate limit, timeout, network, 404, malformed body). A 400, an
+  `IncompleteResponseError` and any error that is not a `PromptClientError` are
+  thrown at once, without trying the next provider.
+- **`OpenAIClient` sends `max_completion_tokens`** instead of `max_tokens`, the
+  field GPT-5 and the o-series require.
+
+**Other**
+
+- `semver-check` treats a removed or renamed declared type as a major change.
+- `promptlang --version` prints the version, like `promptlang version`.
 
 ## 1.2.0 → 2.0.0
 

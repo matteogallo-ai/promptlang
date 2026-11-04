@@ -531,13 +531,13 @@ I design the specifications and acceptance criteria. A coding agent implements; 
 
 Design decisions are recorded in [`docs/adr/`](docs/adr/).
 
-## What I'd do differently
+### What I'd do differently
 
-**Evaluation before shipping.** The AI linter shipped before it had an evaluation set. Once measured on a held-out split, it caught 98% of planted defects, but only 20% of its flags were correct (a lower bound until a human review of the labels is complete). Today, an AI feature ships with its eval set, metric and confidence interval, or it's labelled experimental. Next: raise precision, tuned on dev, measured on test. ([#11](https://github.com/matteogallo-ai/promptlang/pull/11), [#14](https://github.com/matteogallo-ai/promptlang/pull/14))
+**Evaluation before shipping.** The AI linter shipped before it had an evaluation set. Once measured on a held-out split, it caught 98% of planted defects, but only 20% of its flags were correct (a lower bound until a human review of the labels is complete), against 12.5% for a linter that flags every category. Today, an AI feature ships with its eval set, metric and confidence interval, or it's labelled experimental. ([#11](https://github.com/matteogallo-ai/promptlang/pull/11), [#14](https://github.com/matteogallo-ai/promptlang/pull/14))
 
-**Claims enforced by CI, not by discipline.** Every public claim now maps to a test, and CI fails if one isn't backed. I'd have built that gate first. ([#1](https://github.com/matteogallo-ai/promptlang/pull/1))
+**Claims enforced by CI, not by discipline.** Every feature the README advertises now maps to a passing test in `docs/CLAIMS.md`, and CI fails if one isn't backed. I'd have built that gate first. ([#1](https://github.com/matteogallo-ai/promptlang/pull/1))
 
-**Supply-chain and test-quality gates from day one.** Signed releases with provenance, Scorecard, fuzzing and mutation testing (96% score) were added in a dedicated hardening pass. In a new project, they're in the template from the first commit. ([#5](https://github.com/matteogallo-ai/promptlang/pull/5), [#8](https://github.com/matteogallo-ai/promptlang/pull/8), [#10](https://github.com/matteogallo-ai/promptlang/pull/10), [#13](https://github.com/matteogallo-ai/promptlang/pull/13))
+**Supply-chain and test-quality gates from day one.** Signed releases with provenance, Scorecard, fuzzing and mutation testing on the lexer, parser and semver (96%) were added in a dedicated hardening pass. In a new project, they're in the template from the first commit. ([#5](https://github.com/matteogallo-ai/promptlang/pull/5), [#8](https://github.com/matteogallo-ai/promptlang/pull/8), [#10](https://github.com/matteogallo-ai/promptlang/pull/10), [#13](https://github.com/matteogallo-ai/promptlang/pull/13))
 
 ---
 

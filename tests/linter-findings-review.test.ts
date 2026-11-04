@@ -111,6 +111,22 @@ describe("human review of the linter's findings", () => {
     expect(new Set(key.slice(0, 9).map((k) => k.category)).size).toBeGreaterThan(1);
   });
 
+  // README.md, docs/SYSTEM_CARD.md and docs/CLAIMS.md publish this result; score.json
+  // is what `score` printed on the committed answers, and stays so.
+  test("the committed answers score 12/40 (30%, 95% CI 18.1–45.4%), not above the 44/217 bound", async () => {
+    const answered = parseCsv(await Bun.file(join(DIR, "review.csv")).text());
+    const committedKey = (await Bun.file(join(DIR, "key.json")).json()) as KeyEntry[];
+    const s = scoreFindings(answered, committedKey, sizes, LOWER);
+    expect(await Bun.file(join(DIR, "score.json")).json()).toEqual(JSON.parse(JSON.stringify(s)));
+    expect(s).toMatchObject({ complete: true, above_scored_lower_bound: false });
+    expect(s.precision).toMatchObject({ k: 12, n: 40 });
+    const [low, high] = s.precision.ci95 ?? [Number.NaN, Number.NaN];
+    expect(low).toBeCloseTo(0.181, 3);
+    expect(high).toBeCloseTo(0.454, 3);
+    expect(s.scored_wrong_but_supported).toMatchObject({ k: 4, n: 32 });
+    expect(s.scored_right_but_unsupported).toMatchObject({ k: 0, n: 8 });
+  });
+
   const { key } = buildFindingsReview(inputs);
   const answer = (verdict: (k: KeyEntry) => string) =>
     key.map((k) => ({ item_id: k.item_id, human_verdict: verdict(k), comment: "" }));

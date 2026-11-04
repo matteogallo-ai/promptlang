@@ -25,7 +25,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",supported,
 f02,This prompt has the defect CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements.,"@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -53,7 +53,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",supported,
 f03,"This prompt has the defect VAGUE_INSTRUCTIONS: non-actionable phrases (""be careful"", ""make it good"") without concrete criteria.","@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -80,7 +80,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f04,This prompt has the defect POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse.,"@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -107,7 +107,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f05,This prompt has the defect CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements.,"@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -134,7 +134,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f06,"This prompt has the defect VAGUE_INSTRUCTIONS: non-actionable phrases (""be careful"", ""make it good"") without concrete criteria.","@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -162,7 +162,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",supported,
 f07,"This prompt has the defect VAGUE_INSTRUCTIONS: non-actionable phrases (""be careful"", ""make it good"") without concrete criteria.","@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -189,7 +189,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f08,This prompt has the defect POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse.,"@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -216,7 +216,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f09,This prompt has the defect MISSING_FORMAT_SPEC: output type expects structured data but no format constraint in the prompt.,"@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -243,7 +243,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f10,"This prompt has the defect UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined).","@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -270,7 +270,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f11,"This prompt has the defect VAGUE_INSTRUCTIONS: non-actionable phrases (""be careful"", ""make it good"") without concrete criteria.","@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -297,7 +297,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f12,"This prompt has the defect UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined).","@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -325,7 +325,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",supported,
 f13,This prompt has the defect POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse.,"@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -353,7 +353,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",supported,
 f14,This prompt has the defect TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss.,"@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -380,7 +380,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f15,"This prompt has the defect UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined).","@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -407,7 +407,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f16,"This prompt has the defect UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined).","@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -434,7 +434,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f17,This prompt has the defect CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements.,"@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -461,7 +461,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f18,This prompt has the defect CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements.,"@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -489,7 +489,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",supported,
 f19,"This prompt has the defect UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined).","@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -515,7 +515,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f20,This prompt has the defect CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements.,"@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -543,7 +543,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",supported,
 f21,"This prompt has the defect UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined).","@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -570,7 +570,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f22,This prompt has the defect POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse.,"@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -597,7 +597,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f23,"This prompt has the defect VAGUE_INSTRUCTIONS: non-actionable phrases (""be careful"", ""make it good"") without concrete criteria.","@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -624,7 +624,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f24,"This prompt has the defect VAGUE_INSTRUCTIONS: non-actionable phrases (""be careful"", ""make it good"") without concrete criteria.","@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -652,7 +652,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f25,This prompt has the defect CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements.,"@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -680,7 +680,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",supported,
 f26,"This prompt has the defect VAGUE_INSTRUCTIONS: non-actionable phrases (""be careful"", ""make it good"") without concrete criteria.","@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -708,7 +708,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f27,This prompt has the defect TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss.,"@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -736,7 +736,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",supported,
 f28,This prompt has the defect POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse.,"@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -763,7 +763,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f29,"This prompt has the defect VAGUE_INSTRUCTIONS: non-actionable phrases (""be careful"", ""make it good"") without concrete criteria.","@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -792,7 +792,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f30,This prompt has the defect MISSING_FORMAT_SPEC: output type expects structured data but no format constraint in the prompt.,"@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -819,7 +819,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f31,This prompt has the defect POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse.,"@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -848,7 +848,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f32,"This prompt has the defect UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined).","@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -876,7 +876,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",supported,
 f33,This prompt has the defect TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss.,"@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -903,7 +903,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f34,"This prompt has the defect UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined).","@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -931,7 +931,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f35,This prompt has the defect POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse.,"@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -958,7 +958,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f36,This prompt has the defect CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements.,"@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -987,7 +987,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f37,"This prompt has the defect VAGUE_INSTRUCTIONS: non-actionable phrases (""be careful"", ""make it good"") without concrete criteria.","@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -1015,7 +1015,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",supported,
 f38,This prompt has the defect MISSING_FORMAT_SPEC: output type expects structured data but no format constraint in the prompt.,"@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -1041,7 +1041,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",supported,
 f39,This prompt has the defect MISSING_FORMAT_SPEC: output type expects structured data but no format constraint in the prompt.,"@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -1069,7 +1069,7 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,
 f40,This prompt has the defect POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse.,"@version ""1.0.0""
 @model claude-haiku-5-5
 
@@ -1097,4 +1097,4 @@ MISSING_FORMAT_SPEC: output type expects structured data but no format constrain
 CONFLICTING_INSTRUCTIONS: contradictory or ambiguous requirements
 UNDEFINED_TERMS: business terms used without definition (e.g. ""premium user"" undefined)
 POTENTIAL_HALLUCINATION_RISK: instruction that invites the model to guess vs refuse
-TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",,
+TOKEN_INEFFICIENCY: verbose phrasing that could be shorter without loss",unsupported,

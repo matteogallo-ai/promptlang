@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- The human check of the AI linter's eval labels, answered (`evals/linter/human-review/`):
+  27/30 designed labels confirmed, 27/30 decoys rejected (Wilson 95% CI
+  74.4%–96.5% each), kappa 0.80, with its six disagreements documented. Two
+  point to the corpus generator: in 7 of the 15 hallucination cases, the
+  instruction to fill every missing value contradicts the boolean rule of the
+  base task. The linter's precision remains a lower bound.
+
 ## [3.0.0] - 2026-11-03
 
 The fixes for the F1 neutral audit (`docs/audit/`). Several refuse what 2.x

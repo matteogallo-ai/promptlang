@@ -230,7 +230,9 @@ its findings are false alarms (precision 20%, 95% CI 15–26%) and it flags ever
 clean prompt (15/15). Reporting every category on every prompt would find all 45
 defects at 12.5% precision (95% CI 9.5–16.3%), so recall alone says little; the
 precision gain over that baseline is modest. The labels are set by construction;
-their human check (`evals/linter/human-review/`) has no answers recorded. Read its
+a human check of 30 cases (`evals/linter/human-review/`) confirmed 27/30 designed
+labels (95% CI 74–97%, kappa 0.80) and suggests that some reports scored as false
+alarms may be real defects, so the precision stays a lower bound. Read its
 findings as leads to check, not as defects; the six static rules of
 `promptlang analyze` do not depend on the model.
 
@@ -533,7 +535,7 @@ Design decisions are recorded in [`docs/adr/`](docs/adr/).
 
 ### What I'd do differently
 
-**Evaluation before shipping.** The AI linter shipped before it had an evaluation set. Once measured on a held-out split, it caught 44/45 and 45/45 planted defects across two runs, but only 20% of its flags were correct (a lower bound, since a category nobody designed into a case counts as a false alarm; the labels' human check is not done), against 12.5% for a linter that flags every category. Today, an AI feature ships with its eval set, metric and confidence interval, or it ships behind an explicit "unmeasured" label in [CLAIMS](docs/CLAIMS.md). ([#11](https://github.com/matteogallo-ai/promptlang/pull/11), [#14](https://github.com/matteogallo-ai/promptlang/pull/14))
+**Evaluation before shipping.** The AI linter shipped before it had an evaluation set. Once measured on a held-out split, it caught 44/45 and 45/45 planted defects across two runs, but only 20% of its flags were correct (a lower bound, since a category nobody designed into a case counts as a false alarm, and a human check of the labels suggests some exist), against 12.5% for a linter that flags every category. Today, an AI feature ships with its eval set, metric and confidence interval, or it ships behind an explicit "unmeasured" label in [CLAIMS](docs/CLAIMS.md). ([#11](https://github.com/matteogallo-ai/promptlang/pull/11), [#14](https://github.com/matteogallo-ai/promptlang/pull/14))
 
 **Claims enforced by CI, not by discipline.** Every feature the README advertises now maps to a passing test in `docs/CLAIMS.md`, and CI fails if one isn't backed. I'd have built that gate first. ([#1](https://github.com/matteogallo-ai/promptlang/pull/1))
 

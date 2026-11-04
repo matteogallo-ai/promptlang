@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- A pre-registered human review of the AI linter's findings
+  (`evals/linter/findings-review/`): 40 of the 217 test-split findings, stratified
+  by category, seeded, committed unanswered with its analysis
+  (`scripts/linter-findings-review.ts`).
 - The human check of the AI linter's eval labels, answered (`evals/linter/human-review/`):
   27/30 designed labels confirmed, 27/30 decoys rejected (Wilson 95% CI
   74.4%–96.5% each), kappa 0.80, with its six disagreements documented. Two

@@ -1,0 +1,242 @@
+[
+  {
+    "item_id": "f01",
+    "case": "b23-potential-hallucination-risk",
+    "category": "POTENTIAL_HALLUCINATION_RISK",
+    "scored_correct": true
+  },
+  {
+    "item_id": "f02",
+    "case": "b21-clean",
+    "category": "CONFLICTING_INSTRUCTIONS",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f03",
+    "case": "b23-clean",
+    "category": "VAGUE_INSTRUCTIONS",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f04",
+    "case": "b29-vague-instructions",
+    "category": "POTENTIAL_HALLUCINATION_RISK",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f05",
+    "case": "b29-clean",
+    "category": "CONFLICTING_INSTRUCTIONS",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f06",
+    "case": "b16-undefined-terms",
+    "category": "VAGUE_INSTRUCTIONS",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f07",
+    "case": "b18-potential-hallucination-risk",
+    "category": "VAGUE_INSTRUCTIONS",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f08",
+    "case": "b22-vague-instructions",
+    "category": "POTENTIAL_HALLUCINATION_RISK",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f09",
+    "case": "b18-clean",
+    "category": "MISSING_FORMAT_SPEC",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f10",
+    "case": "b24-vague-instructions",
+    "category": "UNDEFINED_TERMS",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f11",
+    "case": "b23-potential-hallucination-risk",
+    "category": "VAGUE_INSTRUCTIONS",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f12",
+    "case": "b16-undefined-terms",
+    "category": "UNDEFINED_TERMS",
+    "scored_correct": true
+  },
+  {
+    "item_id": "f13",
+    "case": "b19-vague-instructions",
+    "category": "POTENTIAL_HALLUCINATION_RISK",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f14",
+    "case": "b24-vague-instructions",
+    "category": "TOKEN_INEFFICIENCY",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f15",
+    "case": "b16-clean",
+    "category": "UNDEFINED_TERMS",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f16",
+    "case": "b15-vague-instructions",
+    "category": "UNDEFINED_TERMS",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f17",
+    "case": "b20-potential-hallucination-risk",
+    "category": "CONFLICTING_INSTRUCTIONS",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f18",
+    "case": "b24-conflicting-instructions",
+    "category": "CONFLICTING_INSTRUCTIONS",
+    "scored_correct": true
+  },
+  {
+    "item_id": "f19",
+    "case": "b24-missing-format-spec",
+    "category": "UNDEFINED_TERMS",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f20",
+    "case": "b27-potential-hallucination-risk",
+    "category": "CONFLICTING_INSTRUCTIONS",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f21",
+    "case": "b22-clean",
+    "category": "UNDEFINED_TERMS",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f22",
+    "case": "b21-missing-format-spec",
+    "category": "POTENTIAL_HALLUCINATION_RISK",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f23",
+    "case": "b28-clean",
+    "category": "VAGUE_INSTRUCTIONS",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f24",
+    "case": "b25-potential-hallucination-risk",
+    "category": "VAGUE_INSTRUCTIONS",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f25",
+    "case": "b16-conflicting-instructions",
+    "category": "CONFLICTING_INSTRUCTIONS",
+    "scored_correct": true
+  },
+  {
+    "item_id": "f26",
+    "case": "b22-token-inefficiency",
+    "category": "VAGUE_INSTRUCTIONS",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f27",
+    "case": "b15-token-inefficiency",
+    "category": "TOKEN_INEFFICIENCY",
+    "scored_correct": true
+  },
+  {
+    "item_id": "f28",
+    "case": "b17-vague-instructions",
+    "category": "POTENTIAL_HALLUCINATION_RISK",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f29",
+    "case": "b27-token-inefficiency",
+    "category": "VAGUE_INSTRUCTIONS",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f30",
+    "case": "b15-potential-hallucination-risk",
+    "category": "MISSING_FORMAT_SPEC",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f31",
+    "case": "b21-undefined-terms",
+    "category": "POTENTIAL_HALLUCINATION_RISK",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f32",
+    "case": "b18-undefined-terms",
+    "category": "UNDEFINED_TERMS",
+    "scored_correct": true
+  },
+  {
+    "item_id": "f33",
+    "case": "b18-clean",
+    "category": "TOKEN_INEFFICIENCY",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f34",
+    "case": "b27-vague-instructions",
+    "category": "UNDEFINED_TERMS",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f35",
+    "case": "b22-clean",
+    "category": "POTENTIAL_HALLUCINATION_RISK",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f36",
+    "case": "b25-token-inefficiency",
+    "category": "CONFLICTING_INSTRUCTIONS",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f37",
+    "case": "b19-vague-instructions",
+    "category": "VAGUE_INSTRUCTIONS",
+    "scored_correct": true
+  },
+  {
+    "item_id": "f38",
+    "case": "b24-missing-format-spec",
+    "category": "MISSING_FORMAT_SPEC",
+    "scored_correct": true
+  },
+  {
+    "item_id": "f39",
+    "case": "b15-token-inefficiency",
+    "category": "MISSING_FORMAT_SPEC",
+    "scored_correct": false
+  },
+  {
+    "item_id": "f40",
+    "case": "b24-conflicting-instructions",
+    "category": "POTENTIAL_HALLUCINATION_RISK",
+    "scored_correct": false
+  }
+]

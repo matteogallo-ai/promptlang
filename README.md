@@ -5,6 +5,10 @@
 Write your LLM prompts as typed, first-class code and compile them to
 TypeScript or Python. Bring your own API key. No third-party runtime dependencies.
 
+![`bun run demo`: semver-check catches an incompatible change released as a minor, passes it as 2.0.0, and the prompt tests pass on mock responses](docs/media/demo.gif)
+
+<sub>`bun run demo`, recorded as it runs ([`docs/media/demo.tape`](docs/media/demo.tape)).</sub>
+
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/matteogallo-ai/promptlang/badge)](https://scorecard.dev/viewer/?uri=github.com/matteogallo-ai/promptlang)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue.svg)](tsconfig.json)

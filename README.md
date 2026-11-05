@@ -132,7 +132,8 @@ Other tools are not scored here: nothing in this repository tests them. Several
 overlap with this list: LangChain returns typed outputs (`with_structured_output`)
 and falls back across models (`with_fallbacks`); LangSmith and W&B Weave version
 prompts and run evaluations, mainly as hosted services (both offer self-hosting).
-Check their documentation for what they offer today.
+Check their documentation for what they offer today. One prompt written in both
+PromptLang and BAML, with each difference sourced: [docs/comparison-baml.md](docs/comparison-baml.md).
 
 ---
 

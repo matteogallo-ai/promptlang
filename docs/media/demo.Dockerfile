@@ -1,6 +1,6 @@
 # Renders docs/media/demo.gif from demo.tape. vhs needs ttyd and ffmpeg, which its
-# image ships; the demo needs Bun and git, added here. Images are pinned by digest
-# so a re-render uses the same tools.
+# image ships; the demo needs Bun and git, added here. The vhs and Bun images are
+# pinned by digest; git comes from the Debian archive at build time.
 #   docker build -f docs/media/demo.Dockerfile -t promptlang-vhs docs/media
 #   docker run --rm -v "$PWD":/vhs promptlang-vhs docs/media/demo.tape
 FROM oven/bun:1.4.4@sha256:1d22548f177f4ff38e0c15baa3c2c46c6c2060ba2d1bc573bb4720b407548f1d AS bun

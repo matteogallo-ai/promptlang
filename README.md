@@ -5,7 +5,7 @@
 Write your LLM prompts as typed, first-class code and compile them to
 TypeScript or Python. Bring your own API key. No third-party runtime dependencies.
 
-![`bun run demo`: semver-check catches an incompatible change released as a minor, passes it as 2.0.0, and the prompt tests pass on mock responses](docs/media/demo.gif)
+![`bun run demo`: semver-check catches an incompatible change released as a minor, passes it as 2.0.0, a consumer pinned to ^1.0.0 then fails cleanly, and the prompt tests pass on mock responses](docs/media/demo.gif)
 
 <sub>`bun run demo`, recorded as it runs ([`docs/media/demo.tape`](docs/media/demo.tape)).</sub>
 

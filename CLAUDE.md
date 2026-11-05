@@ -42,7 +42,7 @@ src/runtime/         client.ts (MockClient), errors.ts, providers/
 src/config/          promptlang.yaml loading
 src/cli/             cli.ts + commands/
 packages/yaml-parser @promptlang/yaml-parser (published separately)
-scripts/             check-claims.ts, check-stale-narrative.ts, check-commits.ts, demo.ts,
+scripts/             check-claims.ts, check-stale-narrative.ts, check-unscoped-cli.ts, check-commits.ts, demo.ts,
                      build.ts, consumer-test.ts, ai-linter-live-run.ts, check-workflows.ts
 benchmarks/bench.ts  generates docs/benchmarks.md
 tests/               cross-module tests; tests/support/ test helpers
@@ -62,6 +62,7 @@ bun run lint                         # biome check . ; bun run lint:fix to apply
 bun run knip                         # dead code / unused exports and deps
 bun run check:claims                 # docs/CLAIMS.md vs README; runs each claim's test
 bun run check:stale-narrative        # "coming in vX", sprint IDs, TODO without (#issue)
+bun run check:unscoped-cli           # npx on the unscoped name runs a third-party package; also a test in bun test
 bun run check:commits main..HEAD     # Conventional Commits on a range
 bun run bench --write                # regenerate docs/benchmarks.md
 bun run demo                         # SemVer scenario in a temporary Git repo

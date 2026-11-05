@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- The README ran the CLI through npx under the unscoped name, which, without
+  `@promptlang/core` installed, downloads and runs the unscoped `promptlang`
+  package, owned by a third party. It now runs `npx @promptlang/core`.
+  `scripts/check-unscoped-cli.ts`, run as a test in `bun test`, fails if a tracked file runs or installs the unscoped package
+  (npx, bunx, pnpm/yarn dlx, npm exec; npm, bun, pnpm, yarn install or add).
+
 ### Added
 - The result of the pre-registered human review of the AI linter's findings
   (`evals/linter/findings-review/RESULT.md`): precision 30% (12/40, Wilson 95% CI

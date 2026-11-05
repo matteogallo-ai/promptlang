@@ -86,14 +86,15 @@ test "classifies feature requests correctly" {
 }
 ```
 
-Test it, then compile it (the `promptlang` CLI runs on Bun ≥ 1.2.20):
+Test it, then compile it (the `promptlang` CLI runs on Bun ≥ 1.2.20). Name the scoped
+package: the unscoped `promptlang` package on npm is not this project.
 
 ```bash
-npx promptlang test classify-ticket.prompt
+npx @promptlang/core test classify-ticket.prompt
 ```
 
 ```bash
-npx promptlang compile classify-ticket.prompt --out ./generated
+npx @promptlang/core compile classify-ticket.prompt --out ./generated
 ```
 
 Use it:

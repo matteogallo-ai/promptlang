@@ -1,6 +1,6 @@
 # PromptLang
 
-**The typed language for production-grade LLM prompts.**
+**A typed language for LLM prompts.**
 
 Write your LLM prompts as typed, first-class code and compile them to
 TypeScript or Python. Bring your own API key. No third-party runtime dependencies.

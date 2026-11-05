@@ -13,7 +13,7 @@ import { runSemverCheck } from "./commands/semver-check";
 import { runTest } from "./commands/test";
 
 const HELP = `
-promptlang — the typed language for production-grade LLM prompts
+promptlang — a typed language for LLM prompts
 
 Usage:
   promptlang <command> [args]

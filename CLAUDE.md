@@ -62,7 +62,7 @@ bun run lint                         # biome check . ; bun run lint:fix to apply
 bun run knip                         # dead code / unused exports and deps
 bun run check:claims                 # docs/CLAIMS.md vs README; runs each claim's test
 bun run check:stale-narrative        # "coming in vX", sprint IDs, TODO without (#issue)
-bun run check:unscoped-cli           # npx on the unscoped name runs a third-party package; also a test in bun test
+bun run check:unscoped-cli           # running/installing the unscoped name gets a third-party package; also a test in bun test
 bun run check:commits main..HEAD     # Conventional Commits on a range
 bun run bench --write                # regenerate docs/benchmarks.md
 bun run demo                         # SemVer scenario in a temporary Git repo

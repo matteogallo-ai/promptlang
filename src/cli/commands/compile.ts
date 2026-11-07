@@ -18,6 +18,7 @@ import {
 import { YamlParseError } from "@promptlang/yaml-parser";
 import { mkdir } from "node:fs/promises";
 import { join, basename, isAbsolute, relative, resolve } from "node:path";
+import { readSource } from "../read-source";
 
 const TARGETS = ["typescript", "python"] as const;
 type Target = (typeof TARGETS)[number];
@@ -114,14 +115,13 @@ export async function runCompile(args: string[]): Promise<number> {
   let hasErrors = false;
 
   for (const file of files) {
-    let source: string;
-    try {
-      source = await Bun.file(file).text();
-    } catch {
-      console.error(`Could not read file: ${file}`);
+    const read = await readSource(file);
+    if (!read.ok) {
+      console.error(read.message);
       hasErrors = true;
       continue;
     }
+    const source = read.text;
 
     try {
       const tokens = tokenize(source);

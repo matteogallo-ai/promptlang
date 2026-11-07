@@ -14,6 +14,7 @@ import {
   formatJsonReport,
   type DeclarationCounts,
 } from "../../analyzer/report";
+import { readSource } from "../read-source";
 
 const EXIT_USAGE = 2;
 
@@ -60,13 +61,12 @@ export async function runAnalyze(args: string[], deps: AnalyzeDeps = defaultDeps
   const parseErrors: string[] = [];
 
   for (const file of files) {
-    let source: string;
-    try {
-      source = await Bun.file(file).text();
-    } catch {
-      console.error(`Could not read file: ${file}`);
+    const read = await readSource(file);
+    if (!read.ok) {
+      console.error(read.message);
       return 1;
     }
+    const source = read.text;
 
     try {
       const tokens = tokenize(source);

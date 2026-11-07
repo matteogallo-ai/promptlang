@@ -48,7 +48,7 @@ function carriesText(
  * a common prompt injection vector. Every role is checked: the caller supplies
  * the value wherever it is inserted. The value itself is known only at run time:
  * generated code passes it through neutralizeDelimiters with the pairs found here,
- * so it cannot close or reopen them.
+ * so it cannot close or reopen them, alone or next to another value.
  */
 export const promptInjectionRiskRule: Rule = {
   name: "prompt-injection-risk",

@@ -39,11 +39,13 @@ user template", and the flagged cases "an unrelated tag earlier in the text" and
 "a string parameter in a system section".
 PromptLang cannot make a user's prompt injection-proof; the rule points at the
 most common gap. Generated code rewrites a value inserted between delimiters so
-that it cannot close or reopen them (`</ticket>` becomes `&lt;/ticket>`), in
-TypeScript and Python alike: `src/compiler/delimiter-neutralization.test.ts`
-"in generated TypeScript", "in generated Python, byte for byte the same", and
-`src/runtime/delimiters.test.ts` "TypeScript and Python rewrite any value to the
-same bytes".
+that it cannot close or reopen them, alone or next to another value
+(`</ticket>` becomes `&lt;/ticket>`), in TypeScript and Python alike:
+`src/compiler/delimiter-neutralization.test.ts` "in generated TypeScript", "in
+generated Python, byte for byte the same", and `src/runtime/delimiters.test.ts`
+"values and plain text, concatenated in any order, never form a delimiter" and
+"TypeScript and Python rewrite any value to the same bytes". Unicode look-alikes
+(`＜`) and the template's own text are not rewritten.
 
 *Not covered:* the effectiveness of the delimiters against a determined attacker is
 not measured; only the escaping is.

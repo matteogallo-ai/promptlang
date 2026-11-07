@@ -102,19 +102,30 @@ const category = await classify_ticket({ ticket: "..." }, client);
 
 ### Delimited values
 
-A value inserted between delimiters cannot close or reopen them: generated
-TypeScript and Python rewrite it the same way, byte for byte, with the pairs that
-`prompt-injection-risk` recognises around its placeholder.
+Generated TypeScript and Python rewrite a string inserted between delimiters, the
+same way byte for byte, with the pairs `prompt-injection-risk` recognises around
+its placeholder, so that the value cannot close or reopen them:
 
-- `<name>` … `</name>`: a `<` that starts `<name` or `</name`, in any ASCII case and
-  with spaces or line breaks around the `/`, becomes `&lt;` (`</TICKET>` →
-  `&lt;/TICKET>`); `<tickets>` is left alone. `<BEGIN>`/`<END>` are treated the same.
+- `<name>` … `</name>` (and `<BEGIN>`/`<END>`): a `<` that starts `<name` or `</name`, in any ASCII
+  case and with ASCII whitespace around the `/`, becomes `&lt;` (`</TICKET>` → `&lt;/TICKET>`); `<tickets>`
+  is left alone.
 - `[[` … `]]`: `[[` becomes `[ [`, `]]` becomes `] ]`.
 - A code fence: a run of three or more backticks gets a space between each.
-- `---` lines: a line of three or more dashes gets a space between each dash.
+- `---` lines: a line of three or more dashes gets a `\` before its first dash
+  (`- - -` would still be a Markdown rule).
 
-This keeps the input from passing as the prompt's own text; how well a model
-respects delimiters is not measured.
+The ends of a value are rewritten too, since it can sit next to another value or
+to the template's own text: a trailing `<` that could still grow into `<name` or
+`</name` becomes `&lt;`; a `[`, `]` or run of backticks at either end gets a space
+on its outer side, the backticks spaced as well; a first or last line made only
+of dashes gets the `\`.
+
+- **Scope.** These exact forms, for string values; a number or a boolean is
+  formatted by each language (`true` / `True`).
+- **Known limit.** Unicode look-alikes (`＜/ticket>`) and text written in the
+  template itself are not rewritten. How well a model respects delimiters is not
+  measured.
+- **Next step.** An adversarial eval against a live model (paid, not run).
 
 ---
 

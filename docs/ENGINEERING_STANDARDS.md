@@ -5,9 +5,9 @@
 > They are enforced by CI wherever a machine can check them, and by the PR template
 > where a human must.
 
-I build AI-natively: coding agents (Claude Code) write most first drafts. That makes these
-rules more important, not less. An agent produces fluent, plausible output whether it is right
-or wrong. My job is to specify, verify, and own the result.
+Built with coding agents: I write the specs, review the pull requests and their tests, and answer for what gets merged. That makes these
+rules more important, not less: an agent produces fluent, plausible output whether it is right
+or wrong.
 
 ---
 

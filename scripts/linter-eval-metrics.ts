@@ -114,3 +114,60 @@ export function percentile(values: number[], p: number): number | null {
   const sorted = [...values].sort((a, b) => a - b);
   return sorted[Math.max(0, Math.ceil((p / 100) * sorted.length) - 1)]!;
 }
+
+function logChoose(n: number, k: number): number {
+  let s = 0;
+  for (let i = 1; i <= k; i++) s += Math.log(n - k + i) - Math.log(i);
+  return s;
+}
+
+/** P(X ≥ k) for X hypergeometric: `draws` items taken from `population`, of which `successes` are positive. */
+export function hypergeometricUpperTail(
+  population: number,
+  successes: number,
+  draws: number,
+  k: number
+): number {
+  const total = logChoose(population, draws);
+  let p = 0;
+  for (let i = Math.max(k, 0); i <= Math.min(successes, draws); i++)
+    p += Math.exp(logChoose(successes, i) + logChoose(population - successes, draws - i) - total);
+  return Math.min(1, p);
+}
+
+/**
+ * The linter against "report every category", decided on the same (case, category)
+ * pairs. `p_random`: the chance that `flagged` pairs drawn at random hold at least
+ * `tp` defects, which asks whether the linter's choice beats chance at its own rate.
+ * A paired McNemar against the baseline is not computed: its discordant pairs are
+ * the linter's unflagged clean pairs against its misses, so a linter that flags
+ * nothing would win it 315 to 45. Pairs of one case are not independent, so
+ * `p_random` overstates the evidence; its order of magnitude is what it shows.
+ * Failed cases are left out, as in scoreCases.
+ */
+export function againstReportEverything(cases: CaseResult[], categories: string[]) {
+  let positives = 0;
+  let tp = 0;
+  let flagged = 0;
+  let pairs = 0;
+  for (const c of cases) {
+    if (c.predicted === null) continue;
+    const truth = new Set(c.defects);
+    const predicted = new Set(c.predicted.filter((p) => categories.includes(p)));
+    pairs += categories.length;
+    positives += truth.size;
+    flagged += predicted.size;
+    for (const p of predicted) if (truth.has(p)) tp++;
+  }
+  const negatives = pairs - positives;
+  const trueNegatives = negatives - (flagged - tp);
+  return {
+    pairs,
+    positives,
+    flagged,
+    tp,
+    expected_tp_at_random: (flagged * positives) / pairs,
+    p_random: hypergeometricUpperTail(pairs, positives, flagged, tp),
+    specificity: rate(trueNegatives, negatives),
+  };
+}

@@ -42,7 +42,7 @@ src/runtime/         client.ts (MockClient), errors.ts, providers/
 src/config/          promptlang.yaml loading
 src/cli/             cli.ts + commands/
 packages/yaml-parser @promptlang/yaml-parser (published separately)
-scripts/             check-claims.ts, check-stale-narrative.ts, check-unscoped-cli.ts, check-commits.ts, demo.ts,
+scripts/             check-claims.ts, check-stale-narrative.ts, check-unscoped-cli.ts, check-commits.ts, check-commit-size.ts, demo.ts,
                      build.ts, consumer-test.ts, ai-linter-live-run.ts, check-workflows.ts
 benchmarks/bench.ts  generates docs/benchmarks.md
 tests/               cross-module tests; tests/support/ test helpers
@@ -64,6 +64,7 @@ bun run check:claims                 # docs/CLAIMS.md vs README; runs each claim
 bun run check:stale-narrative        # "coming in vX", sprint IDs, TODO without (#issue)
 bun run check:unscoped-cli           # running/installing the unscoped name gets a third-party package; also a test in bun test
 bun run check:commits main..HEAD     # Conventional Commits on a range
+bun run check:commit-size main..HEAD # at most 400 changed lines per commit, lockfiles and generated artefacts excluded
 bun run bench --write                # regenerate docs/benchmarks.md
 bun run demo                         # SemVer scenario in a temporary Git repo
 bun run build                        # dist/: ESM + .d.ts (also run by npm pack)

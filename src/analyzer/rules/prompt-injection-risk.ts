@@ -46,8 +46,9 @@ function carriesText(
 /**
  * Flags message sections that insert a text parameter outside any delimiter,
  * a common prompt injection vector. Every role is checked: the caller supplies
- * the value wherever it is inserted. A delimiter is not escaping: a value that
- * contains the closing delimiter still closes it, which no static rule can see.
+ * the value wherever it is inserted. The value itself is known only at run time:
+ * generated code passes it through neutralizeDelimiters with the pairs found here,
+ * so it cannot close or reopen them.
  */
 export const promptInjectionRiskRule: Rule = {
   name: "prompt-injection-risk",

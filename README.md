@@ -100,6 +100,22 @@ const client = new AnthropicClient({ apiKey: process.env.ANTHROPIC_API_KEY! });
 const category = await classify_ticket({ ticket: "..." }, client);
 ```
 
+### Delimited values
+
+A value inserted between delimiters cannot close or reopen them: generated
+TypeScript and Python rewrite it the same way, byte for byte, with the pairs that
+`prompt-injection-risk` recognises around its placeholder.
+
+- `<name>` … `</name>`: a `<` that starts `<name` or `</name`, in any ASCII case and
+  with spaces or line breaks around the `/`, becomes `&lt;` (`</TICKET>` →
+  `&lt;/TICKET>`); `<tickets>` is left alone. `<BEGIN>`/`<END>` are treated the same.
+- `[[` … `]]`: `[[` becomes `[ [`, `]]` becomes `] ]`.
+- A code fence: a run of three or more backticks gets a space between each.
+- `---` lines: a line of three or more dashes gets a space between each dash.
+
+This keeps the input from passing as the prompt's own text; how well a model
+respects delimiters is not measured.
+
 ---
 
 ## Comparison

@@ -378,6 +378,8 @@ def neutralize_delimiters(value: str, delimiters: tuple[str, ...]) -> str:
     out = value
     for d in delimiters:
         if d.startswith("tag:"):
+            if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_.:-]*", d[4:], flags=re.ASCII):
+                raise ValueError("neutralizeDelimiters: invalid tag name " + json.dumps(d[4:]))
             pattern = r"<(?=[ \\t\\r\\n]*/?[ \\t\\r\\n]*" + re.escape(d[4:]) + r"(?![A-Za-z0-9_.:-]))"
             out = re.sub(pattern, "&lt;", out, flags=re.IGNORECASE | re.ASCII)
         elif d == "brackets":

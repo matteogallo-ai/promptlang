@@ -24,6 +24,12 @@ describe("neutralizeDelimiters", () => {
     expect(n("</ticKet></ſection>", ["tag:ticket", "tag:section"])).toBe("</ticKet></ſection>");
   });
 
+  test("a tag name outside the compiler's grammar is refused, not read as a regex", () => {
+    for (const name of ["a+b", "a\\", "a(b", "", "1a"]) {
+      expect(() => n("aab", [`tag:${name}`])).toThrow(`invalid tag name ${JSON.stringify(name)}`);
+    }
+  });
+
   test("a dot in a tag name is literal", () => {
     expect(n("</a.b></axb>", ["tag:a.b"])).toBe("&lt;/a.b></axb>");
   });
@@ -95,6 +101,27 @@ pythonTest("TypeScript and Python rewrite any value to the same bytes", async ()
     const r = Bun.spawnSync(["python3", "-c", script], { cwd: dir });
     if (r.exitCode !== 0) throw new Error(r.stderr.toString());
     expect(JSON.parse(r.stdout.toString())).toEqual(cases.map(([v, d]) => n(v, d)));
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+pythonTest("Python refuses the same tag names with the same message", async () => {
+  const names = ["a+b", "a\\", "a(b", "", "1a"];
+  const dir = await mkdtemp(join(tmpdir(), "promptlang-neutralize-"));
+  try {
+    await writeFile(join(dir, "promptlang_runtime.py"), getPythonRuntimeSource());
+    const script =
+      "import json, sys\nfrom promptlang_runtime import neutralize_delimiters as n\n" +
+      "out = []\nfor name in json.loads(sys.argv[1]):\n" +
+      "    try:\n        n('aab', ('tag:' + name,))\n        out.append(None)\n" +
+      "    except ValueError as e:\n        out.append(str(e))\n" +
+      "sys.stdout.write(json.dumps(out))\n";
+    const r = Bun.spawnSync(["python3", "-c", script, JSON.stringify(names)], { cwd: dir });
+    if (r.exitCode !== 0) throw new Error(r.stderr.toString());
+    expect(JSON.parse(r.stdout.toString())).toEqual(
+      names.map((name) => `neutralizeDelimiters: invalid tag name ${JSON.stringify(name)}`)
+    );
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

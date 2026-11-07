@@ -14,11 +14,20 @@
  * The patterns are ASCII on purpose: `\s` and Unicode case folding differ between
  * JavaScript and Python, and the two languages must send the same text.
  */
+// The grammar the compiler reads tag names with (src/compiler/delimiters.ts). A name
+// outside it never comes from generated code, and refusing it keeps every name that
+// reaches the RegExp below free of metacharacters other than the escaped dot.
+const TAG_NAME = /^[A-Za-z_][A-Za-z0-9_.:-]*$/;
+
 export function neutralizeDelimiters(value: string, delimiters: readonly string[]): string {
   let out = value;
   for (const d of delimiters) {
     if (d.startsWith("tag:")) {
-      const name = d.slice(4).replace(/[.]/g, "\\.");
+      const raw = d.slice(4);
+      if (!TAG_NAME.test(raw)) {
+        throw new Error(`neutralizeDelimiters: invalid tag name ${JSON.stringify(raw)}`);
+      }
+      const name = raw.replace(/[.]/g, "\\.");
       out = out.replace(
         new RegExp(`<(?=[ \\t\\r\\n]*/?[ \\t\\r\\n]*${name}(?![A-Za-z0-9_.:-]))`, "gi"),
         "&lt;"

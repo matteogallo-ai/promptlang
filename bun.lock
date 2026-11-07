@@ -11,7 +11,7 @@
         "@types/bun": "latest",
         "fast-check": "4.10.2",
         "knip": "6.44.1",
-        "typescript": "^7.0.2",
+        "typescript": "7.0.2",
       },
     },
     "packages/yaml-parser": {

@@ -147,6 +147,20 @@ export function workflowViolations(file: string, text: string): string[] {
     out.push(`${file}: uses pull_request_target`);
   out.push(...unsignedReleases(file, Object.fromEntries(jobs)));
 
+  // Without a version, setup-bun installs the newest Bun, so a rebuild of a tag
+  // does not run the Bun that built it.
+  for (const [name, job] of jobs)
+    for (const step of Array.isArray(job.steps) ? job.steps : [])
+      if (
+        typeof step?.uses === "string" &&
+        step.uses.startsWith("oven-sh/setup-bun@") &&
+        !step.with?.["bun-version"] &&
+        !step.with?.["bun-version-file"]
+      )
+        out.push(
+          `${file}: job ${name}: oven-sh/setup-bun without bun-version or bun-version-file installs whatever Bun is newest`
+        );
+
   for (const [name, job] of jobs)
     for (const step of Array.isArray(job.steps) ? job.steps : [])
       if (typeof step?.run === "string")

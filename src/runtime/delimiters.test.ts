@@ -35,9 +35,37 @@ describe("neutralizeDelimiters", () => {
   });
 
   test("brackets, fences and dash lines are broken apart", () => {
-    expect(n("[[a]]]", ["brackets"])).toBe("[ [a] ] ]");
-    expect(n("``ok`` ```x````", ["fence"])).toBe("``ok`` ` ` `x` ` ` `");
-    expect(n("---\n -- \n----\r\nx---", ["dashes"])).toBe("- - -\n -- \n- - - -\r\nx---");
+    expect(n("x[[a]]]y", ["brackets"])).toBe("x[ [a] ] ]y");
+    expect(n("x``ok`` ```x````y", ["fence"])).toBe("x``ok`` ` ` `x` ` ` `y");
+    // A dash line is escaped rather than spaced: "- - -" is still a Markdown rule.
+    expect(n("x\n---\n -- \n----\r\n  ---  \rx---", ["dashes"])).toBe(
+      "x\n\\---\n -- \n\\----\r\n  \\---  \rx---"
+    );
+  });
+
+  test("every line terminator JavaScript's multiline mode knows ends a dash line", () => {
+    for (const eol of ["\n", "\r", "\r\n", "\u2028", "\u2029"])
+      expect(n(`x${eol}---${eol}y`, ["dashes"])).toBe(`x${eol}\\---${eol}y`);
+  });
+
+  test("tag whitespace includes the vertical tab and the form feed", () => {
+    expect(n("<\v/\fticket>", ["tag:ticket"])).toBe("&lt;\v/\fticket>");
+  });
+
+  // A value is rewritten alone, but it lands next to another value or next to the
+  // template's own text: what it starts or ends with must not complete a delimiter.
+  test("the edges of a value cannot combine with what is next to it", () => {
+    const t = ["tag:ticket"];
+    expect(n("<", t) + n("/ticket>EVIL", t)).toBe("&lt;/ticket>EVIL");
+    expect(`Name ${n("</", t)} ticket ${n(">EVIL", t)}`).toBe("Name &lt;/ ticket >EVIL");
+    expect(n("x </tic", t)).toBe("x &lt;/tic");
+    expect(n("x < \n", t)).toBe("x &lt; \n");
+    expect(n("x <b", t)).toBe("x <b");
+    expect(n("]", ["brackets"]) + n("]x", ["brackets"])).toBe(" ]  ]x");
+    expect(n("x[", ["brackets"])).toBe("x[ ");
+    expect(n("``", ["fence"]) + n("`x", ["fence"])).toBe(" ` `  `x");
+    expect(n("-", ["dashes"]) + n("--\nEVIL", ["dashes"])).toBe("\\-\\--\nEVIL");
+    expect(n("a\n-", ["dashes"])).toBe("a\n\\-");
   });
 
   test("no delimiter, no change; an unknown one is a bug in the caller", () => {
@@ -70,6 +98,10 @@ const TOKENS = [
   "```",
   "-",
   "---",
+  "\r",
+  "\u2028",
+  "\f",
+  "\\",
   "x",
 ];
 const DELIMITERS = [
@@ -81,6 +113,31 @@ const DELIMITERS = [
   "fence",
   "dashes",
 ];
+
+// What each delimiter must never contain once values are in place: the patterns the
+// rewrite is meant to defeat, read as broadly as the rewrite claims.
+const FORMS: Record<string, RegExp> = {
+  "tag:ticket": /<[ \t\n\v\f\r]*\/?[ \t\n\v\f\r]*ticket(?![A-Za-z0-9_.:-])/i,
+  "tag:BEGIN": /<[ \t\n\v\f\r]*\/?[ \t\n\v\f\r]*BEGIN(?![A-Za-z0-9_.:-])/i,
+  brackets: /\[\[|\]\]/,
+  fence: /```/,
+  dashes: /(^|\r\n|[\n\r\u2028\u2029])[ \t]*-{3,}[ \t]*(?=$|[\n\r\u2028\u2029])/,
+};
+// Template text between two values, without any delimiter character of its own.
+const TEXT = TOKENS.filter((t) => !/[<[\]`-]/.test(t));
+
+test("values and plain text, concatenated in any order, never form a delimiter", () => {
+  fc.assert(
+    fc.property(
+      fc.constantFrom(...Object.keys(FORMS)),
+      fc.array(fc.constantFrom(...TOKENS), { maxLength: 8 }).map((cs) => cs.join("")),
+      fc.array(fc.constantFrom(...TEXT), { maxLength: 3 }).map((cs) => cs.join("")),
+      fc.array(fc.constantFrom(...TOKENS), { maxLength: 8 }).map((cs) => cs.join("")),
+      (d, a, text, b) => !FORMS[d]!.test(`\n${n(a, [d])}${text}${n(b, [d])}\n`)
+    ),
+    propertyParams(5000)
+  );
+});
 
 pythonTest("TypeScript and Python rewrite any value to the same bytes", async () => {
   const cases = fc.sample(

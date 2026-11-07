@@ -364,35 +364,67 @@ def _bounded(errors: list[str]) -> list[str]:
 
 # ---- Client interface ----
 
-_FENCE_RUN = re.compile(chr(96) + "{3,}")
-_DASH_LINE = re.compile(r"[ \\t]*-{3,}[ \\t\\r]*")
+_TICK = chr(96)
+_FENCE_RUN = re.compile(_TICK + "{3,}")
+_FENCE_START = re.compile(r"\\A" + _TICK + "+")
+_FENCE_END = re.compile(_TICK + r"+\\Z")
+_TAG_WS = r"[ \\t\\n\\v\\f\\r]"
+_EOL = re.compile(r"(\\r\\n|[\\n\\r\\u2028\\u2029])")
+_DASH_LINE = re.compile(r"[ \\t]*-{3,}[ \\t]*")
+_DASH_EDGE = re.compile(r"[ \\t]*-+[ \\t]*")
+
+
+def _spaced(m: "re.Match[str]") -> str:
+    return " ".join(m.group(0))
+
+
+def _neutralize_tag(value: str, name: str) -> str:
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_.:-]*", name, flags=re.ASCII):
+        raise ValueError("neutralizeDelimiters: invalid tag name " + json.dumps(name))
+    prefixes = ""
+    for ch in reversed(name):
+        prefixes = "(?:" + re.escape(ch) + prefixes + ")?"
+    pattern = (
+        "<(?=" + _TAG_WS + "*/?" + _TAG_WS + "*(?:" + re.escape(name)
+        + r"(?![A-Za-z0-9_.:-])|" + prefixes + r"\\Z))"
+    )
+    return re.sub(pattern, "&lt;", value, flags=re.IGNORECASE | re.ASCII)
+
+
+def _neutralize_dashes(value: str) -> str:
+    parts = _EOL.split(value)
+    last = len(parts) - 1
+    for i in range(0, last + 1, 2):
+        line = parts[i]
+        edge = i == 0 or i == last
+        if _DASH_LINE.fullmatch(line) or (edge and _DASH_EDGE.fullmatch(line)):
+            parts[i] = line.replace("-", chr(92) + "-", 1)
+    return "".join(parts)
 
 
 def neutralize_delimiters(value: str, delimiters: tuple[str, ...]) -> str:
     """The rewrite of neutralizeDelimiters in the TypeScript runtime, byte for byte.
 
-    A value inserted between delimiters cannot close or reopen them; the README
-    gives the exact rewrite. The patterns are ASCII only (re.ASCII): whitespace
-    classes and Unicode case folding differ between Python and JavaScript.
+    A value inserted between delimiters cannot close or reopen them, alone or next
+    to another value; the README gives the exact rewrite. The patterns are ASCII
+    only (re.ASCII): whitespace classes and Unicode case folding differ between
+    Python and JavaScript.
     """
     out = value
     for d in delimiters:
         if d.startswith("tag:"):
-            if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_.:-]*", d[4:], flags=re.ASCII):
-                raise ValueError("neutralizeDelimiters: invalid tag name " + json.dumps(d[4:]))
-            pattern = r"<(?=[ \\t\\r\\n]*/?[ \\t\\r\\n]*" + re.escape(d[4:]) + r"(?![A-Za-z0-9_.:-]))"
-            out = re.sub(pattern, "&lt;", out, flags=re.IGNORECASE | re.ASCII)
+            out = _neutralize_tag(out, d[4:])
         elif d == "brackets":
             out = re.sub(r"\\[(?=\\[)", "[ ", out)
             out = re.sub(r"\\](?=\\])", "] ", out)
+            out = re.sub(r"\\A[\\[\\]]", lambda m: " " + m.group(0), out)
+            out = re.sub(r"[\\[\\]]\\Z", lambda m: m.group(0) + " ", out)
         elif d == "fence":
-            out = _FENCE_RUN.sub(lambda m: " ".join(m.group(0)), out)
+            out = _FENCE_RUN.sub(_spaced, out)
+            out = _FENCE_START.sub(lambda m: " " + _spaced(m), out)
+            out = _FENCE_END.sub(lambda m: _spaced(m) + " ", out)
         elif d == "dashes":
-            out = chr(10).join(
-                re.sub("-+", lambda m: " ".join(m.group(0)), line, count=1)
-                if _DASH_LINE.fullmatch(line) else line
-                for line in out.split(chr(10))
-            )
+            out = _neutralize_dashes(out)
         else:
             raise ValueError(f"neutralize_delimiters: unknown delimiter {d!r}")
     return out

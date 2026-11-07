@@ -6,7 +6,6 @@ import {
   type CaseResult,
   categoryOf,
   hypergeometricUpperTail,
-  mcnemarExact,
   percentile,
   scoreCases,
   wilson,
@@ -83,12 +82,9 @@ describe("linter against report-everything, on the same pairs", () => {
     // 5 draws from 10 items of which 5 are positive: all 5 positive with probability 1/C(10,5).
     expect(hypergeometricUpperTail(10, 5, 5, 5)).toBeCloseTo(1 / 252, 12);
     expect(hypergeometricUpperTail(10, 5, 5, 0)).toBeCloseTo(1, 12);
-    // McNemar exact, two-sided: 5 discordant pairs all one way → 2 / 2^5.
-    expect(mcnemarExact(5, 0)).toBeCloseTo(0.0625, 12);
-    expect(mcnemarExact(3, 3)).toBe(1);
   });
 
-  test("pairs, specificity, discordant counts and both p-values", () => {
+  test("pairs, specificity and the count expected at random", () => {
     const cases: CaseResult[] = [
       { id: "a", defects: ["VAGUE_INSTRUCTIONS"], predicted: ["VAGUE_INSTRUCTIONS"] },
       { id: "b", defects: [], predicted: [] },
@@ -98,12 +94,11 @@ describe("linter against report-everything, on the same pairs", () => {
     const r = againstReportEverything(cases, CATS);
     expect(r).toMatchObject({ pairs: 6, positives: 2, flagged: 1, tp: 1 });
     expect(r.specificity).toMatchObject({ k: 4, n: 4 });
-    expect(r.mcnemar).toMatchObject({ linter_only_correct: 4, baseline_only_correct: 1 });
     expect(r.expected_tp_at_random).toBeCloseTo(1 / 3, 12);
   });
 
   // The figures docs/ai-linter.md publishes, recomputed from the committed live run.
-  test("committed run, test split: 44/217 against 27.1 expected at random; McNemar 142 to 1", async () => {
+  test("committed run, test split: 44/217 against 27.1 expected at random, p = 6.4e-10", async () => {
     const record: EvalRecord = await Bun.file(
       join(import.meta.dir, "../runs/live/linter-eval-2026-11-03T08-39-28-817Z.json")
     ).json();
@@ -120,12 +115,11 @@ describe("linter against report-everything, on the same pairs", () => {
     const [first, second] = [run(1), run(2)];
     expect(first).toMatchObject({ pairs: 360, positives: 45, flagged: 217, tp: 44 });
     expect(first.expected_tp_at_random).toBeCloseTo(27.125, 3);
-    expect(first.p_random).toBeLessThan(1e-9);
-    expect(first.p_random).toBeGreaterThan(1e-10);
+    expect(first.p_random.toPrecision(2)).toBe("6.4e-10");
     expect(first.specificity).toMatchObject({ k: 142, n: 315 });
-    expect(first.mcnemar).toMatchObject({ linter_only_correct: 142, baseline_only_correct: 1 });
-    expect(first.mcnemar.p).toBeLessThan(1e-39);
     expect(second).toMatchObject({ pairs: 360, positives: 45, flagged: 229, tp: 45 });
+    expect(second.expected_tp_at_random).toBeCloseTo(28.625, 3);
+    expect(second.p_random.toPrecision(2)).toBe("2.5e-10");
     expect(second.specificity).toMatchObject({ k: 131, n: 315 });
   });
 });

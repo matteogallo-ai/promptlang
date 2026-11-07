@@ -62,11 +62,10 @@ section and the record disagree. Latency, error rate and cost per call:
 `docs/SLO.md`.
 
 **Against chance, on the same pairs.** The linter and the baseline decide the
-same 360 pairs, so they are compared pair by pair (`docs/ai-linter.md`). In
-repeat 1 the 217 flagged pairs hold 44 defects, against 27.1 expected for 217
-pairs drawn at random (hypergeometric P = 6.4e-10); exact McNemar, 142 pairs only
-the linter gets right against 1 only the baseline gets right (p = 2.6e-41).
-Pairs of one case are not independent, so the p-values overstate the evidence.
+same 360 pairs (`docs/ai-linter.md`). In repeat 1 the 217 flagged pairs hold 44
+defects, against 27.1 expected for 217 pairs drawn at random (hypergeometric
+P = 6.4e-10). Pairs of one case are not independent, so the p-value overstates
+the evidence.
 The linter's limit is its specificity: 142/315 clean pairs left unflagged (45%,
 95% CI 39.7%–50.6%).
 

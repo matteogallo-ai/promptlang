@@ -135,22 +135,15 @@ export function hypergeometricUpperTail(
   return Math.min(1, p);
 }
 
-/** Exact two-sided McNemar test: the smaller discordant count against Binomial(b + c, 1/2). */
-export function mcnemarExact(b: number, c: number): number {
-  const n = b + c;
-  let tail = 0;
-  for (let i = 0; i <= Math.min(b, c); i++) tail += Math.exp(logChoose(n, i) - n * Math.LN2);
-  return Math.min(1, 2 * tail);
-}
-
 /**
  * The linter against "report every category", decided on the same (case, category)
- * pairs, so the comparison is paired rather than two intervals set side by side.
- * `p_random`: the chance that `flagged` pairs drawn at random hold at least `tp`
- * defects. McNemar counts the pairs only one of the two decides correctly: an
- * unflagged clean pair for the linter, a missed defect for the baseline. Pairs of
- * one case are not independent, so both p-values overstate the evidence; their
- * order of magnitude is what they show. Failed cases are left out, as in scoreCases.
+ * pairs. `p_random`: the chance that `flagged` pairs drawn at random hold at least
+ * `tp` defects, which asks whether the linter's choice beats chance at its own rate.
+ * A paired McNemar against the baseline is not computed: its discordant pairs are
+ * the linter's unflagged clean pairs against its misses, so a linter that flags
+ * nothing would win it 315 to 45. Pairs of one case are not independent, so
+ * `p_random` overstates the evidence; its order of magnitude is what it shows.
+ * Failed cases are left out, as in scoreCases.
  */
 export function againstReportEverything(cases: CaseResult[], categories: string[]) {
   let positives = 0;
@@ -168,7 +161,6 @@ export function againstReportEverything(cases: CaseResult[], categories: string[
   }
   const negatives = pairs - positives;
   const trueNegatives = negatives - (flagged - tp);
-  const missed = positives - tp;
   return {
     pairs,
     positives,
@@ -177,10 +169,5 @@ export function againstReportEverything(cases: CaseResult[], categories: string[
     expected_tp_at_random: (flagged * positives) / pairs,
     p_random: hypergeometricUpperTail(pairs, positives, flagged, tp),
     specificity: rate(trueNegatives, negatives),
-    mcnemar: {
-      linter_only_correct: trueNegatives,
-      baseline_only_correct: missed,
-      p: mcnemarExact(trueNegatives, missed),
-    },
   };
 }

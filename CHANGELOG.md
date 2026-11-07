@@ -12,10 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   comparison table, installation. The reference moves to `docs/usage.md` (tests,
   versioning, Python target, configuration, providers), `docs/ai-linter.md` and
   `docs/how-this-was-built.md`.
-- The AI linter is compared with "report every category" pair by pair, on the same
-  360 pairs, instead of by two intervals side by side: 44 defects in its 217
-  flagged pairs against 27.1 expected at random (hypergeometric p = 6.4e-10), exact
-  McNemar 142 to 1. Its limit is stated as such: specificity 45% (142/315).
+- The AI linter's selection is tested against chance on the same 360 pairs,
+  instead of setting two precision intervals side by side: 44 defects in its 217
+  flagged pairs against 27.1 expected at random (hypergeometric p = 6.4e-10). Its
+  limit is stated as such: specificity 45% (142/315).
 - One sentence states how the code is built, the same wherever the repository
   speaks of it: "Built with coding agents: I write the specs, review the pull
   requests and their tests, and answer for what gets merged."

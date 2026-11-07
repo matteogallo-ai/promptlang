@@ -167,60 +167,6 @@ git clone https://github.com/matteogallo-ai/promptlang.git && cd promptlang && b
 
 
 
-## AI-Powered Linting
-
-PromptLang can send each prompt to an LLM for a semantic review at build time.
-It looks for six kinds of defect that static rules cannot see:
-
-- Vague instructions like "be careful" that don't tell the model what to do
-- Missing format specs where structured output is expected but not constrained
-- Conflicting instructions ("one-sentence summary" + "detailed key points")
-- Undefined business terms ("premium user" without a definition)
-- Hallucination risks (invitations to guess vs. refuse)
-- Token inefficiencies (verbose phrasing that could be shorter)
-
-**Measured on a labelled corpus** (`evals/linter/`, 120 cases;
-[`docs/SYSTEM_CARD.md`](docs/SYSTEM_CARD.md)), on the test split with
-`claude-haiku-5-5`: it finds almost every designed defect (recall 44/45 and
-45/45 over two runs) but reports about four categories per prompt, so most of
-its findings are false alarms (precision 20%, 95% CI 15–26%) and it flags every
-clean prompt (15/15). Reporting every category on every prompt would find all 45
-defects at 12.5% precision (95% CI 9.5–16.3%), so recall alone says little; the
-precision gain over that baseline is modest. The labels are set by construction;
-a human check of 30 cases (`evals/linter/human-review/`) confirmed 27/30 designed
-labels (95% CI 74–97%, kappa 0.80) and suggests that some reports scored as false
-alarms may be real defects, so that 20% is a lower bound. A pre-registered human
-review of 40 of its findings (`evals/linter/findings-review/`) measured precision
-at about 30% (12/40, 95% CI 18–45%): not distinguishable from the 20% bound, and
-either way seven to eight findings in ten are wrong. The linter is an aid for the
-person reviewing a prompt, not a gate: read its findings as leads to check, not
-as defects, and do not fail a build on them; the six static rules of
-`promptlang analyze` do not depend on the model.
-
-### Usage
-
-```bash
-export ANTHROPIC_API_KEY=sk-ant-...
-bun run cli analyze docs/examples/ --ai
-```
-
-The AI linter runs in parallel (3 prompts at a time by default) and returns
-confidence-scored issues alongside the static analysis output.
-
-### Cost
-
-`--ai` prints a cost estimate for your files and asks before any call; `--yes`
-approves without asking.
-
-Each analyzed prompt is one request to Claude Haiku 5.5 (by default) with
-`max_tokens: 4096`, which leaves room for its adaptive thinking. At list prices
-($0.10 / $0.50 per million input / output tokens, prompts up to 100K tokens) the
-six example files (seven prompts) cost about $0.015 if every call used its full
-`max_tokens`. This is an estimate from request sizes, not a measurement. The
-committed live run (five prompts) used 5,557 input and 6,517 output tokens:
-$0.0038. Costs are yours — bring your own API key.
-
----
 
 
 

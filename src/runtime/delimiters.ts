@@ -16,7 +16,7 @@
  */
 // The grammar the compiler reads tag names with (src/compiler/delimiters.ts). A name
 // outside it never comes from generated code, and refusing it keeps every name that
-// reaches the RegExp below free of metacharacters other than the escaped dot.
+// reaches the RegExp below a name the Python runtime also accepts.
 const TAG_NAME = /^[A-Za-z_][A-Za-z0-9_.:-]*$/;
 
 export function neutralizeDelimiters(value: string, delimiters: readonly string[]): string {
@@ -27,7 +27,9 @@ export function neutralizeDelimiters(value: string, delimiters: readonly string[
       if (!TAG_NAME.test(raw)) {
         throw new Error(`neutralizeDelimiters: invalid tag name ${JSON.stringify(raw)}`);
       }
-      const name = raw.replace(/[.]/g, "\\.");
+      // After the check only the dot needs escaping; escaping every metacharacter
+      // keeps the RegExp literal without relying on TAG_NAME staying narrow.
+      const name = raw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       out = out.replace(
         new RegExp(`<(?=[ \\t\\r\\n]*/?[ \\t\\r\\n]*${name}(?![A-Za-z0-9_.:-]))`, "gi"),
         "&lt;"

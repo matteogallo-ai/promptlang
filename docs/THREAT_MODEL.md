@@ -45,7 +45,9 @@ that it cannot close or reopen them, alone or next to another value
 generated Python, byte for byte the same", and `src/runtime/delimiters.test.ts`
 "values and plain text, concatenated in any order, never form a delimiter" and
 "TypeScript and Python rewrite any value to the same bytes". Unicode look-alikes
-(`＜`) and the template's own text are not rewritten.
+(`＜`) and the template's own text are not rewritten; a `<` in the template right
+before a tag-enclosed placeholder is flagged by the rule instead
+(`src/analyzer/analyzer.test.ts` "flags a tag-enclosed value right after a less-than sign", case "an address in angle brackets").
 
 *Not covered:* the effectiveness of the delimiters against a determined attacker is
 not measured; only the escaping is.

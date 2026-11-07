@@ -111,8 +111,8 @@ its placeholder, so that the value cannot close or reopen them:
   is left alone.
 - `[[` … `]]`: `[[` becomes `[ [`, `]]` becomes `] ]`.
 - A code fence: a run of three or more backticks gets a space between each.
-- `---` lines: a line of three or more dashes gets a `\` before its first dash
-  (`- - -` would still be a Markdown rule).
+- `---` lines: a line of three or more dashes, spaced or not (`- - -` is the same
+  Markdown rule), gets a `\` before its first dash.
 
 The ends of a value are rewritten too, since it can sit next to another value or
 to the template's own text: a trailing `<` that could still grow into `<name` or
@@ -120,11 +120,14 @@ to the template's own text: a trailing `<` that could still grow into `<name` or
 on its outer side, the backticks spaced as well; a first or last line made only
 of dashes gets the `\`.
 
-- **Scope.** These exact forms, for string values; a number or a boolean is
-  formatted by each language (`true` / `True`).
-- **Known limit.** Unicode look-alikes (`＜/ticket>`) and text written in the
-  template itself are not rewritten. How well a model respects delimiters is not
-  measured.
+- **Scope.** These exact forms, for text: strings, and JSON-typed values once
+  serialized. A number or a boolean is formatted by each language (`true` /
+  `True`).
+- **Known limit.** Unicode look-alikes (`＜/ticket>`) and the template's own text
+  are not rewritten. A `<` written in the template right before a placeholder
+  (`<{{email}}>`) lets a value starting with `/ticket>` close the tag:
+  `prompt-injection-risk` warns about it. How well a model respects delimiters is
+  not measured.
 - **Next step.** An adversarial eval against a live model (paid, not run).
 
 ---

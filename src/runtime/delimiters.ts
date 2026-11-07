@@ -47,7 +47,9 @@ function tag(value: string, raw: string): string {
     throw new Error(`neutralizeDelimiters: invalid tag name ${JSON.stringify(raw)}`);
   }
   // Without the `m` flag, `$` is the end of the value, as `\Z` is in Python.
-  const opener = `<(?=${WS}*/?${WS}*(?:${escapeRegExp(raw)}(?![A-Za-z0-9_.:-])|${prefixes(raw)}$))`;
+  // `WS*(?:/WS*)?` rather than `WS*/?WS*`: the second form can split one run of
+  // whitespace two ways, and backtracking over a long run takes quadratic time.
+  const opener = `<(?=${WS}*(?:/${WS}*)?(?:${escapeRegExp(raw)}(?![A-Za-z0-9_.:-])|${prefixes(raw)}$))`;
   return value.replace(new RegExp(opener, "gi"), "&lt;");
 }
 
@@ -74,10 +76,11 @@ export function neutralizeDelimiters(value: string, delimiters: readonly string[
         .replace(/^[[\]]/, " $&")
         .replace(/[[\]]$/, "$& ");
     } else if (d === "fence") {
-      out = out
-        .replace(/`{3,}/g, spaced)
-        .replace(/^`+/, (run) => ` ${spaced(run)}`)
-        .replace(/`+$/, (run) => `${spaced(run)} `);
+      out = out.replace(/`{3,}/g, spaced).replace(/^`+/, (run) => ` ${spaced(run)}`);
+      // A scan, not /`+$/: that pattern retries from every backtick of a long run.
+      let end = out.length;
+      while (end > 0 && out[end - 1] === "`") end--;
+      if (end < out.length) out = `${out.slice(0, end)}${spaced(out.slice(end))} `;
     } else if (d === "dashes") {
       out = dashes(out);
     } else {

@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -66,6 +67,16 @@ describe("neutralizeDelimiters", () => {
     expect(n("``", ["fence"]) + n("`x", ["fence"])).toBe(" ` `  `x");
     expect(n("-", ["dashes"]) + n("--\nEVIL", ["dashes"])).toBe("\\-\\--\nEVIL");
     expect(n("a\n-", ["dashes"])).toBe("a\n\\-");
+  });
+
+  // The value is the caller's: a pattern that backtracks on it is a denial of service.
+  test("long runs of whitespace or backticks are rewritten in linear time", () => {
+    const k = 50_000;
+    const start = performance.now();
+    expect(n(`<${" ".repeat(k)}x`, ["tag:ticket"])).toBe(`<${" ".repeat(k)}x`);
+    expect(n(`<${" ".repeat(k)}/${" ".repeat(k)}x`, ["tag:ticket"])).toHaveLength(2 * k + 3);
+    expect(n(`${"`".repeat(k)}x`, ["fence"])).toHaveLength(2 * k + 1);
+    expect(performance.now() - start).toBeLessThan(250);
   });
 
   test("no delimiter, no change; an unknown one is a bug in the caller", () => {
@@ -162,6 +173,29 @@ pythonTest("TypeScript and Python rewrite any value to the same bytes", async ()
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+pythonTest(
+  "Python rewrites long runs of whitespace or backticks in linear time",
+  () => {
+    const script =
+      "import time\nfrom promptlang_runtime import neutralize_delimiters as n\n" +
+      "k = 50000\nt = time.perf_counter()\n" +
+      "n('<' + ' ' * k + 'x', ('tag:ticket',))\n" +
+      "n('<' + ' ' * k + '/' + ' ' * k + 'x', ('tag:ticket',))\n" +
+      "n(chr(96) * k + 'x', ('fence',))\n" +
+      "print(time.perf_counter() - t)\n";
+    const dir = mkdtempSync(join(tmpdir(), "promptlang-neutralize-"));
+    try {
+      writeFileSync(join(dir, "promptlang_runtime.py"), getPythonRuntimeSource());
+      const r = Bun.spawnSync(["python3", "-c", script], { cwd: dir, timeout: 20_000 });
+      if (r.exitCode !== 0) throw new Error(`exit ${r.exitCode}: ${r.stderr.toString()}`);
+      expect(Number(r.stdout.toString())).toBeLessThan(0.5);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  },
+  30_000
+);
 
 pythonTest("Python refuses the same tag names with the same message", async () => {
   const names = ["a+b", "a\\", "a(b", "", "1a"];

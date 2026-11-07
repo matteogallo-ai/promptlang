@@ -367,7 +367,6 @@ def _bounded(errors: list[str]) -> list[str]:
 _TICK = chr(96)
 _FENCE_RUN = re.compile(_TICK + "{3,}")
 _FENCE_START = re.compile(r"\\A" + _TICK + "+")
-_FENCE_END = re.compile(_TICK + r"+\\Z")
 _TAG_WS = r"[ \\t\\n\\v\\f\\r]"
 _EOL = re.compile(r"(\\r\\n|[\\n\\r\\u2028\\u2029])")
 _DASH_LINE = re.compile(r"[ \\t]*-{3,}[ \\t]*")
@@ -385,7 +384,7 @@ def _neutralize_tag(value: str, name: str) -> str:
     for ch in reversed(name):
         prefixes = "(?:" + re.escape(ch) + prefixes + ")?"
     pattern = (
-        "<(?=" + _TAG_WS + "*/?" + _TAG_WS + "*(?:" + re.escape(name)
+        "<(?=" + _TAG_WS + "*(?:/" + _TAG_WS + "*)?(?:" + re.escape(name)
         + r"(?![A-Za-z0-9_.:-])|" + prefixes + r"\\Z))"
     )
     return re.sub(pattern, "&lt;", value, flags=re.IGNORECASE | re.ASCII)
@@ -422,7 +421,9 @@ def neutralize_delimiters(value: str, delimiters: tuple[str, ...]) -> str:
         elif d == "fence":
             out = _FENCE_RUN.sub(_spaced, out)
             out = _FENCE_START.sub(lambda m: " " + _spaced(m), out)
-            out = _FENCE_END.sub(lambda m: _spaced(m) + " ", out)
+            end = len(out.rstrip(_TICK))
+            if end < len(out):
+                out = out[:end] + " ".join(out[end:]) + " "
         elif d == "dashes":
             out = _neutralize_dashes(out)
         else:

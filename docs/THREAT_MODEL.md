@@ -38,8 +38,16 @@ parameter inserted, in any role, outside a delimiter pair that encloses it:
 user template", and the flagged cases "an unrelated tag earlier in the text" and
 "a string parameter in a system section".
 PromptLang cannot make a user's prompt injection-proof; the rule points at the
-most common gap. It does not escape values: an input that contains the closing
-delimiter (`</ticket>`) still closes it, and generated code inserts it as is.
+most common gap. Generated code rewrites a value inserted between delimiters so
+that it cannot close or reopen them, alone or next to another value
+(`</ticket>` becomes `&lt;/ticket>`), in TypeScript and Python alike:
+`src/compiler/delimiter-neutralization.test.ts` "in generated TypeScript", "in
+generated Python, byte for byte the same", and `src/runtime/delimiters.test.ts`
+"values and plain text, concatenated in any order, never form a delimiter" and
+"TypeScript and Python rewrite any value to the same bytes". Unicode look-alikes
+(`＜`) and the template's own text are not rewritten; a `<` in the template right
+before a tag-enclosed placeholder is flagged by the rule instead
+(`src/analyzer/analyzer.test.ts` "flags a tag-enclosed value right after a less-than sign", case "an address in angle brackets").
 
 *Not covered:* the effectiveness of the delimiters against a determined attacker is
 not measured; only the escaping is.

@@ -5,6 +5,7 @@ export type { PromptClient } from "./client";
 // MockClient — for local development and unit tests
 export { MockClient } from "./client";
 export { outputErrors, parseOutput } from "./output";
+export { neutralizeDelimiters } from "./delimiters";
 export type { OutputSchema, OutputSpec } from "./output";
 
 // Error hierarchy

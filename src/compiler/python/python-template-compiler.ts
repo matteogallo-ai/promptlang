@@ -1,4 +1,6 @@
+import { enclosingDelimiters } from "../delimiters";
 import { CompilerError } from "../errors";
+import { templatePlaceholders } from "../template-compiler";
 
 /**
  * Compiles a PromptLang string section to a Python string expression.
@@ -30,6 +32,7 @@ export function compilePythonStringLiteral(
     // Escape literal braces that are NOT part of {{...}} templates.
     // Strategy: replace {{var}} with a placeholder, escape remaining { and },
     // then restore as f-string interpolations.
+    const around = templatePlaceholders(value).map((p) => enclosingDelimiters(value, p.index));
     const placeholders: string[] = [];
     const withPlaceholders = value.replace(/\{\{(\w+)\}\}/g, (_match, varName: string) => {
       const idx = placeholders.length;
@@ -47,13 +50,21 @@ export function compilePythonStringLiteral(
       // The separators and ensure_ascii of JSON.stringify; numbers are printed
       // by each language (Python writes 3.0 and 1e+20, TypeScript 3 and 1e20).
       const json = `_promptlang_json.dumps(input['${name}'], ensure_ascii=False, separators=(',', ':'))`;
+      // Single quotes only: Python 3.11 refuses the f-string's own quote inside it.
+      const delimiters = around[i]!.map((d) => `'${d}', `).join("");
+      const guard = (text: string) =>
+        around[i]!.length === 0 ? text : `_promptlang_neutralize(${text}, (${delimiters}))`;
       const access = jsonNames.has(name)
         ? optionalNames.has(name)
-          ? `${json} if '${name}' in input else ''`
-          : json
-        : optionalNames.has(name)
-          ? `input.get('${name}', '')`
-          : `input['${name}']`;
+          ? `${guard(json)} if '${name}' in input else ''`
+          : guard(json)
+        : around[i]!.length === 0
+          ? optionalNames.has(name)
+            ? `input.get('${name}', '')`
+            : `input['${name}']`
+          : guard(
+              optionalNames.has(name) ? `str(input.get('${name}', ''))` : `str(input['${name}'])`
+            );
       result = result.replace(`\x00PL${i}\x00`, `{${access}}`);
     }
 

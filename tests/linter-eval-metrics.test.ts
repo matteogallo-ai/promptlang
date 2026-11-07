@@ -1,7 +1,12 @@
 import { describe, expect, test } from "bun:test";
+import { join } from "node:path";
+import type { EvalRecord } from "../scripts/linter-eval";
 import {
+  againstReportEverything,
   type CaseResult,
   categoryOf,
+  hypergeometricUpperTail,
+  mcnemarExact,
   percentile,
   scoreCases,
   wilson,
@@ -70,5 +75,56 @@ describe("linter eval metrics", () => {
     expect(percentile(xs, 95)).toBe(100);
     expect(percentile([7], 95)).toBe(7);
     expect(percentile([], 50)).toBeNull();
+  });
+});
+
+describe("linter against report-everything, on the same pairs", () => {
+  test("exact tails on hand-checkable cases", () => {
+    // 5 draws from 10 items of which 5 are positive: all 5 positive with probability 1/C(10,5).
+    expect(hypergeometricUpperTail(10, 5, 5, 5)).toBeCloseTo(1 / 252, 12);
+    expect(hypergeometricUpperTail(10, 5, 5, 0)).toBeCloseTo(1, 12);
+    // McNemar exact, two-sided: 5 discordant pairs all one way → 2 / 2^5.
+    expect(mcnemarExact(5, 0)).toBeCloseTo(0.0625, 12);
+    expect(mcnemarExact(3, 3)).toBe(1);
+  });
+
+  test("pairs, specificity, discordant counts and both p-values", () => {
+    const cases: CaseResult[] = [
+      { id: "a", defects: ["VAGUE_INSTRUCTIONS"], predicted: ["VAGUE_INSTRUCTIONS"] },
+      { id: "b", defects: [], predicted: [] },
+      { id: "c", defects: ["MISSING_FORMAT_SPEC"], predicted: [] },
+      { id: "d", defects: [], predicted: null },
+    ];
+    const r = againstReportEverything(cases, CATS);
+    expect(r).toMatchObject({ pairs: 6, positives: 2, flagged: 1, tp: 1 });
+    expect(r.specificity).toMatchObject({ k: 4, n: 4 });
+    expect(r.mcnemar).toMatchObject({ linter_only_correct: 4, baseline_only_correct: 1 });
+    expect(r.expected_tp_at_random).toBeCloseTo(1 / 3, 12);
+  });
+
+  // The figures docs/ai-linter.md publishes, recomputed from the committed live run.
+  test("committed run, test split: 44/217 against 27.1 expected at random; McNemar 142 to 1", async () => {
+    const record: EvalRecord = await Bun.file(
+      join(import.meta.dir, "../runs/live/linter-eval-2026-11-03T08-39-28-817Z.json")
+    ).json();
+    const labels = await Bun.file(join(import.meta.dir, "../evals/linter/labels.json")).json();
+    const byId = new Map(labels.cases.map((c: { id: string }) => [c.id, c]));
+    const run = (repeat: number) =>
+      againstReportEverything(
+        record.results
+          .filter((r) => r.repeat === repeat && byId.get(r.case)?.split === "test")
+          .map((r) => ({ id: r.case, defects: byId.get(r.case)!.defects, predicted: r.predicted })),
+        labels.categories
+      );
+    const [first, second] = [run(1), run(2)];
+    expect(first).toMatchObject({ pairs: 360, positives: 45, flagged: 217, tp: 44 });
+    expect(first.expected_tp_at_random).toBeCloseTo(27.125, 3);
+    expect(first.p_random).toBeLessThan(1e-9);
+    expect(first.p_random).toBeGreaterThan(1e-10);
+    expect(first.specificity).toMatchObject({ k: 142, n: 315 });
+    expect(first.mcnemar).toMatchObject({ linter_only_correct: 142, baseline_only_correct: 1 });
+    expect(first.mcnemar.p).toBeLessThan(1e-39);
+    expect(second).toMatchObject({ pairs: 360, positives: 45, flagged: 229, tp: 45 });
+    expect(second.specificity).toMatchObject({ k: 131, n: 315 });
   });
 });

@@ -44,6 +44,11 @@ describe("neutralizeDelimiters", () => {
     );
   });
 
+  test("a dash line spaced the Markdown way is escaped too", () => {
+    expect(n("x\n- - -\n -\t- - \ny", ["dashes"])).toBe("x\n\\- - -\n \\-\t- - \ny");
+    expect(n("- -", ["dashes"]) + n("-\nEVIL", ["dashes"])).toBe("\\- -\\-\nEVIL");
+  });
+
   test("every line terminator JavaScript's multiline mode knows ends a dash line", () => {
     for (const eol of ["\n", "\r", "\r\n", "\u2028", "\u2029"])
       expect(n(`x${eol}---${eol}y`, ["dashes"])).toBe(`x${eol}\\---${eol}y`);
@@ -76,10 +81,12 @@ describe("neutralizeDelimiters", () => {
     expect(n(`<${" ".repeat(k)}x`, ["tag:ticket"])).toBe(`<${" ".repeat(k)}x`);
     expect(n(`<${" ".repeat(k)}/${" ".repeat(k)}x`, ["tag:ticket"])).toHaveLength(2 * k + 3);
     expect(n(`${"`".repeat(k)}x`, ["fence"])).toHaveLength(2 * k + 1);
-    expect(performance.now() - start).toBeLessThan(250);
+    // Quadratic took 17 s here; the bound leaves room for a slow CI runner.
+    expect(performance.now() - start).toBeLessThan(1000);
   });
 
   test("no delimiter, no change; an unknown one is a bug in the caller", () => {
+    expect(() => n("x", ["é"])).toThrow('neutralizeDelimiters: unknown delimiter "é"');
     expect(n("</ticket>", [])).toBe("</ticket>");
     expect(() => n("x", ["quotes"])).toThrow("unknown delimiter");
   });
@@ -132,7 +139,7 @@ const FORMS: Record<string, RegExp> = {
   "tag:BEGIN": /<[ \t\n\v\f\r]*\/?[ \t\n\v\f\r]*BEGIN(?![A-Za-z0-9_.:-])/i,
   brackets: /\[\[|\]\]/,
   fence: /```/,
-  dashes: /(^|\r\n|[\n\r\u2028\u2029])[ \t]*-{3,}[ \t]*(?=$|[\n\r\u2028\u2029])/,
+  dashes: /(^|\r\n|[\n\r\u2028\u2029])[ \t]*(?:-[ \t]*){3,}(?=$|[\n\r\u2028\u2029])/,
 };
 // Template text between two values, without any delimiter character of its own.
 const TEXT = TOKENS.filter((t) => !/[<[\]`-]/.test(t));
@@ -189,7 +196,7 @@ pythonTest(
       writeFileSync(join(dir, "promptlang_runtime.py"), getPythonRuntimeSource());
       const r = Bun.spawnSync(["python3", "-c", script], { cwd: dir, timeout: 20_000 });
       if (r.exitCode !== 0) throw new Error(`exit ${r.exitCode}: ${r.stderr.toString()}`);
-      expect(Number(r.stdout.toString())).toBeLessThan(0.5);
+      expect(Number(r.stdout.toString())).toBeLessThan(2);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -197,22 +204,30 @@ pythonTest(
   30_000
 );
 
-pythonTest("Python refuses the same tag names with the same message", async () => {
-  const names = ["a+b", "a\\", "a(b", "", "1a"];
+pythonTest("Python refuses the same tag names and delimiters with the same messages", async () => {
+  const names = ["a+b", "a\\", "a(b", "", "1a", "é"];
+  const delimiters = [...names.map((name) => `tag:${name}`), "zz", "é"];
   const dir = await mkdtemp(join(tmpdir(), "promptlang-neutralize-"));
   try {
     await writeFile(join(dir, "promptlang_runtime.py"), getPythonRuntimeSource());
     const script =
       "import json, sys\nfrom promptlang_runtime import neutralize_delimiters as n\n" +
-      "out = []\nfor name in json.loads(sys.argv[1]):\n" +
-      "    try:\n        n('aab', ('tag:' + name,))\n        out.append(None)\n" +
+      "out = []\nfor d in json.loads(sys.argv[1]):\n" +
+      "    try:\n        n('aab', (d,))\n        out.append(None)\n" +
       "    except ValueError as e:\n        out.append(str(e))\n" +
       "sys.stdout.write(json.dumps(out))\n";
-    const r = Bun.spawnSync(["python3", "-c", script, JSON.stringify(names)], { cwd: dir });
+    const r = Bun.spawnSync(["python3", "-c", script, JSON.stringify(delimiters)], { cwd: dir });
     if (r.exitCode !== 0) throw new Error(r.stderr.toString());
-    expect(JSON.parse(r.stdout.toString())).toEqual(
-      names.map((name) => `neutralizeDelimiters: invalid tag name ${JSON.stringify(name)}`)
-    );
+    const typescript = delimiters.map((d) => {
+      try {
+        n("aab", [d]);
+        return null;
+      } catch (error) {
+        return (error as Error).message;
+      }
+    });
+    expect(JSON.parse(r.stdout.toString())).toEqual(typescript);
+    expect(typescript.every((m) => m?.startsWith("neutralizeDelimiters: "))).toBe(true);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

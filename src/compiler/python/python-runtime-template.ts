@@ -369,8 +369,8 @@ _FENCE_RUN = re.compile(_TICK + "{3,}")
 _FENCE_START = re.compile(r"\\A" + _TICK + "+")
 _TAG_WS = r"[ \\t\\n\\v\\f\\r]"
 _EOL = re.compile(r"(\\r\\n|[\\n\\r\\u2028\\u2029])")
-_DASH_LINE = re.compile(r"[ \\t]*-{3,}[ \\t]*")
-_DASH_EDGE = re.compile(r"[ \\t]*-+[ \\t]*")
+_DASH_LINE = re.compile(r"[ \\t]*(?:-[ \\t]*){3,}")
+_DASH_EDGE = re.compile(r"[ \\t]*(?:-[ \\t]*)+")
 
 
 def _spaced(m: "re.Match[str]") -> str:
@@ -379,7 +379,7 @@ def _spaced(m: "re.Match[str]") -> str:
 
 def _neutralize_tag(value: str, name: str) -> str:
     if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_.:-]*", name, flags=re.ASCII):
-        raise ValueError("neutralizeDelimiters: invalid tag name " + json.dumps(name))
+        raise ValueError("neutralizeDelimiters: invalid tag name " + json.dumps(name, ensure_ascii=False))
     prefixes = ""
     for ch in reversed(name):
         prefixes = "(?:" + re.escape(ch) + prefixes + ")?"
@@ -427,7 +427,7 @@ def neutralize_delimiters(value: str, delimiters: tuple[str, ...]) -> str:
         elif d == "dashes":
             out = _neutralize_dashes(out)
         else:
-            raise ValueError(f"neutralize_delimiters: unknown delimiter {d!r}")
+            raise ValueError("neutralizeDelimiters: unknown delimiter " + json.dumps(d, ensure_ascii=False))
     return out
 
 

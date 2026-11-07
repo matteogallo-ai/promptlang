@@ -9,8 +9,9 @@
  *   left alone.
  * - `brackets`: `[[` becomes `[ [` and `]]` becomes `] ]`.
  * - `fence`: a run of three or more backticks gets a space between each.
- * - `dashes`: a line of three or more dashes gets a backslash before its first
- *   dash. Spacing them would not do: `- - -` is still a Markdown rule.
+ * - `dashes`: a line of three or more dashes, spaced or not, gets a backslash
+ *   before its first dash. Spacing them would not do: `- - -` is still a
+ *   Markdown rule.
  *
  * A value is rewritten on its own but lands next to another value or next to the
  * template's text, so its edges are rewritten too: a trailing `<` that could still
@@ -29,8 +30,9 @@ const WS = "[ \\t\\n\\v\\f\\r]";
 // The line terminators of JavaScript's multiline mode, which the compiler uses to
 // find a dash line around a placeholder.
 const EOL = /(\r\n|[\n\r\u2028\u2029])/;
-const DASH_LINE = /^[ \t]*-{3,}[ \t]*$/;
-const DASH_EDGE = /^[ \t]*-+[ \t]*$/;
+// Spaced dashes too: Markdown reads `- - -` as the same rule as `---`.
+const DASH_LINE = /^[ \t]*(?:-[ \t]*){3,}$/;
+const DASH_EDGE = /^[ \t]*(?:-[ \t]*)+$/;
 
 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const spaced = (run: string) => run.split("").join(" ");

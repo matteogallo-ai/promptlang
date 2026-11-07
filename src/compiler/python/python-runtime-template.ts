@@ -364,6 +364,38 @@ def _bounded(errors: list[str]) -> list[str]:
 
 # ---- Client interface ----
 
+_FENCE_RUN = re.compile(chr(96) + "{3,}")
+_DASH_LINE = re.compile(r"[ \\t]*-{3,}[ \\t\\r]*")
+
+
+def neutralize_delimiters(value: str, delimiters: tuple[str, ...]) -> str:
+    """The rewrite of neutralizeDelimiters in the TypeScript runtime, byte for byte.
+
+    A value inserted between delimiters cannot close or reopen them; the README
+    gives the exact rewrite. The patterns are ASCII only (re.ASCII): whitespace
+    classes and Unicode case folding differ between Python and JavaScript.
+    """
+    out = value
+    for d in delimiters:
+        if d.startswith("tag:"):
+            pattern = r"<(?=[ \\t\\r\\n]*/?[ \\t\\r\\n]*" + re.escape(d[4:]) + r"(?![A-Za-z0-9_.:-]))"
+            out = re.sub(pattern, "&lt;", out, flags=re.IGNORECASE | re.ASCII)
+        elif d == "brackets":
+            out = re.sub(r"\\[(?=\\[)", "[ ", out)
+            out = re.sub(r"\\](?=\\])", "] ", out)
+        elif d == "fence":
+            out = _FENCE_RUN.sub(lambda m: " ".join(m.group(0)), out)
+        elif d == "dashes":
+            out = chr(10).join(
+                re.sub("-+", lambda m: " ".join(m.group(0)), line, count=1)
+                if _DASH_LINE.fullmatch(line) else line
+                for line in out.split(chr(10))
+            )
+        else:
+            raise ValueError(f"neutralize_delimiters: unknown delimiter {d!r}")
+    return out
+
+
 class PromptClient(ABC):
     @abstractmethod
     async def complete(self, request: PromptRequest) -> PromptResponse: ...

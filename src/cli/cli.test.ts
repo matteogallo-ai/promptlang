@@ -1,7 +1,8 @@
-import { describe, test, expect, beforeAll } from "bun:test";
-import { rm, mkdir, mkdtemp } from "node:fs/promises";
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { chmod, rm, mkdir, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { captureConsole } from "../../tests/support/console";
 import { SCRATCH } from "../../tests/support/scratch";
 import { pythonTest } from "../../tests/support/python";
 import { runTsc, SUBPROCESS_TIMEOUT_MS, subprocessTest } from "../../tests/support/subprocess";
@@ -1180,4 +1181,39 @@ describe("compile — output names", () => {
     },
     SUBPROCESS_TIMEOUT_MS
   );
+});
+
+// ---------------------------------------------------------------------------
+// unreadable source files
+// ---------------------------------------------------------------------------
+
+describe("a source file that cannot be read", () => {
+  let dir: string;
+  let locked: string;
+  beforeAll(async () => {
+    dir = await mkdtemp(join(tmpdir(), "promptlang-unreadable-"));
+    locked = join(dir, "locked.prompt");
+    await Bun.write(locked, `@version "1.0.0"\nprompt p() -> string { user: "hi" }\n`);
+    await chmod(locked, 0o000);
+  });
+  afterAll(async () => {
+    await chmod(locked, 0o600);
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  // root reads a mode-000 file, so the permission case cannot happen there.
+  // A loop, not test.each: Bun 1.2.20 (the engines floor) has no skipIf(...).each.
+  for (const command of ["parse", "tokens", "analyze", "compile"])
+    test.skipIf(process.getuid?.() === 0)(`${command} names the cause`, async () => {
+      const args = command === "compile" ? [locked, "--out", join(dir, "out")] : [locked];
+      const { code, stderr } = await captureConsole(() => main(["bun", "cli", command, ...args]));
+      expect(code).toBe(1);
+      expect(stderr).toContain(`Could not read file: ${locked}: permission denied (EACCES)`);
+    });
+
+  test("a missing file is named as missing", async () => {
+    const missing = join(dir, "missing.prompt");
+    const { stderr } = await captureConsole(() => main(["bun", "cli", "parse", missing]));
+    expect(stderr).toContain(`Could not read file: ${missing}: no such file (ENOENT)`);
+  });
 });

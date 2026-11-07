@@ -4,6 +4,7 @@ import { printAst } from "../../ast/printer";
 import { LexerError } from "../../lexer/errors";
 import { ParserError } from "../../parser/errors";
 import { formatError } from "../output";
+import { readSource } from "../read-source";
 
 export async function runParse(args: string[]): Promise<number> {
   if (args.length === 0) {
@@ -12,14 +13,12 @@ export async function runParse(args: string[]): Promise<number> {
   }
 
   const filePath = args[0];
-  let source: string;
-
-  try {
-    source = await Bun.file(filePath).text();
-  } catch {
-    console.error(`Could not read file: ${filePath}`);
+  const read = await readSource(filePath);
+  if (!read.ok) {
+    console.error(read.message);
     return 1;
   }
+  const source = read.text;
 
   try {
     const tokens = tokenize(source);

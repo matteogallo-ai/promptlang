@@ -32,6 +32,9 @@ describe("check-stale-narrative: scanText", () => {
       "future-version",
     ]);
     expect(kinds("Rule suppression via comments (v0.8+)")).toEqual(["future-version"]);
+    // The sentence that sat in packages/yaml-parser/README.md.
+    expect(kinds("Will be removed in v2.0 — prefer `YamlParseError`.")).toEqual(["future-version"]);
+    expect(kinds("This option will be deprecated.")).toEqual(["future-version"]);
     // The comment that sat in docs/examples/summarize-and-translate.prompt.
     expect(
       kinds("// Note: comparison operators (> n, <= n) and regex matchers require the v0.6")
@@ -90,6 +93,19 @@ describe("check-stale-narrative: scanRepository", () => {
       await Bun.write(join(root, "node_modules", "dep", "b.prompt"), "// coming in v2\n");
       const findings = await scanRepository(root);
       expect(findings.map((f) => f.file)).toEqual(["examples/deep/a.prompt"]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  test("scans each package's README, which npm publishes with it", async () => {
+    const root = await mkdtemp(join(tmpdir(), "stale-narrative-"));
+    try {
+      await mkdir(join(root, "packages", "lib", "src"), { recursive: true });
+      await Bun.write(join(root, "README.md"), "ok\n");
+      await Bun.write(join(root, "packages", "lib", "README.md"), "Coming in v2.\n");
+      const findings = await scanRepository(root);
+      expect(findings.map((f) => f.file)).toEqual(["packages/lib/README.md"]);
     } finally {
       await rm(root, { recursive: true, force: true });
     }

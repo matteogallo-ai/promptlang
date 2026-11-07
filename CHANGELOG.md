@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- `check:stale-narrative` did not read the packages' READMEs and did not know
+  "will be removed": `packages/yaml-parser/README.md` said `ConfigParseError`
+  "Will be removed in v2.0". The check now reads every package README and flags
+  "will be removed / deprecated / dropped / renamed / replaced"; the sentence
+  says "Deprecated".
+- `parse`, `tokens`, `analyze` and `compile` printed `Could not read file: <path>`
+  whatever the cause. They now name it with its errno code, for example
+  `Could not read file: a.prompt: permission denied (EACCES)`; ENOENT, EPERM and
+  EISDIR have their own wording (`src/cli/read-source.ts`).
 - `bun run mutation` failed on a fresh clone (`ts.parseConfigFileTextToJson is not
   a function`): Stryker 10.1.1 rewrites `tsconfig.json` through the TypeScript 4–5
   API, which TypeScript 7 no longer has. The rewrite only moves `extends` and

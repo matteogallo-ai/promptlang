@@ -1,4 +1,5 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, expect, test } from "bun:test";
+import { describePython, pythonAvailable } from "../../../tests/support/python";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -111,6 +112,7 @@ let dir: string;
 let results: Record<string, unknown>;
 
 beforeAll(async () => {
+  if (!pythonAvailable) return;
   dir = await mkdtemp(join(tmpdir(), "promptlang-pyrt-"));
   await writeFile(join(dir, "promptlang_runtime.py"), getPythonRuntimeSource());
   await writeFile(join(dir, "httpx.py"), FAKE_HTTPX);
@@ -120,10 +122,11 @@ beforeAll(async () => {
   results = JSON.parse(r.stdout.toString());
 });
 afterAll(async () => {
+  if (!pythonAvailable) return;
   await rm(dir, { recursive: true, force: true });
 });
 
-describe("Python runtime guards", () => {
+describePython("Python runtime guards", () => {
   test("an empty or blank API key is refused before any request", () => {
     expect(results.empty_keys).toEqual([
       "AnthropicClient: api_key is empty. Pass a key, e.g. from os.environ['ANTHROPIC_API_KEY'].",

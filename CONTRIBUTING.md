@@ -20,8 +20,11 @@ from fixing typos in docs to implementing compiler stages. Every change follows
 
 ### Prerequisites
 
-- [Bun](https://bun.sh) >= 1.2.20
+- [Bun](https://bun.sh) >= 1.2.20 (CI builds and publishes with the Bun in `.bun-version`)
 - Git >= 2.30
+- Python >= 3.11 as `python3` on PATH, for the tests that run generated Python. With an
+  older `python3` (macOS ships 3.9) those tests are skipped and the reason is printed;
+  `bun run check:claims` then fails, since one claim's test is skipped.
 
 ### Local setup
 
@@ -40,7 +43,7 @@ bun run lint                   # Biome lint + format check (bun run lint:fix to 
 bun run knip                   # dead code, unused exports and dependencies
 bun run check:claims           # docs/CLAIMS.md vs README, runs each claim's test
 bun run check:stale-narrative  # no "coming in vX", sprint IDs or untracked TODOs
-bun run bench                  # regenerates the numbers in docs/benchmarks.md
+bun run bench                  # prints docs/benchmarks.md; --write rewrites it
 ```
 
 Run the CLI from the repository with `bun run cli <command>` (for example

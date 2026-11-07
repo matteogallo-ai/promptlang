@@ -17,6 +17,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
 
@@ -34,6 +36,9 @@ jobs:
         with:
           bun-version: ${{ matrix.bun }}
       - run: bun install --frozen-lockfile
+      # The Python tests skip below 3.11 (tests/support/python.ts); here they must run.
+      - name: python3 is 3.11 or later
+        run: python3 -c 'import sys; assert sys.version_info >= (3, 11), sys.version; print(sys.version)'
       - name: bun test (root, includes packages)
         run: bun test
       - name: bun test (packages/yaml-parser on its own)
@@ -51,6 +56,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ matrix.node }}
@@ -65,6 +72,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
       - run: bun install --frozen-lockfile
       - run: bun run lint
 
@@ -73,6 +82,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
       - run: bun install --frozen-lockfile
       - run: bun run knip
 
@@ -81,16 +92,37 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
       - run: bun install --frozen-lockfile
       # python3 (preinstalled on ubuntu-latest) backs the Python-target claim test.
-      - run: python3 --version
+      - name: python3 is 3.11 or later
+        run: python3 -c 'import sys; assert sys.version_info >= (3, 11), sys.version; print(sys.version)'
       - run: bun run check:claims
+
+  mutation-smoke:
+    # The full run takes minutes per core (mutation.yml, weekly); this proves that
+    # Stryker starts and its initial test run passes on a fresh checkout. It also
+    # guards "tsconfigFile": "" in stryker.config.json (JSON has no comments):
+    # Stryker's tsconfig preprocessor calls ts.parseConfigFileTextToJson, which
+    # TypeScript 7 removed, and an empty path resolves to the working directory,
+    # which is not a file, so the preprocessor rewrites nothing.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+      - run: bun install --frozen-lockfile
+      - run: bunx stryker run --dryRunOnly
 
   fresh-clone:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
       # The README's command, run as written in an empty directory, cloning this checkout.
       - run: bun run scripts/fresh-clone.ts "$GITHUB_WORKSPACE"
 
@@ -99,6 +131,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
       - run: bun run check:stale-narrative
 
   commits:
@@ -108,6 +142,8 @@ jobs:
         with:
           fetch-depth: 0
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
       - name: Conventional Commits in this PR / push
         env:
           BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
@@ -128,6 +164,8 @@ jobs:
         with:
           fetch-depth: 0
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
       - run: bun install --frozen-lockfile
       - name: The examples' @version covers their interface changes
         env:

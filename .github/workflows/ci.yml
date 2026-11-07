@@ -102,7 +102,11 @@ jobs:
 
   mutation-smoke:
     # The full run takes minutes per core (mutation.yml, weekly); this proves that
-    # Stryker starts and its initial test run passes on a fresh checkout.
+    # Stryker starts and its initial test run passes on a fresh checkout. It also
+    # guards "tsconfigFile": "" in stryker.config.json (JSON has no comments):
+    # Stryker's tsconfig preprocessor calls ts.parseConfigFileTextToJson, which
+    # TypeScript 7 removed, and an empty path resolves to the working directory,
+    # which is not a file, so the preprocessor rewrites nothing.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

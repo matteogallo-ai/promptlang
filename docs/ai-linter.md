@@ -55,18 +55,23 @@ $0.0038. Costs are yours — bring your own API key.
 ## Against chance, on the same pairs
 
 The linter and "report every category" decide the same 360 (case, category)
-pairs of the test split, so they are compared pair by pair, not by setting two
-intervals side by side (`againstReportEverything` in
+pairs of the test split. Setting the two precision intervals side by side (15–26%
+against 9.5–16.3%) is not a test, and the second figure is only the base rate
+(45/360). The question is whether the pairs the linter picks hold more defects
+than as many pairs picked at random (`againstReportEverything` in
 `scripts/linter-eval-metrics.ts`, recomputed from the committed run by
 `tests/linter-eval-metrics.test.ts`).
 
-| Repeat | Defects in the flagged pairs | Expected at random, same number flagged | P(at least as many at random) | McNemar exact: pairs only the linter gets right / only the baseline gets right |
-| ------ | ---------------------------- | --------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------ |
-| 1 | 44 of 217 | 27.1 | 6.4e-10 (hypergeometric) | 142 / 1, p = 2.6e-41 |
-| 2 | 45 of 229 | 28.6 | 2.5e-10 | 131 / 0, p = 7.3e-40 |
+| Repeat | Defects in the flagged pairs | Expected at random, same number flagged | P(at least as many at random), hypergeometric |
+| ------ | ---------------------------- | --------------------------------------- | --------------------------------------------- |
+| 1 | 44 of 217 | 27.1 | 6.4e-10 |
+| 2 | 45 of 229 | 28.6 | 2.5e-10 |
 
-The pairs of one case are not independent, so both p-values overstate the
-evidence; their order of magnitude is what they show.
+The pairs of one case are not independent, so these p-values overstate the
+evidence; their order of magnitude is what they show. A paired McNemar test
+against "report every category" is not reported: its discordant pairs are the
+clean pairs the linter leaves unflagged against the defects it misses, so a linter
+that flags nothing would win it, 315 to 45.
 
 - **Scope.** The linter's selection carries signal: the pairs it flags hold far
   more defects than as many pairs drawn at random.
@@ -75,8 +80,9 @@ evidence; their order of magnitude is what they show.
   36.3%–47.1%), and it flags every clean prompt (15/15). Most of what it reports
   is still wrong.
 - **Next step.** A baseline that isolates what the model adds (the same model
-  with a naive instruction, or the six static rules) on the same split. That is a
-  paid run, not done.
+  with a naive instruction, or the six static rules) on the same split, compared
+  case by case with a permutation test so that the pairs of one case move
+  together. The model baseline is a paid run, not done.
 
 The human review's reading (12/40 "not distinguishable from the 20% bound") is
 a one-sample comparison with a fixed value, read as its protocol pre-registered;

@@ -5,20 +5,24 @@
  * generators are reviewed instead.
  *
  * Usage: bun run scripts/check-commit-size.ts <base>..<head>
- * Merge commits are skipped, as in check-commits.ts.
+ * Merge commits are skipped, as in check-commits.ts. Renames are read as a removal
+ * and an addition, so each path is matched as written rather than as `{a => b}`.
  */
 const LIMIT = 400;
 
-// Written by a tool, never by hand: lockfiles, live-run records, eval samples and
-// checksums, the generated corpus, media, and the mutation and benchmark reports.
+// Written by a tool, never by hand: lockfiles, live-run records, the generated
+// corpus with its labels and checksums, the review answer keys and scores, media,
+// and the mutation and benchmark reports. An annotated review.csv and
+// docs/mutation/survivors.md are written by a person and count.
 const GENERATED = [
   /(^|\/)bun\.lock$/,
   /^runs\//,
-  /^evals\/.*\.(csv|json)$/,
   /(^|\/)SHA256SUMS$/,
   /^evals\/linter\/cases\//,
+  /^evals\/linter\/labels\.json$/,
+  /^evals\/linter\/[^/]+\/(key|score)\.json$/,
   /^docs\/media\//,
-  /^docs\/mutation\//,
+  /^docs\/mutation\/(README\.md|summary\.json)$/,
   /^docs\/benchmarks\.md$/,
 ];
 
@@ -62,7 +66,7 @@ if (import.meta.main) {
     .filter(Boolean)
     .map((l) => {
       const [sha, ...rest] = l.split("\t");
-      const numstat = git(["show", "--numstat", "--format=", sha!]);
+      const numstat = git(["show", "--numstat", "--no-renames", "--format=", sha!]);
       return { sha: sha!, subject: rest.join("\t"), lines: changedLines(numstat) };
     });
   const bad = oversized(commits);

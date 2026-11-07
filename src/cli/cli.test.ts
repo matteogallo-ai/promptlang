@@ -1202,15 +1202,14 @@ describe("a source file that cannot be read", () => {
   });
 
   // root reads a mode-000 file, so the permission case cannot happen there.
-  test.skipIf(process.getuid?.() === 0).each(["parse", "tokens", "analyze", "compile"])(
-    "%s names the cause",
-    async (command) => {
+  // A loop, not test.each: Bun 1.2.20 (the engines floor) has no skipIf(...).each.
+  for (const command of ["parse", "tokens", "analyze", "compile"])
+    test.skipIf(process.getuid?.() === 0)(`${command} names the cause`, async () => {
       const args = command === "compile" ? [locked, "--out", join(dir, "out")] : [locked];
       const { code, stderr } = await captureConsole(() => main(["bun", "cli", command, ...args]));
       expect(code).toBe(1);
       expect(stderr).toContain(`Could not read file: ${locked}: permission denied (EACCES)`);
-    }
-  );
+    });
 
   test("a missing file is named as missing", async () => {
     const missing = join(dir, "missing.prompt");

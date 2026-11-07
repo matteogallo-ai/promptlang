@@ -41,7 +41,8 @@ const PATTERNS: ReadonlyArray<{ kind: FindingKind; regex: RegExp }> = [
   { kind: "future-version", regex: /\bv\d+(?:\.\d+)*\+/ },
   {
     kind: "future-version",
-    regex: /\bwill be (?:published|added|implemented|released|supported|available)\b/i,
+    regex:
+      /\bwill be (?:published|added|implemented|released|supported|available|removed|deprecated|dropped|renamed|replaced)\b/i,
   },
   { kind: "future-version", regex: /\bonce\b.*\b(?:is|are) (?:published|released|shipped)\b/i },
   // Only verbs about the project's own future: "the call will fail" describes
@@ -98,7 +99,8 @@ async function* walk(dir: string): AsyncGenerator<string> {
 async function listTargets(repoRoot: string): Promise<string[]> {
   const roots = [...ROOTS];
   for (const pkg of await readdir(join(repoRoot, "packages"), { withFileTypes: true })) {
-    if (pkg.isDirectory()) roots.push(join("packages", pkg.name, "src"));
+    if (pkg.isDirectory())
+      roots.push(join("packages", pkg.name, "src"), join("packages", pkg.name, "README.md"));
   }
   const files = new Set<string>();
   for (const root of roots) {

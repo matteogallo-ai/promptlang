@@ -72,7 +72,7 @@ type YamlValue =
 
 Re-export of `YamlParseError` under the pre-extraction name. Kept for
 backwards compatibility with PromptLang v1.0.x internal code and early
-Praxis consumers. Will be removed in v2.0 — prefer `YamlParseError`.
+Praxis consumers. Deprecated: prefer `YamlParseError`.
 
 ## What is supported
 

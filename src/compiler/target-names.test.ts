@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { pythonTest } from "../../tests/support/python";
 import { tokenize } from "../lexer/lexer";
 import { parse } from "../parser/parser";
 import { compile } from "./compiler";
@@ -57,8 +58,8 @@ describe("names the target language cannot hold are compile errors", () => {
     );
   });
 
-  test("every Python keyword is refused as a prompt name", () => {
-    // Generated files need Python 3.11+; 3.9's kwlist also holds a keyword since removed.
+  // 3.9's kwlist also holds a keyword since removed, hence 3.11+ like the generated files.
+  pythonTest("every Python keyword is refused as a prompt name", () => {
     const r = Bun.spawnSync([
       "python3",
       "-c",

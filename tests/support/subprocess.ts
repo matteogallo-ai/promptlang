@@ -5,7 +5,7 @@ import { test } from "bun:test";
  * on a cold CI runner, which is how these tests used to blow bun's 5 s default
  * and flake.
  */
-const SUBPROCESS_TIMEOUT_MS = 60_000;
+export const SUBPROCESS_TIMEOUT_MS = 60_000;
 
 /** A test that shells out to a subprocess and therefore needs a longer timeout. */
 export function subprocessTest(name: string, fn: () => Promise<void>): void {

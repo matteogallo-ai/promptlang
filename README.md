@@ -148,8 +148,9 @@ The library (`@promptlang/core`: tokenize, parse, compile, analyze) and the runt
 for Node ≥ 20 and Bun. The `promptlang` CLI needs Bun ≥ 1.2.20. CI installs the
 packed tarball into an empty project, imports both entry points from Node, runs
 this quick example with the installed CLI and type-checks the generated code against
-the installed declarations (`scripts/consumer-test.ts`). No version of
-`@promptlang/core` is on npm before 2.0.0.
+the installed declarations (`scripts/consumer-test.ts`). The only version on npm
+before 2.0.0, `0.0.0-stage`, is an empty placeholder (two files, no code) published
+while publishing was set up; it is not a release.
 
 To work on PromptLang itself, one command from a fresh clone to the example tests
 passing (CI runs it on every pull request, `fresh-clone` job):

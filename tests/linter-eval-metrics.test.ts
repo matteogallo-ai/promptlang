@@ -108,7 +108,8 @@ describe("linter against report-everything, on the same pairs", () => {
       join(import.meta.dir, "../runs/live/linter-eval-2026-11-03T08-39-28-817Z.json")
     ).json();
     const labels = await Bun.file(join(import.meta.dir, "../evals/linter/labels.json")).json();
-    const byId = new Map(labels.cases.map((c: { id: string }) => [c.id, c]));
+    type Labelled = { id: string; split: string; defects: string[] };
+    const byId = new Map<string, Labelled>(labels.cases.map((c: Labelled) => [c.id, c]));
     const run = (repeat: number) =>
       againstReportEverything(
         record.results

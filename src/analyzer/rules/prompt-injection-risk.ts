@@ -1,5 +1,6 @@
 import type { Rule, AnalysisContext, Issue } from "../analyzer";
 import type { Program, PromptDeclaration, TypeExpression } from "../../ast/nodes";
+import { enclosingDelimiters } from "../../compiler/delimiters";
 import { templatePlaceholders } from "../../compiler/template-compiler";
 
 /**
@@ -42,49 +43,6 @@ function carriesText(
   }
 }
 
-/** Whether an unmatched opener sits before `at` and its closer after it. */
-function between(content: string, at: number, open: string, close: string): boolean {
-  return (
-    content.lastIndexOf(open, at) > content.lastIndexOf(close, at) &&
-    content.indexOf(close, at) !== -1
-  );
-}
-
-/** Whether an odd number of `fence` lines precede `at`, so one is open there, and one follows. */
-function insideFence(content: string, at: number, fence: RegExp): boolean {
-  const before = [...content.slice(0, at).matchAll(fence)].length;
-  return before % 2 === 1 && content.slice(at).match(fence) !== null;
-}
-
-/** Whether a `<name ...>` opened before `at` and still open there is closed after it. */
-function insideTag(content: string, at: number): boolean {
-  const open: string[] = [];
-  for (const m of content.slice(0, at).matchAll(/<(\/?)([A-Za-z_][\w.:-]*)(?:\s[^<>]*)?>/g)) {
-    const [, slash, name] = m;
-    if (!slash) open.push(name!);
-    else if (open.includes(name!)) open.splice(open.lastIndexOf(name!));
-  }
-  const after = content.slice(at);
-  // Closing tags are read with a fixed pattern: no name is built into a regex.
-  const closed = new Set([...after.matchAll(/<\/([A-Za-z_][\w.:-]*)\s*>/g)].map((m) => m[1]!));
-  return open.some((name) => closed.has(name));
-}
-
-/**
- * Whether the placeholder at `at` lies inside a delimiter pair. Each pair is
- * matched around the placeholder itself: a delimiter elsewhere in the text
- * separates nothing from the input.
- */
-function isEnclosed(content: string, at: number): boolean {
-  return (
-    insideTag(content, at) ||
-    between(content, at, "<BEGIN>", "<END>") ||
-    between(content, at, "[[", "]]") ||
-    insideFence(content, at, /```/g) ||
-    insideFence(content, at, /^[ \t]*---[ \t]*$/gm)
-  );
-}
-
 /**
  * Flags message sections that insert a text parameter outside any delimiter,
  * a common prompt injection vector. Every role is checked: the caller supplies
@@ -112,7 +70,8 @@ export const promptInjectionRiskRule: Rule = {
         const content = section.content.value;
         const open = new Set<string>();
         for (const { name, index } of templatePlaceholders(content)) {
-          if (textParams.has(name) && !isEnclosed(content, index)) open.add(name);
+          if (textParams.has(name) && enclosingDelimiters(content, index).length === 0)
+            open.add(name);
         }
         if (open.size === 0) continue;
 

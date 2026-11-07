@@ -50,6 +50,15 @@ function carriesText(
  * generated code passes it through neutralizeDelimiters with the pairs found here,
  * so it cannot close or reopen them, alone or next to another value.
  */
+// The template text before a placeholder, other placeholders removed, ends in "<"
+// and optional whitespace or "/": the value can complete a tag there. The runtime
+// rewrites values only, so this is reported instead of handled.
+const LESS_THAN_BEFORE = /<[ \t\n\v\f\r]*(?:\/[ \t\n\v\f\r]*)?$/;
+
+function followsLessThan(content: string, at: number): boolean {
+  return LESS_THAN_BEFORE.test(content.slice(0, at).replace(/\{\{\w+\}\}/g, ""));
+}
+
 export const promptInjectionRiskRule: Rule = {
   name: "prompt-injection-risk",
   severity: "warning",
@@ -70,9 +79,26 @@ export const promptInjectionRiskRule: Rule = {
         if (section.kind !== "MessageSection" || !section.content.isTemplate) continue;
         const content = section.content.value;
         const open = new Set<string>();
+        const afterLessThan = new Set<string>();
         for (const { name, index } of templatePlaceholders(content)) {
-          if (textParams.has(name) && enclosingDelimiters(content, index).length === 0)
-            open.add(name);
+          if (!textParams.has(name)) continue;
+          const around = enclosingDelimiters(content, index);
+          if (around.length === 0) open.add(name);
+          else if (around.some((d) => d.startsWith("tag:")) && followsLessThan(content, index))
+            afterLessThan.add(name);
+        }
+        if (afterLessThan.size > 0) {
+          const list = [...afterLessThan].map((v) => `'{{${v}}}'`).join(", ");
+          issues.push({
+            severity: "warning",
+            rule: "prompt-injection-risk",
+            file: context.file,
+            line: section.content.line,
+            column: section.content.column,
+            message: `Template ${list} in ${section.role} section follows a "<": a value starting with "/name>" closes the tag around it, and the runtime rewrites only the value.`,
+            suggestion:
+              'Put other text between the "<" and the placeholder (<mailto:{{x}}>), or write &lt; in the template.',
+          });
         }
         if (open.size === 0) continue;
 

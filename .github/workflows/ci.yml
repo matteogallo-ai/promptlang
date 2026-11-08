@@ -144,7 +144,7 @@ jobs:
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version-file: .bun-version
-      - name: Conventional Commits in this PR / push
+      - name: Conventional Commits, and at most 400 changed lines each, in this PR / push
         env:
           BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
           HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
@@ -156,6 +156,7 @@ jobs:
             echo "Base commit unavailable; checking $BASE..$HEAD (since main)."
           fi
           bun run scripts/check-commits.ts "$BASE..$HEAD"
+          bun run scripts/check-commit-size.ts "$BASE..$HEAD"
 
   semver-check:
     runs-on: ubuntu-latest

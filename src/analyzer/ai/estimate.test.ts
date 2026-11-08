@@ -27,14 +27,14 @@ describe("estimateLinterCost", () => {
   });
 });
 
-// The README quotes this estimate for `analyze --ai docs/examples/`; it must
+// docs/ai-linter.md quotes this estimate for `analyze --ai docs/examples/`; it must
 // count what that command reads, subdirectories included.
-test("the README's estimate for docs/examples/ matches what analyze would read", async () => {
+test("the estimate docs/ai-linter.md quotes for docs/examples/ matches what analyze would read", async () => {
   const { resolveFiles } = await import("../../cli/files");
   const files = await resolveFiles(["docs/examples/"]);
   const contexts = await Promise.all(files.map(async (file) => ctx(await Bun.file(file).text())));
   const e = estimateLinterCost(contexts);
-  const readme = await Bun.file("README.md").text();
+  const readme = await Bun.file("docs/ai-linter.md").text();
   const m = /(\w+) example files \((\w+) prompts\) cost about \$(\d+\.\d+)/.exec(readme);
   expect(m).not.toBeNull();
   const words = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];

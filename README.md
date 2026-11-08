@@ -20,31 +20,18 @@ TypeScript or Python. Bring your own API key. No third-party runtime dependencie
 
 ## Why PromptLang
 
-Today, LLM prompts live as strings scattered across Python and TypeScript
-codebases. No type safety. No tests. No versioning. When a prompt breaks
-in production, you find out from a customer complaint.
+LLM prompts usually live as untyped strings in application code, with no tests and
+no versions. PromptLang treats them as typed code:
 
-PromptLang treats prompts as first-class typed code:
-
-- **Typed I/O**: typed inputs and outputs; the generated TypeScript type-checks under `strict`,
-  and the generated code (TypeScript and Python) checks each answer against its declared type
-- **Compile to TypeScript and Python** from the same source of truth
-- **Static analysis (SonarQube-style)**: six deterministic rules (missing tests, unbounded
-  templates, prompt-injection risk, token cost, chain complexity, duplicates)
-- **Native tests**: `promptlang test` runs `test` blocks against the generated code,
-  on recorded `mock:` responses by default or on the provider with `--live`
-- **SemVer for prompts**: `@version` is validated, imports can require a version
-  range, and `promptlang semver-check` fails when a prompt's interface changed more
-  than its version says
+- **Typed I/O**: typed inputs and outputs; generated TypeScript and Python check each answer against its declared type
+- **Compile to TypeScript and Python** from the same source
+- **Static analysis (SonarQube-style)**: six deterministic rules, from prompt-injection risk to token cost
+- **Native tests**: `promptlang test` runs `test` blocks on recorded `mock:` responses, or on the provider with `--live`
+- **SemVer for prompts**: `semver-check` fails when a prompt's interface changed more than its `@version` says
 - **Multi-provider runtime** (Anthropic, OpenAI, Ollama, or your own client)
-- **Multi-provider fallback**: `RoutingClient` tries providers in order, translating
-  the model name per provider (`modelMap`), and never falls back on a bad key
-- **AI-powered linter**: `analyze --ai` sends each prompt to Claude for a semantic
-  review, as an aid for the person reviewing the prompt, not a gate; measured on a
-  labelled corpus, it finds almost every designed defect but most of its findings
-  are false alarms (a pre-registered human review measured precision at about
-  30%, 95% CI 18–45%, not distinguishable from the 20% lower bound)
-- **No third-party runtime dependencies**: Bun + `fetch` + your own API keys
+- **Multi-provider fallback**: `RoutingClient` tries providers in order, with a model map per provider
+- **AI-powered linter**: a reviewer aid, not a gate: its findings beat chance (p ≈ 6e-10) but it flags every clean prompt ([`docs/ai-linter.md`](docs/ai-linter.md))
+- **No third-party runtime dependencies**: Bun or Node, `fetch` and your own API keys
 
 Not delivered, and labelled as such everywhere in this repository (see
 [`docs/CLAIMS.md`](docs/CLAIMS.md)):
@@ -118,6 +105,8 @@ const category = await classify_ticket({ ticket: "..." }, client);
 ## Comparison
 
 Each cell is checked against [`docs/CLAIMS.md`](docs/CLAIMS.md) by the `claims` CI job.
+Other tools are not scored: nothing here tests them. One prompt written in both
+PromptLang and BAML, each difference sourced: [docs/comparison-baml.md](docs/comparison-baml.md).
 
 | Feature                              | PromptLang |
 | ------------------------------------ | :--------: |
@@ -130,13 +119,6 @@ Each cell is checked against [`docs/CLAIMS.md`](docs/CLAIMS.md) by the `claims` 
 | Static analysis (SonarQube-style)    | ✅ |
 | Open source, zero SaaS               | ✅ |
 
-Other tools are not scored here: nothing in this repository tests them. Several
-overlap with this list: LangChain returns typed outputs (`with_structured_output`)
-and falls back across models (`with_fallbacks`); LangSmith and W&B Weave version
-prompts and run evaluations, mainly as hosted services (both offer self-hosting).
-Check their documentation for what they offer today. One prompt written in both
-PromptLang and BAML, with each difference sourced: [docs/comparison-baml.md](docs/comparison-baml.md).
-
 ---
 
 ## Installation
@@ -145,17 +127,13 @@ PromptLang and BAML, with each difference sourced: [docs/comparison-baml.md](doc
 npm install @promptlang/core
 ```
 
-The library (`@promptlang/core`: tokenize, parse, compile, analyze) and the runtime
-(`@promptlang/core/runtime`: the provider clients the generated code calls) are ESM
-for Node ≥ 20 and Bun. The `promptlang` CLI needs Bun ≥ 1.2.20. CI installs the
-packed tarball into an empty project, imports both entry points from Node, runs
-this quick example with the installed CLI and type-checks the generated code against
-the installed declarations (`scripts/consumer-test.ts`). The only version on npm
-before 2.0.0, `0.0.0-stage`, is an empty placeholder (two files, no code) published
-while publishing was set up; it is not a release.
+The library and the runtime (`@promptlang/core/runtime`) are ESM for Node ≥ 20 and
+Bun; the `promptlang` CLI needs Bun ≥ 1.2.20. CI installs the packed tarball in an
+empty project and runs the quick example with it (`scripts/consumer-test.ts`). The
+only version on npm before 2.0.0, `0.0.0-stage`, is an empty placeholder (two files,
+no code) published while publishing was set up; it is not a release.
 
-To work on PromptLang itself, one command from a fresh clone to the example tests
-passing (CI runs it on every pull request, `fresh-clone` job):
+From a fresh clone to the example tests passing (CI job `fresh-clone`):
 
 <!-- fresh-clone:start -->
 ```bash
@@ -165,408 +143,28 @@ git clone https://github.com/matteogallo-ai/promptlang.git && cd promptlang && b
 
 ---
 
-## Tests
-
-`test` blocks run with `promptlang test <files or directories>`:
-
-```promptlang
-test "extracts the total" {
-  input: extract_invoice(pdf_text: "Total due: 1,250.00 EUR")
-  mock: """{"amount": 1250, "currency": "EUR", "invoice_date": "2026-08-11", "vendor": "Acme"}"""
-  expect.amount: 1250
-  expect.currency matches: "^[A-Z]{3}$"
-  expect.vendor contains: "Acme"
-  expect schema
-}
-```
-
-- **Assertions**: `expect: v` and `expect.field: v` (equality), `contains: "s"`,
-  `matches: "regex"`, and `expect schema` (the output conforms to the declared
-  type: enum members, required fields, field types, no undeclared fields).
-- **Mock mode (default)**: each test's `mock:` response goes through the generated
-  TypeScript, so request building and output parsing are what is tested. It does
-  not measure the model: the mock is written by hand. A test without `mock:` fails
-  in this mode.
-- **Live mode** (`--live`, Anthropic models, `ANTHROPIC_API_KEY`): prints a cost
-  estimate (every call at its full `max_tokens`, input approximated at 3 characters
-  per token, chain steps charged with earlier steps' outputs, no retries: the client
-  makes none) and asks before calling;
-  `--yes` approves without asking. Models without a recorded price are refused.
-- `--json` for tools; exit 0 when every test passes, 1 on a failure, 2 on usage errors,
-  3 when a call failed and left a test without a verdict. The report says which
-  kind: a **configuration error** (authentication, a rejected request, an unknown
-  model: fix the file or the key) or a **provider failure** (timeout, network, rate
-  limit, server overload, malformed response: retry later).
-- A test whose `input` calls a prompt or chain that the file does not declare is a
-  compile error, in `compile` and in `test`. `eval` blocks are parsed, and `compile`
-  and `test` warn that they are not executed.
-
----
-
-## Versioning
-
-- `@version` must be SemVer 2.0.0 (`1.4.0`, `2.0.0-rc.1`); anything else is a parse error.
-- `import "./sentiment.prompt" as S requires "^1.0.0"`: `install` and `check` fail
-  with `VersionMismatchError` when the imported file's `@version` is outside the range.
-- `promptlang semver-check [--base <ref>]` compares each `.prompt` file with its version
-  at a Git ref (default `origin/main`, else the latest tag). Removing or retyping a
-  parameter, adding a required one, changing the output type or the `@model` requires a
-  major bump; optional additions a minor; text-only changes a patch. CI runs it on
-  `docs/examples`. Full rules: [`docs/syntax-reference.md`](docs/syntax-reference.md) Section 6.
-
-`bun run demo` plays the whole story in a temporary Git repository: an incompatible
-change released as 1.1.0 is rejected, 2.0.0 passes, a consumer pinned to `^1.0.0`
-fails cleanly, and the tests still pass ([`docs/examples/demo/`](docs/examples/demo/)).
-
----
-
-## AI-Powered Linting
-
-PromptLang can send each prompt to an LLM for a semantic review at build time.
-It looks for six kinds of defect that static rules cannot see:
-
-- Vague instructions like "be careful" that don't tell the model what to do
-- Missing format specs where structured output is expected but not constrained
-- Conflicting instructions ("one-sentence summary" + "detailed key points")
-- Undefined business terms ("premium user" without a definition)
-- Hallucination risks (invitations to guess vs. refuse)
-- Token inefficiencies (verbose phrasing that could be shorter)
-
-**Measured on a labelled corpus** (`evals/linter/`, 120 cases;
-[`docs/SYSTEM_CARD.md`](docs/SYSTEM_CARD.md)), on the test split with
-`claude-haiku-5-5`: it finds almost every designed defect (recall 44/45 and
-45/45 over two runs) but reports about four categories per prompt, so most of
-its findings are false alarms (precision 20%, 95% CI 15–26%) and it flags every
-clean prompt (15/15). Reporting every category on every prompt would find all 45
-defects at 12.5% precision (95% CI 9.5–16.3%), so recall alone says little; the
-precision gain over that baseline is modest. The labels are set by construction;
-a human check of 30 cases (`evals/linter/human-review/`) confirmed 27/30 designed
-labels (95% CI 74–97%, kappa 0.80) and suggests that some reports scored as false
-alarms may be real defects, so that 20% is a lower bound. A pre-registered human
-review of 40 of its findings (`evals/linter/findings-review/`) measured precision
-at about 30% (12/40, 95% CI 18–45%): not distinguishable from the 20% bound, and
-either way seven to eight findings in ten are wrong. The linter is an aid for the
-person reviewing a prompt, not a gate: read its findings as leads to check, not
-as defects, and do not fail a build on them; the six static rules of
-`promptlang analyze` do not depend on the model.
-
-### Usage
-
-```bash
-export ANTHROPIC_API_KEY=sk-ant-...
-bun run cli analyze docs/examples/ --ai
-```
-
-The AI linter runs in parallel (3 prompts at a time by default) and returns
-confidence-scored issues alongside the static analysis output.
-
-### Cost
-
-`--ai` prints a cost estimate for your files and asks before any call; `--yes`
-approves without asking.
-
-Each analyzed prompt is one request to Claude Haiku 5.5 (by default) with
-`max_tokens: 4096`, which leaves room for its adaptive thinking. At list prices
-($0.10 / $0.50 per million input / output tokens, prompts up to 100K tokens) the
-six example files (seven prompts) cost about $0.015 if every call used its full
-`max_tokens`. This is an estimate from request sizes, not a measurement. The
-committed live run (five prompts) used 5,557 input and 6,517 output tokens:
-$0.0038. Costs are yours — bring your own API key.
-
----
-
-## Python target
-
-PromptLang compiles to Python as well as TypeScript:
-
-```bash
-bun run cli compile docs/examples/classify-ticket.prompt --out ./generated --target python
-```
-
-This generates:
-
-- `classify_ticket.py` — typed Python async function
-- `promptlang_runtime.py` — self-contained runtime (no external deps for mocking)
-- `__init__.py` — barrel export
-
-### Usage
-
-```python
-import asyncio
-import os
-from generated.classify_ticket import classify_ticket, Category
-from generated.promptlang_runtime import AnthropicClient
-
-async def main():
-    client = AnthropicClient(api_key=os.environ["ANTHROPIC_API_KEY"])
-    result: Category = await classify_ticket(
-        {"ticket": "The submit button crashes"},
-        client,
-    )
-    print(result)
-
-asyncio.run(main())
-```
-
-Requires Python 3.11+ (generated files import `typing.NotRequired`) and `httpx` for real API calls (`pip install httpx`).
-`promptlang_runtime.py` checks what the TypeScript runtime checks on a response: an
-empty key is refused, HTTP errors raise `AuthenticationError`, `RateLimitError`,
-`InvalidRequestError` or `ServerError`, a malformed response raises
-`InvalidResponseError`, and an answer cut at `@max_tokens`, refused or empty raises
-`IncompleteResponseError` (all subclasses of `PromptClientError`). It sends Anthropic API
-version 2026-10-21, without `temperature`. Unlike the TypeScript runtime, it does not
-retry, and a timeout or a connection failure raises `httpx`'s own exception.
-The `MockClient` works with no dependencies for local testing.
-
----
-
-## Project configuration
-
-For multi-file projects, create a `promptlang.yaml` at the project root:
-
-```yaml
-name: my-project
-version: 1.0.0
-defaults:
-  model: claude-opus-5-5
-sources:
-  - path: ./prompts
-compile:
-  target: typescript
-  out: ./generated
-  emit_tsconfig: true
-```
-
-Files can declare imports at the top:
-
-```
-import "shared/classify.prompt" as Classify
-```
-
-`install` resolves these imports into the project's dependency graph and
-`check` verifies their hashes. Calling an imported prompt from a chain
-(`Classify.classify_ticket(...)`) does not parse; chains can only call
-prompts declared in the same file.
-
-Bootstrap a new project:
-
-```bash
-bun run cli init
-bun run cli install
-bun run cli compile
-```
-
-Once the registry is populated (`.promptlang/manifest.json` + `integrity.json`),
-`promptlang check` verifies that no imported prompt has been silently modified
-since it was last resolved. `compile` does not read `integrity.json`, so a prompt
-you are editing compiles without a new `install`; in CI, run `check` before
-`compile` to make a modified prompt fail the build. See [`docs/yaml-support.md`](docs/yaml-support.md)
-for the exact YAML subset supported.
-
----
-
-## Available runtime providers
-
-The compiled TypeScript imports `PromptClient` from `@promptlang/core/runtime`. Three
-provider clients ship with PromptLang — pick the one that matches your stack.
-
-### Anthropic
-
-```typescript
-import { AnthropicClient } from "@promptlang/core/runtime";
-import { classify_ticket } from "./generated/classify-ticket";
-
-const client = new AnthropicClient({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-});
-
-const category = await classify_ticket(
-  { ticket: "The submit button crashes on iOS 17" },
-  client
-);
-```
-
-### OpenAI
-
-```typescript
-import { OpenAIClient } from "@promptlang/core/runtime";
-import { classify_ticket } from "./generated/classify-ticket";
-
-const client = new OpenAIClient({
-  apiKey: process.env.OPENAI_API_KEY!,
-  // organization: "org-abc123",   // optional
-});
-
-const category = await classify_ticket({ ticket: "..." }, client);
-```
-
-### Ollama (local)
-
-```typescript
-import { OllamaClient } from "@promptlang/core/runtime";
-import { classify_ticket } from "./generated/classify-ticket";
-
-// No API key required — Ollama runs locally.
-const client = new OllamaClient({
-  baseURL: "http://localhost:11434", // default
-});
-
-const category = await classify_ticket({ ticket: "..." }, client);
-```
-
-### Routing (fallback across providers)
-
-The generated code puts the file's `@model` in every request. Give each provider
-that uses other names a `modelMap` from that model to its own; a provider whose map
-has no entry for the requested model is skipped rather than sent a name it cannot
-serve. Routing moves on only when a provider could not serve the request (5xx, rate
-limit, timeout, network error, 404, malformed body). A bad key, an incomplete answer,
-a 400 (the request itself is wrong, so another provider would receive the user's
-data for nothing) and any error that is not a `PromptClientError` stop it at once. A
-timed-out request may still be billed by the provider that timed out.
-
-```typescript
-import { AnthropicClient, OpenAIClient, RoutingClient } from "@promptlang/core/runtime";
-import { classify_ticket } from "./generated/classify-ticket";
-
-const client = new RoutingClient({
-  primary: new AnthropicClient({ apiKey: process.env.ANTHROPIC_API_KEY! }),
-  fallbacks: [
-    {
-      client: new OpenAIClient({ apiKey: process.env.OPENAI_API_KEY! }),
-      modelMap: { "claude-opus-5-5": "gpt-5" },
-    },
-  ],
-  onFallback: (err, i) => console.warn(`Fallback #${i}:`, err.message),
-});
-
-const category = await classify_ticket({ ticket: "..." }, client);
-```
-
-`OpenAIClient` sends `max_tokens` as `max_completion_tokens`, which GPT-5 and the
-o-series require. Those models refuse any `temperature` but 1, so a prompt routed to
-them should not set `@temperature`; the provider's 400 surfaces as
-`InvalidRequestError`. `compile` warns about `@temperature` only next to a `claude-`
-model, where it is not sent at all. An OpenAI-compatible server reached through
-`baseURL` that does not read `max_completion_tokens` applies its own output limit
-instead.
-
----
-
-## Compiling against a checkout
-
-The generated TypeScript imports `@promptlang/core/runtime`. With the package
-installed that resolves through its `exports`. To compile against a local checkout
-instead, pass `--emit-tsconfig`: it writes a `tsconfig.json` whose `paths` mapping
-points at the checkout's runtime source.
-
-```bash
-bun run cli compile src/prompts/ --out ./generated --emit-tsconfig
-bunx tsc --project ./generated/tsconfig.json --noEmit
-```
-
----
-
 ## Documentation
 
-| Document                                              | Description                                        |
-| ----------------------------------------------------- | -------------------------------------------------- |
-| [docs/syntax-reference.md](docs/syntax-reference.md)  | Complete `.prompt` language reference              |
-| [docs/architecture.md](docs/architecture.md)          | Technical design, pipeline, design decisions       |
-| [docs/migration-guide.md](docs/migration-guide.md)    | Migration guide 0.x → 1.0                          |
-| [docs/yaml-support.md](docs/yaml-support.md)          | YAML subset supported by `promptlang.yaml`         |
-| [docs/benchmarks.md](docs/benchmarks.md)              | Timings produced by `bun run bench`                |
-| [docs/CLAIMS.md](docs/CLAIMS.md)                      | Every advertised capability → module → test → status |
-| [docs/ENGINEERING_STANDARDS.md](docs/ENGINEERING_STANDARDS.md) | Rules every change in this repository follows |
-| [docs/roadmap.md](docs/roadmap.md)                    | Public milestone roadmap                           |
-| [docs/RELEASING.md](docs/RELEASING.md)                | How a tag becomes an npm release, and its setup    |
-| [docs/release-notes/](docs/release-notes/)            | Notes for each release                             |
-| [docs/examples/](docs/examples/)                      | Annotated `.prompt` examples                       |
+| Document | What it covers |
+| --- | --- |
+| [docs/usage.md](docs/usage.md) | Tests, versioning, the Python target, `promptlang.yaml`, provider clients and routing |
+| [docs/ai-linter.md](docs/ai-linter.md) | The AI linter: what it looks for, its measured precision, cost |
+| [docs/syntax-reference.md](docs/syntax-reference.md) | The `.prompt` language |
+| [docs/architecture.md](docs/architecture.md) | Pipeline and design decisions; ADRs in [docs/adr/](docs/adr/) |
+| [docs/CLAIMS.md](docs/CLAIMS.md) | Every advertised capability → module → test → status |
+| [docs/SYSTEM_CARD.md](docs/SYSTEM_CARD.md) | Intended use, measured performance, known limits |
+| [docs/migration-guide.md](docs/migration-guide.md) | Upgrading from 2.x to 3.0.0 |
+| [docs/how-this-was-built.md](docs/how-this-was-built.md) | History, audits, and what I'd do differently |
+| [docs/roadmap.md](docs/roadmap.md) | What is not scheduled: `eval` execution, a remote registry, streaming |
+| [docs/RELEASING.md](docs/RELEASING.md), [docs/release-notes/](docs/release-notes/) | How a tag becomes an npm release; notes per release |
 
----
-
-## Packages
-
-PromptLang is developed as a Bun workspace. The main package,
-`@promptlang/core` (the CLI binary is `promptlang`), lives in `src/`. First-party companion packages live under
-`packages/` and are published under the `@promptlang/` scope on npm.
-
-| Package | Location | Version | Description |
-| --- | --- | --- | --- |
-| [`@promptlang/yaml-parser`](https://www.npmjs.com/package/@promptlang/yaml-parser) | `packages/yaml-parser/` | 1.0.1 | Zero-dependency minimal YAML parser. Extracted from PromptLang core in v1.1.0 so sibling projects (like [Praxis](https://github.com/matteogallo-ai/praxis)) can reuse it via `bun add @promptlang/yaml-parser`. |
-
-Each package has its own `README.md`, `CHANGELOG.md`, and independent
-SemVer track.
-
----
-
-## Roadmap
-
-Not scheduled:
-
-- `eval` execution (datasets, metrics, thresholds)
-- Remote package registry (the registry is local-only)
-- Streaming responses in the runtime
-- More provider clients (Google Gemini, Mistral, Cohere)
-- IDE extensions (VS Code syntax highlighting, LSP)
-- MCP server integration
-
-See [`docs/roadmap.md`](docs/roadmap.md) for the full list.
+`@promptlang/yaml-parser` (`packages/yaml-parser/`, on npm) is the zero-dependency
+YAML parser PromptLang uses, published on its own SemVer track.
 
 ---
 
 ## How this was built
 
-PromptLang was written mostly by a coding agent (Claude Code) working from the
-maintainer's specifications, one milestone per release; the git history up to
-v1.2.0 shows one large commit per milestone.
+Built with coding agents: I write the specs, review the pull requests and their tests, and answer for what gets merged. Details: [docs/how-this-was-built.md](docs/how-this-was-built.md).
 
-On 2026-11-02 an independent external audit compared the README with the code. It found
-that the two headline features — "SemVer for prompts" and "Native tests" — were
-marked ✅ but not implemented; that `src/index.ts` exported only a hard-coded
-`VERSION = "0.1.0-alpha.0"` in v1.2.0; that the test badge double-counted the
-workspace package's tests; that cross-provider fallback could not work; and that
-the package could not be published under its name. A follow-up review of the
-docs found that `parallel` steps and calls to imported prompts, both documented,
-do not parse. Both headline features were then implemented, with the scope stated
-in the [Tests](#tests) and [Versioning](#versioning) sections.
-
-What changed in response:
-
-- every README capability is now listed in [`docs/CLAIMS.md`](docs/CLAIMS.md)
-  with its test, and CI (`claims`) fails if the README shows an unshipped one as ✅;
-- CI (`stale-narrative`) rejects forward-looking release talk and untracked TODOs in code and docs;
-- Biome and knip run in CI; dead code they reported was removed;
-- the package is `@promptlang/core` and its entry point exports the compiler API;
-- the rules followed for every change are in
-  [`docs/ENGINEERING_STANDARDS.md`](docs/ENGINEERING_STANDARDS.md).
-
-What the maintainer does:
-
-I design the specifications and acceptance criteria. A coding agent implements; an independent reviewer agent and a separate orchestrating model audit every delivery against written standards (docs/ENGINEERING_STANDARDS.md). I make the calls, and since November 2026 nothing merges until I pass a comprehension check on the changed code.
-
-Design decisions are recorded in [`docs/adr/`](docs/adr/).
-
-### What I'd do differently
-
-**Evaluation before shipping.** The AI linter shipped before it had an evaluation set. Once measured on a held-out split, it caught 44/45 and 45/45 planted defects across two runs, but only 20% of its flags were scored correct, against 12.5% for a linter that flags every category; a pre-registered human review of 40 flags measured about 30% (95% CI 18–45%), not distinguishable from that 20%. It stays a reviewer aid, not a gate. Today, an AI feature ships with its eval set, metric and confidence interval, or it ships behind an explicit "unmeasured" label in [CLAIMS](docs/CLAIMS.md). ([#11](https://github.com/matteogallo-ai/promptlang/pull/11), [#14](https://github.com/matteogallo-ai/promptlang/pull/14))
-
-**Claims enforced by CI, not by discipline.** Every feature the README advertises now maps to a passing test in `docs/CLAIMS.md`, and CI fails if one isn't backed. I'd have built that gate first. ([#1](https://github.com/matteogallo-ai/promptlang/pull/1))
-
-**Supply-chain and test-quality gates from day one.** Signed releases with provenance, Scorecard, fuzzing and mutation testing on the lexer, parser and semver (96%) were added in a dedicated hardening pass. In a new project, Scorecard runs in CI from the first commit, and fuzzing, mutation testing and signed releases are [Definition of Done](docs/DEFINITION_OF_DONE.md) items (G1–G3). ([#5](https://github.com/matteogallo-ai/promptlang/pull/5), [#8](https://github.com/matteogallo-ai/promptlang/pull/8), [#10](https://github.com/matteogallo-ai/promptlang/pull/10), [#13](https://github.com/matteogallo-ai/promptlang/pull/13))
-
-**A per-call spending cap before the first paid call.** The first live linter run was guarded only by a check, in its script, that the whole run's worst-case estimate stayed under the approved $0.05; a cap checked before every call against the spend so far came after it. Now `analyze --ai`, `test --live`, the linter eval and the live linter run go through `BudgetedClient`, which does not send a call whose worst case would take the spend past the approved amount. ([ADR 0004](docs/adr/0004-spending-cap.md))
-
----
-
-## Contributing
-
-Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup,
-coding standards, and the PR checklist. If you're unsure where to start, look for
-issues tagged `good first issue`.
-
----
-
-## License
-
-MIT © Matteo Gallo — see [LICENSE](LICENSE).
+Contributions: [CONTRIBUTING.md](CONTRIBUTING.md). MIT © Matteo Gallo, see [LICENSE](LICENSE).

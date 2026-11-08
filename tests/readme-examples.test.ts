@@ -8,12 +8,16 @@ import { CLONE_URL, freshCloneCommand } from "../scripts/fresh-clone";
 
 const ROOT = resolve(import.meta.dir, "..");
 const readme = await Bun.file(resolve(ROOT, "README.md")).text();
-const blocks = [...readme.matchAll(/```promptlang\n([\s\S]*?)```/g)].map((m) => m[1]!);
+const usage = await Bun.file(resolve(ROOT, "docs/usage.md")).text();
+const promptlangBlocks = (doc: string) =>
+  [...doc.matchAll(/```promptlang\n([\s\S]*?)```/g)].map((m) => m[1]!);
+const quickExample = promptlangBlocks(readme)[0]!;
+const testsSnippet = promptlangBlocks(usage)[0]!;
 
 // The README's `promptlang` snippets are documentation that must stay true.
-describe("README promptlang snippets", () => {
+describe("README and docs/usage.md promptlang snippets", () => {
   test("the quick example passes promptlang test and the static analyzer", async () => {
-    const program = parse(tokenize(blocks[0]!));
+    const program = parse(tokenize(quickExample));
     const results = await runTests(program, "README quick example", { kind: "mock" });
     expect(results.map((r) => r.failures)).toEqual([[], []]);
     expect(
@@ -21,10 +25,10 @@ describe("README promptlang snippets", () => {
     ).toEqual([]);
   });
 
-  test("the Tests section snippet passes against extract-invoice.prompt", async () => {
+  test("the docs/usage.md Tests snippet passes against extract-invoice.prompt", async () => {
     const example = await Bun.file(resolve(ROOT, "docs/examples/extract-invoice.prompt")).text();
     const prompts = example.slice(0, example.indexOf("// --- Tests ---"));
-    const results = await runTests(parse(tokenize(prompts + blocks[1]!)), "README tests", {
+    const results = await runTests(parse(tokenize(prompts + testsSnippet)), "README tests", {
       kind: "mock",
     });
     expect(results).toHaveLength(1);

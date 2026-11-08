@@ -364,6 +364,73 @@ def _bounded(errors: list[str]) -> list[str]:
 
 # ---- Client interface ----
 
+_TICK = chr(96)
+_FENCE_RUN = re.compile(_TICK + "{3,}")
+_FENCE_START = re.compile(r"\\A" + _TICK + "+")
+_TAG_WS = r"[ \\t\\n\\v\\f\\r]"
+_EOL = re.compile(r"(\\r\\n|[\\n\\r\\u2028\\u2029])")
+_DASH_LINE = re.compile(r"[ \\t]*(?:-[ \\t]*){3,}")
+_DASH_EDGE = re.compile(r"[ \\t]*(?:-[ \\t]*)+")
+
+
+def _spaced(m: "re.Match[str]") -> str:
+    return " ".join(m.group(0))
+
+
+def _neutralize_tag(value: str, name: str) -> str:
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_.:-]*", name, flags=re.ASCII):
+        raise ValueError("neutralizeDelimiters: invalid tag name " + json.dumps(name, ensure_ascii=False))
+    prefixes = ""
+    for ch in reversed(name):
+        prefixes = "(?:" + re.escape(ch) + prefixes + ")?"
+    pattern = (
+        "<(?=" + _TAG_WS + "*(?:/" + _TAG_WS + "*)?(?:" + re.escape(name)
+        + r"(?![A-Za-z0-9_.:-])|" + prefixes + r"\\Z))"
+    )
+    return re.sub(pattern, "&lt;", value, flags=re.IGNORECASE | re.ASCII)
+
+
+def _neutralize_dashes(value: str) -> str:
+    parts = _EOL.split(value)
+    last = len(parts) - 1
+    for i in range(0, last + 1, 2):
+        line = parts[i]
+        edge = i == 0 or i == last
+        if _DASH_LINE.fullmatch(line) or (edge and _DASH_EDGE.fullmatch(line)):
+            parts[i] = line.replace("-", chr(92) + "-", 1)
+    return "".join(parts)
+
+
+def neutralize_delimiters(value: str, delimiters: tuple[str, ...]) -> str:
+    """The rewrite of neutralizeDelimiters in the TypeScript runtime, byte for byte.
+
+    A value inserted between delimiters cannot close or reopen them, alone or next
+    to another value; the README gives the exact rewrite. The patterns are ASCII
+    only (re.ASCII): whitespace classes and Unicode case folding differ between
+    Python and JavaScript.
+    """
+    out = value
+    for d in delimiters:
+        if d.startswith("tag:"):
+            out = _neutralize_tag(out, d[4:])
+        elif d == "brackets":
+            out = re.sub(r"\\[(?=\\[)", "[ ", out)
+            out = re.sub(r"\\](?=\\])", "] ", out)
+            out = re.sub(r"\\A[\\[\\]]", lambda m: " " + m.group(0), out)
+            out = re.sub(r"[\\[\\]]\\Z", lambda m: m.group(0) + " ", out)
+        elif d == "fence":
+            out = _FENCE_RUN.sub(_spaced, out)
+            out = _FENCE_START.sub(lambda m: " " + _spaced(m), out)
+            end = len(out.rstrip(_TICK))
+            if end < len(out):
+                out = out[:end] + " ".join(out[end:]) + " "
+        elif d == "dashes":
+            out = _neutralize_dashes(out)
+        else:
+            raise ValueError("neutralizeDelimiters: unknown delimiter " + json.dumps(d, ensure_ascii=False))
+    return out
+
+
 class PromptClient(ABC):
     @abstractmethod
     async def complete(self, request: PromptRequest) -> PromptResponse: ...

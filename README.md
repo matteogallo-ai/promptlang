@@ -100,6 +100,36 @@ const client = new AnthropicClient({ apiKey: process.env.ANTHROPIC_API_KEY! });
 const category = await classify_ticket({ ticket: "..." }, client);
 ```
 
+### Delimited values
+
+Generated TypeScript and Python rewrite a string inserted between delimiters, the
+same way byte for byte, with the pairs `prompt-injection-risk` recognises around
+its placeholder, so that the value cannot close or reopen them:
+
+- `<name>` … `</name>` (and `<BEGIN>`/`<END>`): a `<` that starts `<name` or `</name`, in any ASCII
+  case and with ASCII whitespace around the `/`, becomes `&lt;` (`</TICKET>` → `&lt;/TICKET>`); `<tickets>`
+  is left alone.
+- `[[` … `]]`: `[[` becomes `[ [`, `]]` becomes `] ]`.
+- A code fence: a run of three or more backticks gets a space between each.
+- `---` lines: a line of three or more dashes, spaced or not (`- - -` is the same
+  Markdown rule), gets a `\` before its first dash.
+
+The ends of a value are rewritten too, since it can sit next to another value or
+to the template's own text: a trailing `<` that could still grow into `<name` or
+`</name` becomes `&lt;`; a `[`, `]` or run of backticks at either end gets a space
+on its outer side, the backticks spaced as well; a first or last line made only
+of dashes gets the `\`.
+
+- **Scope.** These exact forms, for text: strings, and JSON-typed values once
+  serialized. A number or a boolean is formatted by each language (`true` /
+  `True`).
+- **Known limit.** Unicode look-alikes (`＜/ticket>`) and the template's own text
+  are not rewritten. A `<` written in the template right before a placeholder
+  (`<{{email}}>`) lets a value starting with `/ticket>` close the tag:
+  `prompt-injection-risk` warns about it. How well a model respects delimiters is
+  not measured.
+- **Next step.** An adversarial eval against a live model (paid, not run).
+
 ---
 
 ## Comparison

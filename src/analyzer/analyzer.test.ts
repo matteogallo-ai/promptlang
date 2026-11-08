@@ -279,6 +279,27 @@ describe("prompt-injection-risk: what encloses each placeholder", () => {
     });
   }
 
+  // The runtime rewrites the value, not the template: a "<" written just before the
+  // placeholder lets a value starting with "/ticket>" close the tag around it.
+  const afterLessThan: Array<[string, string]> = [
+    ["an address in angle brackets", `  user: "<d>From: <{{x}}></d>"`],
+    ["a comparison", `  user: "<d>if n < {{x}} then</d>"`],
+    ["a < then a slash", `  user: "<d>< / {{x}}</d>"`],
+    ["a < before another placeholder", `  user: "<d><{{y}}{{x}}</d>"`],
+  ];
+  for (const [name, body] of afterLessThan) {
+    test(`flags a tag-enclosed value right after a less-than sign: ${name}`, () => {
+      const issues = issuesFor("x: string, y: string", body);
+      expect(issues.map((i) => i.rule)).toEqual(["prompt-injection-risk"]);
+      expect(issues[0]!.message).toContain("'{{x}}'");
+      expect(issues[0]!.message).toContain('follows a "<"');
+    });
+  }
+
+  test('a "<" followed by other text before the placeholder is not flagged', () => {
+    expect(issuesFor("x: string", `  user: "<d><mailto:{{x}}> x &lt; {{x}}</d>"`)).toEqual([]);
+  });
+
   test("a parameter that cannot carry text is not flagged", () => {
     expect(issuesFor("n: number, b: boolean", `  system: "Use {{n}} words, strict {{b}}"`)).toEqual(
       []

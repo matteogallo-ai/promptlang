@@ -47,6 +47,7 @@ export function compilePython(program: Program, sourceFile: string): string {
     parts.push(`from typing import ${typingImports.join(", ")}`);
   }
   parts.push("import json as _promptlang_json");
+  const runtimeImport = parts.length;
   parts.push(
     `from .promptlang_runtime import PromptClient, PromptRequest, parse_output as _promptlang_parse_output`
   );
@@ -93,6 +94,12 @@ export function compilePython(program: Program, sourceFile: string): string {
     }
   }
 
+  // Imported only when used, as in TypeScript: a file without delimiters keeps its 3.0 output.
+  if (parts.some((p) => p.includes("_promptlang_neutralize(")))
+    parts[runtimeImport] = parts[runtimeImport]!.replace(
+      "PromptRequest, parse_output",
+      "PromptRequest, neutralize_delimiters as _promptlang_neutralize, parse_output"
+    );
   return parts.join("\n");
 }
 

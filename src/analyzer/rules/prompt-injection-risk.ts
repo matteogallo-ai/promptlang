@@ -1,5 +1,6 @@
 import type { Rule, AnalysisContext, Issue } from "../analyzer";
 import type { Program, PromptDeclaration, TypeExpression } from "../../ast/nodes";
+import { enclosingDelimiters } from "../../compiler/delimiters";
 import { templatePlaceholders } from "../../compiler/template-compiler";
 
 /**
@@ -42,55 +43,22 @@ function carriesText(
   }
 }
 
-/** Whether an unmatched opener sits before `at` and its closer after it. */
-function between(content: string, at: number, open: string, close: string): boolean {
-  return (
-    content.lastIndexOf(open, at) > content.lastIndexOf(close, at) &&
-    content.indexOf(close, at) !== -1
-  );
-}
-
-/** Whether an odd number of `fence` lines precede `at`, so one is open there, and one follows. */
-function insideFence(content: string, at: number, fence: RegExp): boolean {
-  const before = [...content.slice(0, at).matchAll(fence)].length;
-  return before % 2 === 1 && content.slice(at).match(fence) !== null;
-}
-
-/** Whether a `<name ...>` opened before `at` and still open there is closed after it. */
-function insideTag(content: string, at: number): boolean {
-  const open: string[] = [];
-  for (const m of content.slice(0, at).matchAll(/<(\/?)([A-Za-z_][\w.:-]*)(?:\s[^<>]*)?>/g)) {
-    const [, slash, name] = m;
-    if (!slash) open.push(name!);
-    else if (open.includes(name!)) open.splice(open.lastIndexOf(name!));
-  }
-  const after = content.slice(at);
-  // Closing tags are read with a fixed pattern: no name is built into a regex.
-  const closed = new Set([...after.matchAll(/<\/([A-Za-z_][\w.:-]*)\s*>/g)].map((m) => m[1]!));
-  return open.some((name) => closed.has(name));
-}
-
-/**
- * Whether the placeholder at `at` lies inside a delimiter pair. Each pair is
- * matched around the placeholder itself: a delimiter elsewhere in the text
- * separates nothing from the input.
- */
-function isEnclosed(content: string, at: number): boolean {
-  return (
-    insideTag(content, at) ||
-    between(content, at, "<BEGIN>", "<END>") ||
-    between(content, at, "[[", "]]") ||
-    insideFence(content, at, /```/g) ||
-    insideFence(content, at, /^[ \t]*---[ \t]*$/gm)
-  );
-}
-
 /**
  * Flags message sections that insert a text parameter outside any delimiter,
  * a common prompt injection vector. Every role is checked: the caller supplies
- * the value wherever it is inserted. A delimiter is not escaping: a value that
- * contains the closing delimiter still closes it, which no static rule can see.
+ * the value wherever it is inserted. The value itself is known only at run time:
+ * generated code passes it through neutralizeDelimiters with the pairs found here,
+ * so it cannot close or reopen them, alone or next to another value.
  */
+// The template text before a placeholder, other placeholders removed, ends in "<"
+// and optional whitespace or "/": the value can complete a tag there. The runtime
+// rewrites values only, so this is reported instead of handled.
+const LESS_THAN_BEFORE = /<[ \t\n\v\f\r]*(?:\/[ \t\n\v\f\r]*)?$/;
+
+function followsLessThan(content: string, at: number): boolean {
+  return LESS_THAN_BEFORE.test(content.slice(0, at).replace(/\{\{\w+\}\}/g, ""));
+}
+
 export const promptInjectionRiskRule: Rule = {
   name: "prompt-injection-risk",
   severity: "warning",
@@ -111,8 +79,26 @@ export const promptInjectionRiskRule: Rule = {
         if (section.kind !== "MessageSection" || !section.content.isTemplate) continue;
         const content = section.content.value;
         const open = new Set<string>();
+        const afterLessThan = new Set<string>();
         for (const { name, index } of templatePlaceholders(content)) {
-          if (textParams.has(name) && !isEnclosed(content, index)) open.add(name);
+          if (!textParams.has(name)) continue;
+          const around = enclosingDelimiters(content, index);
+          if (around.length === 0) open.add(name);
+          else if (around.some((d) => d.startsWith("tag:")) && followsLessThan(content, index))
+            afterLessThan.add(name);
+        }
+        if (afterLessThan.size > 0) {
+          const list = [...afterLessThan].map((v) => `'{{${v}}}'`).join(", ");
+          issues.push({
+            severity: "warning",
+            rule: "prompt-injection-risk",
+            file: context.file,
+            line: section.content.line,
+            column: section.content.column,
+            message: `Template ${list} in ${section.role} section follows a "<": a value starting with "/name>" closes the tag around it, and the runtime rewrites only the value.`,
+            suggestion:
+              'Put other text between the "<" and the placeholder (<mailto:{{x}}>), or write &lt; in the template.',
+          });
         }
         if (open.size === 0) continue;
 

@@ -1,0 +1,32 @@
+name: Mutation
+
+# The full Stryker run behind docs/mutation/README.md, from a fresh checkout. Too
+# slow for every pull request; ci.yml runs a dry run there instead.
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mutation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+      - run: bun install --frozen-lockfile
+      - run: bun run mutation
+      - name: The report it wrote
+        run: git diff --stat -- docs/mutation/
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mutation-report
+          path: |
+            reports/mutation/mutation.json
+            docs/mutation/README.md
+          if-no-files-found: error

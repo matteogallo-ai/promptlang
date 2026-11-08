@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `bun run mutation` failed on a fresh clone (`ts.parseConfigFileTextToJson is not
+  a function`): Stryker 10.1.1 rewrites `tsconfig.json` through the TypeScript 4–5
+  API, which TypeScript 7 no longer has. The rewrite only moves `extends` and
+  `references` paths, which `tsconfig.json` does not have, so `stryker.config.json`
+  turns it off (`"tsconfigFile": ""`). CI runs a Stryker dry run on every pull
+  request and the full run weekly (`.github/workflows/mutation.yml`).
+- With a `python3` older than 3.11 (macOS ships 3.9), the tests that run generated
+  Python failed with `ImportError: cannot import name 'NotRequired'`. They are
+  skipped, and the reason is printed once (`tests/support/python.ts`); CI asserts
+  Python 3.11+ before testing. CONTRIBUTING lists the prerequisite.
+
+### Changed
+- CI and the release build use the Bun in `.bun-version` (1.3.14), and a workflow
+  rule fails a `setup-bun` step that names no version, so a tag is rebuilt with the
+  Bun that built it. TypeScript is pinned to 7.0.2.
+- The README's "Use it" says to run the example with Bun: Node does not run the
+  generated `.ts` files as they are.
+
 ## [3.0.1] - 2026-11-07
 
 A patch: the README published with 3.0.0, on npm and in the tarball, ran the CLI

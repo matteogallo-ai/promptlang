@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { describePython, pythonTest } from "./support/python";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -251,7 +252,7 @@ for name, answer in json.load(open("cases.json")):
 json.dump(results, sys.stdout)
 `;
 
-describe("generated Python checks the answer exactly as generated TypeScript does", () => {
+describePython("generated Python checks the answer exactly as generated TypeScript does", () => {
   let dir: string;
   let python: Outcome[];
 
@@ -284,7 +285,7 @@ describe("generated Python checks the answer exactly as generated TypeScript doe
 
 // TypeScript imports the runtime's parseOutput; a prompt of that name cannot share
 // a file with parse_output, as both generate ParseOutputInput.
-test("a prompt named parseOutput still checks its answer, in both languages", async () => {
+pythonTest("a prompt named parseOutput still checks its answer, in both languages", async () => {
   const source = `@version "1.0.0"\nprompt parseOutput(x: string) -> number {\n  user: "<t>{{x}}</t>"\n}\n`;
   const shadow = parse(tokenize(source));
   const ts = await importCompiled<{ parseOutput: Call }>(compile(shadow, "shadow.prompt"));

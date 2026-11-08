@@ -9,8 +9,9 @@ bun run mutation
 
 Stryker mutates `src/lexer/**/*.ts`, `src/parser/**/*.ts`, `src/semver/**/*.ts`, `!**/*.test.ts` and runs
 `bun test src/lexer src/parser src/semver` against each mutant (command runner,
-no per-test coverage, so every mutant runs the whole command). This runs locally,
-not in CI. Score = (killed + timeout) / (killed + timeout + survived + no coverage).
+no per-test coverage, so every mutant runs the whole command). CI runs it in full
+weekly (`.github/workflows/mutation.yml`) and as a dry run on every pull request.
+Score = (killed + timeout) / (killed + timeout + survived + no coverage).
 Every surviving mutant is accounted for in [survivors.md](survivors.md).
 
 The score covers those files only. Not mutated: `src/analyzer`, `src/ast`, `src/cli`, `src/compiler`, `src/config`, `src/registry`, `src/runtime`, `src/testing`;

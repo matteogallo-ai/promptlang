@@ -8,5 +8,6 @@
   "jsonReporter": { "fileName": "reports/mutation/mutation.json" },
   "concurrency": 8,
   "timeoutMS": 20000,
-  "cleanTempDir": "always"
+  "cleanTempDir": "always",
+  "tsconfigFile": ""
 }

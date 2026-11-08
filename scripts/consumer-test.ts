@@ -74,10 +74,10 @@ const issues: Issue[] = analyze([{ file: "p.prompt", ast: program }]);
 export { ts, issues };
 `;
 
-/** The README's quick example: the first promptlang block and the TypeScript after "Use it:". */
+/** The README's quick example: the first promptlang block and the first TypeScript block after "Use it". */
 export function readmeQuickExample(readme: string): { prompt: string; usage: string } {
   const prompt = /```promptlang\n([\s\S]*?)```/.exec(readme)?.[1];
-  const usage = /Use it:\s*```typescript\n([\s\S]*?)```/.exec(readme)?.[1];
+  const usage = /\bUse it\b[\s\S]*?```typescript\n([\s\S]*?)```/.exec(readme)?.[1];
   if (!prompt || !usage) throw new Error("README quick example not found");
   return { prompt, usage };
 }

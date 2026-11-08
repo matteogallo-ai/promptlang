@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { pythonTest } from "../../tests/support/python";
 import { mkdtemp, rm, writeFile, mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -59,7 +60,7 @@ describe("a struct parameter reaches the model as JSON", () => {
     expect(sent.map((r) => r.messages[0]!.content)).toEqual([EXPECTED, SYSTEM_EXPECTED]);
   });
 
-  test("in generated Python, byte for byte the same", async () => {
+  pythonTest("in generated Python, byte for byte the same", async () => {
     const dir = await mkdtemp(join(tmpdir(), "promptlang-struct-params-"));
     try {
       await mkdir(join(dir, "pkg"));

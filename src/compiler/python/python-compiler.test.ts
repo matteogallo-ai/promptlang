@@ -1,4 +1,5 @@
 import { describe, test, expect } from "bun:test";
+import { pythonTest } from "../../../tests/support/python";
 import { compilePython } from "./python-compiler";
 import { getPythonRuntimeSource } from "./python-runtime-template";
 import { tokenize } from "../../lexer/lexer";
@@ -17,12 +18,6 @@ function parseSource(src: string) {
 
 function compile(src: string): string {
   return compilePython(parseSource(src), "test.prompt");
-}
-
-// Check if python3 is available for integration tests
-const pythonAvailable = Bun.spawnSync(["which", "python3"]).exitCode === 0;
-if (!pythonAvailable) {
-  console.warn("⚠  python3 not available — skipping Python integration tests");
 }
 
 // ---------------------------------------------------------------------------
@@ -281,7 +276,7 @@ chain run() -> string {
 // Integration: py_compile
 // ---------------------------------------------------------------------------
 
-test.if(pythonAvailable)("generated Python parses with ast.parse (classify-ticket)", async () => {
+pythonTest("generated Python parses with ast.parse (classify-ticket)", async () => {
   const source = await Bun.file("docs/examples/classify-ticket.prompt").text();
   const ast = parse(tokenize(source));
   const generated = compilePython(ast, "classify-ticket.prompt");
@@ -322,27 +317,24 @@ print("OK")
   }
 });
 
-test.if(pythonAvailable)(
-  "generated Python parses with ast.parse (extract-invoice struct)",
-  async () => {
-    const source = await Bun.file("docs/examples/extract-invoice.prompt").text();
-    const ast = parse(tokenize(source));
-    const generated = compilePython(ast, "extract-invoice.prompt");
+pythonTest("generated Python parses with ast.parse (extract-invoice struct)", async () => {
+  const source = await Bun.file("docs/examples/extract-invoice.prompt").text();
+  const ast = parse(tokenize(source));
+  const generated = compilePython(ast, "extract-invoice.prompt");
 
-    const tmpDir = join(SCRATCH, "promptlang-python-invoice-test");
-    await mkdir(tmpDir, { recursive: true });
-    await writeFile(`${tmpDir}/extract_invoice.py`, generated);
-    await writeFile(`${tmpDir}/promptlang_runtime.py`, getPythonRuntimeSource());
+  const tmpDir = join(SCRATCH, "promptlang-python-invoice-test");
+  await mkdir(tmpDir, { recursive: true });
+  await writeFile(`${tmpDir}/extract_invoice.py`, generated);
+  await writeFile(`${tmpDir}/promptlang_runtime.py`, getPythonRuntimeSource());
 
-    try {
-      const result = Bun.spawnSync(["python3", "-m", "py_compile", `${tmpDir}/extract_invoice.py`]);
-      if (result.exitCode !== 0) {
-        const stderr = new TextDecoder().decode(result.stderr);
-        throw new Error(`py_compile failed:\n${stderr}\n\nGenerated:\n${generated}`);
-      }
-      expect(result.exitCode).toBe(0);
-    } finally {
-      await rm(tmpDir, { recursive: true, force: true });
+  try {
+    const result = Bun.spawnSync(["python3", "-m", "py_compile", `${tmpDir}/extract_invoice.py`]);
+    if (result.exitCode !== 0) {
+      const stderr = new TextDecoder().decode(result.stderr);
+      throw new Error(`py_compile failed:\n${stderr}\n\nGenerated:\n${generated}`);
     }
+    expect(result.exitCode).toBe(0);
+  } finally {
+    await rm(tmpDir, { recursive: true, force: true });
   }
-);
+});

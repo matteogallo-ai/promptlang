@@ -3,7 +3,8 @@ import { rm, mkdir, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { SCRATCH } from "../../tests/support/scratch";
-import { runTsc, subprocessTest } from "../../tests/support/subprocess";
+import { pythonTest } from "../../tests/support/python";
+import { runTsc, SUBPROCESS_TIMEOUT_MS, subprocessTest } from "../../tests/support/subprocess";
 import { main } from "./cli";
 
 // Helpers that suppress output and capture it.
@@ -1167,12 +1168,16 @@ describe("compile — output names", () => {
     expect(written).toContain("class_.py");
   });
 
-  subprocessTest("the compiled Python package imports", async () => {
-    await compileTree({ "sentiment.v2.prompt": prompt("sentiment") }, ["--target", "python"]);
-    const r = Bun.spawnSync(["python3", "-c", "import out; print(out.sentiment.__name__)"], {
-      cwd: DIR,
-    });
-    expect(r.stderr.toString()).toBe("");
-    expect(r.stdout.toString().trim()).toBe("sentiment");
-  });
+  pythonTest(
+    "the compiled Python package imports",
+    async () => {
+      await compileTree({ "sentiment.v2.prompt": prompt("sentiment") }, ["--target", "python"]);
+      const r = Bun.spawnSync(["python3", "-c", "import out; print(out.sentiment.__name__)"], {
+        cwd: DIR,
+      });
+      expect(r.stderr.toString()).toBe("");
+      expect(r.stdout.toString().trim()).toBe("sentiment");
+    },
+    SUBPROCESS_TIMEOUT_MS
+  );
 });

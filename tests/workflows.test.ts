@@ -30,6 +30,28 @@ describe.skipIf(typeof Bun.YAML === "undefined")("GitHub Actions workflows", () 
     expect(workflowViolations("ok.yml", text)).toEqual([]);
   });
 
+  test("every setup-bun step names the Bun it installs", () => {
+    const setup = (w: string) => `      - uses: oven-sh/setup-bun@${SHA} # v2.2.0\n${w}`;
+    const pinned = wf(
+      `    steps:\n${setup("        with:\n          bun-version-file: .bun-version\n")}`
+    );
+    const matrix = wf(`    steps:\n${setup("        with:\n          bun-version: 1.2.20\n")}`);
+    expect(workflowViolations("a.yml", pinned)).toEqual([]);
+    expect(workflowViolations("b.yml", matrix)).toEqual([]);
+    expect(workflowViolations("c.yml", wf(`    steps:\n${setup("")}`))).toEqual([
+      "c.yml: job j: oven-sh/setup-bun without bun-version or bun-version-file installs whatever Bun is newest",
+    ]);
+    for (const tag of ["latest", "canary"])
+      expect(
+        workflowViolations(
+          "d.yml",
+          wf(`    steps:\n${setup(`        with:\n          bun-version: ${tag}\n`)}`)
+        )
+      ).toEqual([
+        `d.yml: job j: oven-sh/setup-bun with bun-version: ${tag} installs whatever Bun is newest`,
+      ]);
+  });
+
   test("rejects a tag, a short SHA and a SHA without its version comment", () => {
     const text = wf(
       `    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/checkout@11d5960\n      - uses: actions/checkout@${SHA}\n`

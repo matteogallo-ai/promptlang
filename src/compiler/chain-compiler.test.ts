@@ -420,13 +420,9 @@ describe("chain — errors: undefined identifiers", () => {
         return r
       }
     `;
-    try {
-      compileSource(src);
-      expect(true).toBe(false); // should not reach
-    } catch (e) {
-      expect((e as Error).message).toContain("bad_chain");
-      expect((e as Error).message).toContain("nonexistent");
-    }
+    expect(() => compileSource(src)).toThrow(CompilerError);
+    expect(() => compileSource(src)).toThrow("bad_chain");
+    expect(() => compileSource(src)).toThrow("nonexistent");
   });
 
   test("return referencing undefined throws CompilerError", () => {
@@ -463,12 +459,8 @@ describe("chain — errors: forward references", () => {
         return a
       }
     `;
-    try {
-      compileSource(src);
-      expect(true).toBe(false);
-    } catch (e) {
-      expect((e as Error).message).toContain("defined later");
-    }
+    expect(() => compileSource(src)).toThrow(CompilerError);
+    expect(() => compileSource(src)).toThrow("defined later");
   });
 });
 

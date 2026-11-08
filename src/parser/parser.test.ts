@@ -878,16 +878,10 @@ describe("Parser — Errors", () => {
   });
 
   test("ParserError has correct line and column", () => {
-    try {
-      p(`
-prompt foo() string { }`);
-      expect(true).toBe(false); // should not reach here
-    } catch (e) {
-      expect(e).toBeInstanceOf(ParserError);
-      const err = e as ParserError;
-      expect(err.line).toBeGreaterThan(0);
-      expect(err.column).toBeGreaterThan(0);
-    }
+    // `string` is the 14th character of line 2, where "->" is expected.
+    const parseMissingArrow = () => p(`\nprompt foo() string { }`);
+    expect(parseMissingArrow).toThrow(ParserError);
+    expect(parseMissingArrow).toThrow(expect.objectContaining({ line: 2, column: 14 }));
   });
 
   test("ParserError message is pedagogical", () => {

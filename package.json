@@ -1,6 +1,6 @@
 {
   "name": "@promptlang/core",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "A typed language for LLM prompts",
   "workspaces": [
     "packages/*"
@@ -21,7 +21,8 @@
     "ai",
     "openai",
     "anthropic",
-    "typescript"
+    "typescript",
+    "python"
   ],
   "type": "module",
   "main": "./dist/index.js",

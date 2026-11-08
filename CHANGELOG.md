@@ -7,12 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.1] - 2026-11-07
+
+A patch: the README published with 3.0.0, on npm and in the tarball, ran the CLI
+under the unscoped name. The library, the CLI and the generated code are
+unchanged.
+
 ### Security
 - The README ran the CLI through npx under the unscoped name, which, without
   `@promptlang/core` installed, downloads and runs the unscoped `promptlang`
   package, owned by a third party. It now runs `npx @promptlang/core`.
   `scripts/check-unscoped-cli.ts`, run as a test in `bun test`, fails if a tracked file runs or installs the unscoped package
   (npx, bunx, pnpm/yarn dlx, npm exec; npm, bun, pnpm, yarn install or add).
+
+### Changed
+- The README said no version of `@promptlang/core` was on npm before 2.0.0. npm
+  has `0.0.0-stage`, an empty placeholder published on 2026-11-03 while
+  publishing was set up; the README now names it.
+- The npm keywords include `python`, the second compile target.
 
 ### Added
 - The result of the pre-registered human review of the AI linter's findings

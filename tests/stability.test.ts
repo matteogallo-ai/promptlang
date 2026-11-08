@@ -19,6 +19,13 @@ describe("3.x stability: package metadata", () => {
     expect(pkg.name).toBe("@promptlang/core");
   });
 
+  // The npm page is read before the README: it names both compile targets and
+  // claims nothing that docs/CLAIMS.md does not list.
+  test("npm description and keywords match what is shipped", () => {
+    expect(pkg.description).toBe("A typed language for LLM prompts");
+    expect(pkg.keywords).toEqual(expect.arrayContaining(["typescript", "python"]));
+  });
+
   test("bin entry exposes the CLI", () => {
     expect(pkg.bin).toBeDefined();
     expect((pkg.bin as Record<string, string>).promptlang).toBe("dist/cli/cli.js");

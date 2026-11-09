@@ -67,7 +67,7 @@
     "test:consumer": "bun run scripts/consumer-test.ts"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.4",
+    "@biomejs/biome": "2.6.6",
     "@promptlang/yaml-parser": "workspace:*",
     "@stryker-mutator/core": "10.1.1",
     "@types/bun": "latest",

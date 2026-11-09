@@ -89,10 +89,12 @@ npx @promptlang/core test classify-ticket.prompt
 npx @promptlang/core compile classify-ticket.prompt --out ./generated
 ```
 
-Use it from Bun (`bun use.ts`). The generated files are TypeScript source, and
-Node does not run them as they are (`ERR_UNKNOWN_FILE_EXTENSION` before Node 22.18,
-`ERR_MODULE_NOT_FOUND` from 22.18): under Node, transpile them first. The library
-and the runtime themselves run on Node ≥ 20.
+Use it from Bun (`bun use.ts`). The generated files are TypeScript source whose
+imports have no file extension, and Node does not run them as they are: a Node
+without default type stripping (before 22.18) stops on the `.ts` file
+(`ERR_UNKNOWN_FILE_EXTENSION`); one with it stops on the extensionless import
+(`ERR_MODULE_NOT_FOUND`). Under Node, transpile them first. The library and the
+runtime themselves run on Node ≥ 20.
 
 ```typescript
 import { classify_ticket } from "./generated/classify-ticket";

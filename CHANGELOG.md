@@ -11,7 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Contact address: `matteogallo.office@gmail.com` in `SECURITY.md`,
   `CODE_OF_CONDUCT.md` and the `author` field of both packages (on npm from the
   next publish).
-- 3.0.1 and 3.1.0 are dated 2026-11-08, the day they were tagged and published.
+- 3.0.1 and 3.1.0 are dated 2026-11-08, the day they were tagged and published;
+  3.0.0 is dated 2026-11-04 for the same reason (it read 2026-11-03).
 - The README shows the `@promptlang/core` npm badge, gives the Node error for
   both cases (`ERR_UNKNOWN_FILE_EXTENSION` without default type stripping,
   `ERR_MODULE_NOT_FOUND` on the extensionless import with it), and leaves the AI
@@ -133,7 +134,7 @@ unchanged.
   instruction to fill every missing value contradicts the boolean rule of the
   base task. The linter's precision remains a lower bound.
 
-## [3.0.0] - 2026-11-03
+## [3.0.0] - 2026-11-04
 
 The fixes for the F1 neutral audit (`docs/audit/`). Several refuse what 2.x
 accepted silently: an answer outside its declared type, an incomplete answer,

@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-Email **matteo.gallo@gallarti.io** with the subject line
+Email **matteogallo.office@gmail.com** with the subject line
 `[SECURITY] PromptLang — <brief description>`. Do **not** open a public GitHub
 issue. Reports are acknowledged within 48 hours; a fix or mitigation is targeted
 within 14 days.

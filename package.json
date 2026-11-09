@@ -5,7 +5,7 @@
   "workspaces": [
     "packages/*"
   ],
-  "author": "Matteo Gallo <matteo.gallo@gallarti.io>",
+  "author": "Matteo Gallo <matteogallo.office@gmail.com>",
   "license": "MIT",
   "repository": {
     "type": "git",

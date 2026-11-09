@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [3.1.0] - 2026-11-07
+## [3.1.0] - 2026-11-08
 
 ### Security
 - A value inserted between delimiters can no longer close or reopen them. Before,
@@ -84,7 +84,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The README's "Use it" says to run the example with Bun: Node does not run the
   generated `.ts` files as they are.
 
-## [3.0.1] - 2026-11-07
+## [3.0.1] - 2026-11-08
 
 A patch: the README published with 3.0.0, on npm and in the tarball, ran the CLI
 under the unscoped name. The library, the CLI and the generated code are

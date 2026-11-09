@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+- Contact address: `matteogallo.office@gmail.com` in `SECURITY.md`,
+  `CODE_OF_CONDUCT.md` and the `author` field of both packages (on npm from the
+  next publish).
+- 3.0.1 and 3.1.0 are dated 2026-11-08, the day they were tagged and published.
+- The README shows the `@promptlang/core` npm badge, gives the Node error for
+  both cases (`ERR_UNKNOWN_FILE_EXTENSION` before Node 22.18,
+  `ERR_MODULE_NOT_FOUND` from 22.18), and leaves the AI linter's p-values to
+  `docs/ai-linter.md`.
+- American spelling throughout the README and docs.
+
 ## [3.1.0] - 2026-11-08
 
 ### Security

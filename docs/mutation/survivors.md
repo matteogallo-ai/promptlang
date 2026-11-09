@@ -12,21 +12,24 @@ Measured with the same Stryker configuration (`stryker.config.json`).
 | File | Before % | After % |
 | ---- | -------: | ------: |
 | `src/lexer/errors.ts` | 50.00 | 100.00 |
-| `src/lexer/lexer.ts` | 85.25 | 97.70 |
+| `src/lexer/lexer.ts` | 85.25 | 97.69 |
 | `src/parser/errors.ts` | 50.00 | 100.00 |
 | `src/parser/parser.ts` | 73.00 | 95.83 |
 | `src/semver/check.ts` | 84.72 | 91.20 |
-| `src/semver/interface.ts` | 90.48 | 99.27 |
+| `src/semver/interface.ts` | 90.48 | 99.34 |
 | `src/semver/semver.ts` | 85.57 | 95.19 |
-| **total** | **81.44** | **96.13** |
+| **total** | **81.44** | **96.19** |
 
 "Before" is the test suite of `main` at the start of this work (1 918 mutants:
 1 503 killed, 59 timeout, 356 survived). The tests added since are the property
 tests (`*.property.test.ts`), the error tables (`lexer.errors.test.ts`,
 `parser.errors.test.ts`) and boundary cases in the existing test files, each
 written against a mutant that had survived. "After" is the run recorded in
-[README.md](README.md) (1 914 mutants: 1 780 killed, 60 timeout, 74 survived).
-That run took 14 min 31 s on an 8-core laptop, which is why it is not a CI job.
+[README.md](README.md), on commit a168201 (1 942 mutants: 1 808 killed, 60 timeout,
+74 survived). That run took 11 min 30 s on an 8-core laptop, which is why pull
+requests run only a dry run. The first "after" run, on f4f7306 (2026-11-03), scored
+96.13% on 1 914 mutants (1 780 killed, 60 timeout, 74 survived); since then
+`src/semver/interface.ts` gained 29 mutants and `src/lexer/lexer.ts` lost one.
 
 Under that load a mutant is occasionally reported killed because an unrelated
 test went over its time limit: 211:47 below was killed in one run and survived
@@ -35,7 +38,7 @@ a mutant lands.
 
 ## Equivalent mutants
 
-An equivalent mutant changes the code without changing any observable behaviour,
+An equivalent mutant changes the code without changing any observable behavior,
 so no test can tell it apart from the original.
 
 ### `src/lexer/lexer.ts`
@@ -80,8 +83,8 @@ so no test can tell it apart from the original.
 
 | Position | Mutator | Why it survives |
 | -------- | ------- | --------------- |
-| 28:32 | EqualityOperator | With `>=`, a change of the same level replaces `best` with an equal value. |
-| 106:9 | ConditionalExpression | Registering every declaration as a type adds entries with an `undefined` definition for prompts, chains, tests and evals; `shapeOf` treats a missing definition as unresolved, as it does a name absent from the map (`interface.test.ts` pins this with a parameter typed by a prompt's name). |
+| 29:32 | EqualityOperator | With `>=`, a change of the same level replaces `best` with an equal value. |
+| 185:12 | ConditionalExpression | With `false`, a type's change carries `declaration: undefined` instead of no `declaration` key; `formatChange` prints nothing for either, and the JSON output drops an undefined value. |
 
 ### `src/semver/semver.ts`
 

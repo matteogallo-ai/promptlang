@@ -10,7 +10,7 @@ It looks for six kinds of defect that static rules cannot see:
 - Hallucination risks (invitations to guess vs. refuse)
 - Token inefficiencies (verbose phrasing that could be shorter)
 
-**Measured on a labelled corpus** (`evals/linter/`, 120 cases;
+**Measured on a labeled corpus** (`evals/linter/`, 120 cases;
 [`docs/SYSTEM_CARD.md`](SYSTEM_CARD.md)), on the test split with
 `claude-haiku-5-5`: it finds almost every designed defect (recall 44/45 and
 45/45 over two runs) but reports about four categories per prompt, so most of

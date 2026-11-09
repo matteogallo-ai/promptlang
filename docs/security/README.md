@@ -35,7 +35,7 @@ records one run so that the explanations below can be checked against it.
 | CI-Tests | 10 | Every merged pull request ran CI. |
 | CII-Best-Practices | 0 | The project is not registered on bestpractices.dev. |
 | Code-Review | 0 | Low by nature on a solo repository: Scorecard counts changesets with an approving GitHub review from someone other than their author, and there is no second maintainer. |
-| Contributors | 0 | Low by nature on a solo repository: Scorecard counts the distinct companies and organisations (GitHub profile company, public org memberships) of contributors with at least 5 commits, and gives 10 at three. The only author has 4 commits, under that threshold; past it, their one company scores about 3, and more needs contributors from other organisations. |
+| Contributors | 0 | Low by nature on a solo repository: Scorecard counts the distinct companies and organizations (GitHub profile company, public org memberships) of contributors with at least 5 commits, and gives 10 at three. The only author has 4 commits, under that threshold; past it, their one company scores about 3, and more needs contributors from other organizations. |
 | Dangerous-Workflow | 10 | No `pull_request_target`, and no `github.event.*` or `github.head_ref` expression inside a `run:` script; `tests/workflows.test.ts` keeps both so. |
 | Dependency-Update-Tool | 10 | `.github/dependabot.yml`. |
 | Fuzzing | 0 | No fuzzing or property-based tests detected at `b3270b7`; see the Fuzzing check below. |

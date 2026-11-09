@@ -9,6 +9,7 @@ TypeScript or Python. Bring your own API key. No third-party runtime dependencie
 
 <sub>`bun run demo`, recorded as it runs ([`docs/media/demo.tape`](docs/media/demo.tape)).</sub>
 
+[![@promptlang/core](https://img.shields.io/npm/v/@promptlang/core.svg?label=%40promptlang%2Fcore)](https://www.npmjs.com/package/@promptlang/core)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/matteogallo-ai/promptlang/badge)](https://scorecard.dev/viewer/?uri=github.com/matteogallo-ai/promptlang)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue.svg)](tsconfig.json)
@@ -30,10 +31,10 @@ no versions. PromptLang treats them as typed code:
 - **SemVer for prompts**: `semver-check` fails when a prompt's interface changed more than its `@version` says
 - **Multi-provider runtime** (Anthropic, OpenAI, Ollama, or your own client)
 - **Multi-provider fallback**: `RoutingClient` tries providers in order, with a model map per provider
-- **AI-powered linter**: a reviewer aid, not a gate: its findings beat chance (p ≈ 6e-10) but it flags every clean prompt ([`docs/ai-linter.md`](docs/ai-linter.md))
+- **AI-powered linter**: a reviewer aid, not a gate: its findings beat chance but it flags every clean prompt ([`docs/ai-linter.md`](docs/ai-linter.md))
 - **No third-party runtime dependencies**: Bun or Node, `fetch` and your own API keys
 
-Not delivered, and labelled as such everywhere in this repository (see
+Not delivered, and labeled as such everywhere in this repository (see
 [`docs/CLAIMS.md`](docs/CLAIMS.md)):
 
 - **`eval` blocks**: parsed, not executed
@@ -88,9 +89,12 @@ npx @promptlang/core test classify-ticket.prompt
 npx @promptlang/core compile classify-ticket.prompt --out ./generated
 ```
 
-Use it from Bun (`bun use.ts`). The generated files are TypeScript source, and
-Node does not run them as they are (`ERR_UNKNOWN_FILE_EXTENSION`): under Node,
-transpile them first. The library and the runtime themselves run on Node ≥ 20.
+Use it from Bun (`bun use.ts`). The generated files are TypeScript source whose
+imports have no file extension, and Node does not run them as they are: a Node
+without default type stripping (before 22.18) stops on the `.ts` file
+(`ERR_UNKNOWN_FILE_EXTENSION`); one with it stops on the extensionless import
+(`ERR_MODULE_NOT_FOUND`). Under Node, transpile them first. The library and the
+runtime themselves run on Node ≥ 20.
 
 ```typescript
 import { classify_ticket } from "./generated/classify-ticket";
@@ -103,7 +107,7 @@ const category = await classify_ticket({ ticket: "..." }, client);
 ### Delimited values
 
 Generated TypeScript and Python rewrite a string inserted between delimiters, the
-same way byte for byte, with the pairs `prompt-injection-risk` recognises around
+same way byte for byte, with the pairs `prompt-injection-risk` recognizes around
 its placeholder, so that the value cannot close or reopen them:
 
 - `<name>` … `</name>` (and `<BEGIN>`/`<END>`): a `<` that starts `<name` or `</name`, in any ASCII

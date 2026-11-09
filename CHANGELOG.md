@@ -7,14 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [3.1.0] - 2026-11-07
+### Documentation
+- Contact address: `matteogallo.office@gmail.com` in `SECURITY.md`,
+  `CODE_OF_CONDUCT.md` and the `author` field of both packages (on npm from the
+  next publish).
+- 3.0.1 and 3.1.0 are dated 2026-11-08, the day they were tagged and published.
+- The README shows the `@promptlang/core` npm badge, gives the Node error for
+  both cases (`ERR_UNKNOWN_FILE_EXTENSION` without default type stripping,
+  `ERR_MODULE_NOT_FOUND` on the extensionless import with it), and leaves the AI
+  linter's p-values to `docs/ai-linter.md`.
+- Mutation score re-measured on a168201: 96.19% of 1 942 mutants (96.13% of
+  1 914 on f4f7306).
+- American spelling throughout the README and docs.
+
+## [3.1.0] - 2026-11-08
 
 ### Security
 - A value inserted between delimiters can no longer close or reopen them. Before,
   a ticket containing `</ticket>` closed the `<ticket>` tag around it, and the
   text after it read as the prompt's own. Generated TypeScript and Python now
   rewrite such a string, byte for byte the same in both languages, using the pairs
-  `prompt-injection-risk` recognises around its placeholder:
+  `prompt-injection-risk` recognizes around its placeholder:
   - `<name>`…`</name>` (and `<BEGIN>`/`<END>`): a `<` that starts `<name` or
     `</name`, in any ASCII case, with ASCII whitespace around the `/`, becomes
     `&lt;`; a longer name (`<tickets>`) is left alone;
@@ -84,7 +97,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The README's "Use it" says to run the example with Bun: Node does not run the
   generated `.ts` files as they are.
 
-## [3.0.1] - 2026-11-07
+## [3.0.1] - 2026-11-08
 
 A patch: the README published with 3.0.0, on npm and in the tarball, ran the CLI
 under the unscoped name. The library, the CLI and the generated code are
@@ -163,7 +176,7 @@ version; `docs/migration-guide.md` (2.x → 3.0.0) lists what to change.
   `enum`, or enclose the input in a delimiter pair.
 
 - **Generated code checks every answer against its declared type** (breaking for
-  code that relied on the old behaviour). Answers that used to pass now raise
+  code that relied on the old behavior). Answers that used to pass now raise
   `InvalidOutputError`: a struct with a field the type does not declare, a field
   of the wrong type at any depth, a `number` not in decimal notation (`0x10`), a
   `date` that is not a real day (`2024-02-30`). The error has `prompt`, `errors`
@@ -274,7 +287,7 @@ ways, each of which SemVer reserves for a major version:
   `RoutingClient` maps the model per provider (see Added).
 - README marked the **AI-powered linter** ✅ and "unique"; it was only tested with a
   mocked client and had never run against the API. It is now measured on a
-  labelled corpus (see Added): it finds almost every designed defect (recall
+  labeled corpus (see Added): it finds almost every designed defect (recall
   44/45 and 45/45) but most of its findings are false alarms (precision about
   20%), and it flags every clean prompt. The README says so.
 - The test badge said "626 passing": it counted `@promptlang/yaml-parser`'s 23
@@ -398,7 +411,7 @@ ways, each of which SemVer reserves for a major version:
   (exit 3); `analyze --ai` reports the prompt as `ai:request-failure`.
   `test --live` refuses a model without a price before any call (exit 2).
 - The AI linter is measured: `scripts/linter-eval.ts` runs it on `evals/linter/`
-  (120 labelled cases, corpus 1.1.0), scores precision and recall with Wilson
+  (120 labeled cases, corpus 1.1.0), scores precision and recall with Wilson
   intervals, and writes an immutable record to `runs/live/` (checked by
   `SHA256SUMS`). `scripts/eval-report.ts` renders the measured blocks of
   `docs/SYSTEM_CARD.md` and `docs/SLO.md` from it.

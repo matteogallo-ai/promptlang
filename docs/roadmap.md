@@ -45,7 +45,7 @@ Release history is in [`CHANGELOG.md`](../CHANGELOG.md).
       exponential backoff on retryable errors only, typed error hierarchy,
       `InvalidResponseError` for malformed provider responses, empty API keys rejected
 - [x] Cross-provider fallback: per-provider `modelMap` in `RoutingClient`; `Retry-After`
-      honoured on rate limits
+      honored on rate limits
 - [x] `@promptlang/core` entry point exporting `tokenize`, `parse`, `resolveGraph`,
       `resolveImport`, `compile`, `compilePython`, `analyze`, the error classes and AST types
 

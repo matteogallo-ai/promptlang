@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-03",
+  "date": "2026-11-09",
   "stryker": "10.1.1",
   "files": [
     {
@@ -13,12 +13,12 @@
     },
     {
       "file": "src/lexer/lexer.ts",
-      "killed": 393,
+      "killed": 392,
       "timeout": 31,
       "survived": 10,
       "noCoverage": 0,
       "errors": 0,
-      "score": 97.7
+      "score": 97.69
     },
     {
       "file": "src/parser/errors.ts",
@@ -49,12 +49,12 @@
     },
     {
       "file": "src/semver/interface.ts",
-      "killed": 271,
+      "killed": 300,
       "timeout": 0,
       "survived": 2,
       "noCoverage": 0,
       "errors": 0,
-      "score": 99.27
+      "score": 99.34
     },
     {
       "file": "src/semver/semver.ts",
@@ -68,11 +68,11 @@
   ],
   "total": {
     "file": "total",
-    "killed": 1780,
+    "killed": 1808,
     "timeout": 60,
     "survived": 74,
     "noCoverage": 0,
     "errors": 0,
-    "score": 96.13
+    "score": 96.19
   }
 }

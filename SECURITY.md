@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-Email **matteo.gallo@gallarti.io** with the subject line
+Email **matteogallo.office@gmail.com** with the subject line
 `[SECURITY] PromptLang — <brief description>`. Do **not** open a public GitHub
 issue. Reports are acknowledged within 48 hours; a fix or mitigation is targeted
 within 14 days.
@@ -43,7 +43,7 @@ What the code does today:
 ## Threat model
 
 PromptLang compiles `.prompt` files into code that calls LLM providers. The assets
-are your provider keys, the integrity of the prompts you ship, and the behaviour
+are your provider keys, the integrity of the prompts you ship, and the behavior
 of the model calls made from generated code.
 
 | Threat | Where it enters | What PromptLang does | What it does not do |

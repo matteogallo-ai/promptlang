@@ -90,8 +90,9 @@ npx @promptlang/core compile classify-ticket.prompt --out ./generated
 ```
 
 Use it from Bun (`bun use.ts`). The generated files are TypeScript source, and
-Node does not run them as they are (`ERR_UNKNOWN_FILE_EXTENSION`): under Node,
-transpile them first. The library and the runtime themselves run on Node ≥ 20.
+Node does not run them as they are (`ERR_UNKNOWN_FILE_EXTENSION` before Node 22.18,
+`ERR_MODULE_NOT_FOUND` from 22.18): under Node, transpile them first. The library
+and the runtime themselves run on Node ≥ 20.
 
 ```typescript
 import { classify_ticket } from "./generated/classify-ticket";

@@ -9,6 +9,7 @@ TypeScript or Python. Bring your own API key. No third-party runtime dependencie
 
 <sub>`bun run demo`, recorded as it runs ([`docs/media/demo.tape`](docs/media/demo.tape)).</sub>
 
+[![@promptlang/core](https://img.shields.io/npm/v/@promptlang/core.svg?label=%40promptlang%2Fcore)](https://www.npmjs.com/package/@promptlang/core)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/matteogallo-ai/promptlang/badge)](https://scorecard.dev/viewer/?uri=github.com/matteogallo-ai/promptlang)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue.svg)](tsconfig.json)

@@ -31,7 +31,7 @@ no versions. PromptLang treats them as typed code:
 - **SemVer for prompts**: `semver-check` fails when a prompt's interface changed more than its `@version` says
 - **Multi-provider runtime** (Anthropic, OpenAI, Ollama, or your own client)
 - **Multi-provider fallback**: `RoutingClient` tries providers in order, with a model map per provider
-- **AI-powered linter**: a reviewer aid, not a gate: its findings beat chance (p ≈ 6e-10) but it flags every clean prompt ([`docs/ai-linter.md`](docs/ai-linter.md))
+- **AI-powered linter**: a reviewer aid, not a gate: its findings beat chance but it flags every clean prompt ([`docs/ai-linter.md`](docs/ai-linter.md))
 - **No third-party runtime dependencies**: Bun or Node, `fetch` and your own API keys
 
 Not delivered, and labelled as such everywhere in this repository (see

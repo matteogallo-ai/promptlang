@@ -34,7 +34,7 @@ no versions. PromptLang treats them as typed code:
 - **AI-powered linter**: a reviewer aid, not a gate: its findings beat chance but it flags every clean prompt ([`docs/ai-linter.md`](docs/ai-linter.md))
 - **No third-party runtime dependencies**: Bun or Node, `fetch` and your own API keys
 
-Not delivered, and labelled as such everywhere in this repository (see
+Not delivered, and labeled as such everywhere in this repository (see
 [`docs/CLAIMS.md`](docs/CLAIMS.md)):
 
 - **`eval` blocks**: parsed, not executed
@@ -105,7 +105,7 @@ const category = await classify_ticket({ ticket: "..." }, client);
 ### Delimited values
 
 Generated TypeScript and Python rewrite a string inserted between delimiters, the
-same way byte for byte, with the pairs `prompt-injection-risk` recognises around
+same way byte for byte, with the pairs `prompt-injection-risk` recognizes around
 its placeholder, so that the value cannot close or reopen them:
 
 - `<name>` … `</name>` (and `<BEGIN>`/`<END>`): a `<` that starts `<name` or `</name`, in any ASCII

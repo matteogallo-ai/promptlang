@@ -6,7 +6,7 @@
 ## Context
 
 `semver-check` must decide, for each change to a `.prompt` file, whether it breaks
-consumers (major), extends them compatibly (minor) or only changes behaviour behind
+consumers (major), extends them compatibly (minor) or only changes behavior behind
 the same contract (patch). The project decision is that the interface is the
 parameters (names, types, optionality), the output schema and the target model,
 plus, since the 2026-11-03 amendment, the declared type names.
@@ -41,7 +41,7 @@ plus, since the 2026-11-03 amendment, the declared type names.
   break. Treating both as major is conservative and easy to explain. A struct
   field becoming optional is major for the same reason (consumers read it).
 - **A model change is major.** Same parameters and schema do not mean the same
-  behaviour; the project decision says so explicitly.
+  behavior; the project decision says so explicitly.
 - **Making a required parameter optional is minor**: existing calls still type-check.
 - **Prompt replaced by a chain of the same name is major**: the function signature
   can be identical, but the model contract no longer applies.

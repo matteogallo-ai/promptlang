@@ -1,6 +1,6 @@
 # AI linter eval corpus
 
-A frozen, labelled set of `.prompt` files with known defects, used by
+A frozen, labeled set of `.prompt` files with known defects, used by
 `scripts/linter-eval.ts` to measure the AI linter's precision and recall.
 
 ## What is in it

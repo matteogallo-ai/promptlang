@@ -57,7 +57,7 @@ Initial release. Extracted verbatim from PromptLang core
 ### Notes
 
 - Logic is identical to the parser shipped in PromptLang v1.0.0. No
-  behavioural changes were made during extraction. Any future evolution
+  behavioral changes were made during extraction. Any future evolution
   happens here first; downstream consumers (PromptLang, Praxis) pick it
   up via SemVer.
 

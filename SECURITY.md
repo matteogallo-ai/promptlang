@@ -43,7 +43,7 @@ What the code does today:
 ## Threat model
 
 PromptLang compiles `.prompt` files into code that calls LLM providers. The assets
-are your provider keys, the integrity of the prompts you ship, and the behaviour
+are your provider keys, the integrity of the prompts you ship, and the behavior
 of the model calls made from generated code.
 
 | Threat | Where it enters | What PromptLang does | What it does not do |

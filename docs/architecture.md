@@ -307,7 +307,7 @@ Command-line interface. Subcommands:
 | `promptlang check` | Verify integrity + import resolution |
 | `promptlang semver-check [paths] [--base ref] [--json]` | Compare `@version` bumps with interface changes against a Git ref |
 | `promptlang test <paths> [--json] [--live [--yes]]` | Run `test` blocks: mock responses by default, the provider after a cost estimate with `--live` |
-| `promptlang version` | Print version, repository and licence |
+| `promptlang version` | Print version, repository and license |
 
 There is no `eval`, `lint` or `viz` command.
 

@@ -3,7 +3,7 @@
 Reference for the `.prompt` language as the current parser and compilers implement
 it. The formal grammar is [`src/parser/grammar.md`](../src/parser/grammar.md). Forms
 that parse but have no effect are marked **parsed only**; capabilities that do
-not exist are listed at the end, so nothing below describes behaviour the code does
+not exist are listed at the end, so nothing below describes behavior the code does
 not have.
 
 ---
@@ -341,7 +341,7 @@ output, `--strict` to exit 1 on warnings):
 | --- | --- | --- |
 | `missing-tests` | warning | a prompt with no `test` block calling it |
 | `unbounded-template` | warning | `{{var}}` where `var` is not a parameter |
-| `prompt-injection-risk` | warning | a message section of any role that inserts a text parameter (`string`, `date`, a struct with a text field, or a type the file does not declare) outside a delimiter pair enclosing it: `<tag>`…`</tag>`, `---` lines, a code fence, `<BEGIN>`/`<END>`, `[[ ]]`. Numbers, booleans and enums are not flagged: that relies on the caller's type checker, as nothing checks them at run time. Generated code rewrites a value inserted between delimiters so that it cannot close or reopen them (README, "Delimited values"); a `<` written right before a tag-enclosed placeholder (`<{{email}}>`) is flagged, since a value starting with `/name>` would close the tag. Not recognised as delimiters: HTML comments; an unclosed tag such as `<br>` is matched with a later `</br>` |
+| `prompt-injection-risk` | warning | a message section of any role that inserts a text parameter (`string`, `date`, a struct with a text field, or a type the file does not declare) outside a delimiter pair enclosing it: `<tag>`…`</tag>`, `---` lines, a code fence, `<BEGIN>`/`<END>`, `[[ ]]`. Numbers, booleans and enums are not flagged: that relies on the caller's type checker, as nothing checks them at run time. Generated code rewrites a value inserted between delimiters so that it cannot close or reopen them (README, "Delimited values"); a `<` written right before a tag-enclosed placeholder (`<{{email}}>`) is flagged, since a value starting with `/name>` would close the tag. Not recognized as delimiters: HTML comments; an unclosed tag such as `<br>` is matched with a later `</br>` |
 | `token-cost-estimate` | info | a prompt whose static text is estimated above 500 tokens |
 | `chain-complexity` | info | a chain with more than 5 steps |
 | `duplicate-prompts` | warning | the same prompt name declared in several files |

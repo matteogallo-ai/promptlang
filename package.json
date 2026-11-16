@@ -67,12 +67,12 @@
     "test:consumer": "bun run scripts/consumer-test.ts"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.4",
+    "@biomejs/biome": "2.6.7",
     "@promptlang/yaml-parser": "workspace:*",
     "@stryker-mutator/core": "10.1.1",
     "@types/bun": "latest",
     "fast-check": "4.10.2",
-    "knip": "6.44.1",
+    "knip": "6.45.1",
     "typescript": "7.0.2"
   },
   "engines": {
